@@ -1,0 +1,175 @@
+{
+    "initialize":
+    {
+        "synthpop_initialize":true,
+        "simulation_initialize":true
+    },
+    "covasim_pars":
+    {
+        "region_pars":{
+            "different_pars":
+            {
+                "value":true,
+                "interventions_different":false,
+                "regions":[
+                    { 
+                        "label":"testlabel1",
+                        "popfile":"testfile",
+                        "n_days":30,
+                        "pop_type":"synthpops",
+                        "interventions":[
+                            {
+                                "type":"beta_change",
+                                "start_day":"2020-03-16",
+                                "end_day":"2020-05-19",
+                                "start_change":0.1,
+                                "end_change":1,
+                                "layers":["s","w"]
+                            },
+                            {
+                                "type":"mobility_change",
+                                "start_day":"2020-03-16",
+                                "end_day":"2020-05-19",
+                                "start_change":0,
+                                "end_change":1,
+                                "layers":[""]                                
+                            }   
+                        ]
+                    },
+                    {
+                        "label":"testlabel2",
+                        "popfile":"testfile",
+                        "n_days":30,
+                        "pop_type":"synthpops"
+                    }
+                ]
+            }
+        },
+        "mobility_pars":
+        {
+            "value":true,
+            "filepath":""
+        },
+        "population_pars":
+        {
+            "value":true,
+            "filepath":""
+        },
+        "interventions":
+        [
+            {
+                "type":"beta_change",
+                "start_day":"2020-03-16",
+                "end_day":"2020-05-19",
+                "start_change":0.1,
+                "end_change":1,
+                "layers":["s","w"]
+            }   
+        ],
+        "pars":
+        {
+            "label":"testlabel",
+            "popfile":"testfile",
+            "n_days":30,
+            "pop_type":"synthpops",
+            "analyzers":[
+
+            ],
+            "interventions":[
+
+            ]
+        }
+    },
+    "synthpops_pars":
+    {
+        "region_pars":{
+            "regions":
+            [         
+                {
+                    "name_with_diacritic":"Hlavní město Praha",
+                    "name":"Czechia-Czechia_CZ01",
+                    "filename":"Czechia-Czechia_CZ01.json",
+                    "location_code":"CZ01",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ01"
+                },
+                {
+                    "name_with_diacritic":"Středočeský kraj",
+                    "name":"Czechia-Czechia_CZ02",
+                    "filename":"Czechia-Czechia_CZ02.json",
+                    "location_code":"CZ02",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ02"
+                },
+                {
+                    "name_with_diacritic":"Jihozápad",
+                    "name":"Czechia-Czechia_CZ03",
+                    "filename":"Czechia-Czechia_CZ03.json",
+                    "location_code":"CZ03",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ03"
+                },
+                {
+                    "name_with_diacritic":"Severozápad",
+                    "name":"Czechia-Czechia_CZ04",
+                    "filename":"Czechia-Czechia_CZ04.json",
+                    "location_code":"CZ04",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ04"
+                },
+                {
+                    "name_with_diacritic":"Severovýchod",
+                    "name":"Czechia-Czechia_CZ05",
+                    "filename":"Czechia-Czechia_CZ05.json",
+                    "location_code":"CZ05",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ05"
+                },
+                {
+                    "name_with_diacritic":"Jihovýchod",
+                    "name":"Czechia-Czechia_CZ06",
+                    "filename":"Czechia-Czechia_CZ06.json",
+                    "location_code":"CZ06",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ06"
+                },
+                {
+                    "name_with_diacritic":"Střední Morava",
+                    "name":"Czechia-Czechia_CZ07",
+                    "filename":"Czechia-Czechia_CZ07.json",
+                    "location_code":"CZ07",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ07"
+                },
+                {
+                    "name_with_diacritic":"Moravskoslezský kraj",
+                    "name":"Czechia-Czechia_CZ08",
+                    "filename":"Czechia-Czechia_CZ08.json",
+                    "location_code":"CZ08",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ08"
+                }
+            ],
+          "age_distribution":
+              [
+                  {
+                      "num_bins":16,
+                      "filename":"CZ_NUTS2_population_distrib.xlsx"
+                  },
+                  {
+                      "num_bins":20,
+                      "filename":"CZ_NUTS2_population_distrib.xlsx"
+                  }
+              ],
+           "age_distribution_filepath":"CZ_NUTS2_population_distrib.xlsx"
+        }
+    }
+}

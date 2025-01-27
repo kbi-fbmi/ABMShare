@@ -1,0 +1,28 @@
+{
+    "location_name": "",
+    "data_provenance_notices": [],
+    "reference_links": [],
+    "citations": [],
+    "notes": [
+    ],
+    "parent": "",
+    "population_age_distributions": [
+    ],
+    "employment_rates_by_age": [
+    ],
+    "enrollment_rates_by_age": [
+    ],
+    "household_head_age_brackets": [],
+    "household_head_age_distribution_by_family_size": [    ],
+    "household_size_distribution": [
+    ],
+    "ltcf_resident_to_staff_ratio_distribution": [],
+    "ltcf_num_residents_distribution": [],
+    "ltcf_num_staff_distribution": [],
+    "ltcf_use_rate_distribution": [],
+    "school_size_brackets": [],
+    "school_size_distribution": [],
+    "school_size_distribution_by_type": [],
+    "school_types_by_age": [],
+    "workplace_size_counts_by_num_personnel": []
+  }

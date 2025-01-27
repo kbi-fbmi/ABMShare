@@ -1,0 +1,2 @@
+variant, rel_beta, rel_symp_prob, rel_severe_prob, rel_crit_prob, rel_death_prob
+omicron, 0.015,0.3,0.1,0.1,0.01

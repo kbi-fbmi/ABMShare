@@ -1,0 +1,36 @@
+{
+    "parallel_run": true,
+    "test":true,
+    "region_parameters":
+    {
+        "filepath":"<Path_to_sandbox>/input_data/simulation_configuration_files/simulation_region_pars.csv"
+    },
+    "interventions":
+    {
+        "filepath":"<Path_to_sandbox>/input_data/simulation_configuration_files/simulation_interventions.csv"
+    },
+    "immunity":
+    {                
+        "filepath":"<Path_to_sandbox>/input_data/simulation_immunity_files/immunity_input_files.csv"
+    },
+    "variants":
+    {
+        "filepath":"<Path_to_sandbox>/input_data/simulation_configuration_files/simulation_variants.csv"
+    },
+    "mobility":
+    {
+        "value":true,
+        "filepath":"<Path_to_sandbox>/input_data/data/NUTS2_mobility_data.csv"
+    },
+    "population_size":
+    {
+        "filepath":"<Path_to_sandbox>/input_data/data/population_age_distributions.csv"
+    },
+    "global_parameters":
+    {
+        "pars":{
+            "n_days":180
+        },
+        "filepath":"<Path_to_sandbox>/input_data/simulation_configuration_files/simulation_global_pars.csv"
+    }
+}

@@ -1,0 +1,2 @@
+vaccine_dose_pars,vaccine_variant_pars,variant_pars,variant_cross_immunity
+<Path_to_sandbox>/input_data/simulation_immunity_files/vaccine_dose_pars.csv,<Path_to_sandbox>/input_data/simulation_immunity_files/vaccine_variant_pars.csv,<Path_to_sandbox>/input_data/simulation_immunity_files/variants_pars.csv,<Path_to_sandbox>/input_data/simulation_immunity_files/variants_cross_imunnity.csv

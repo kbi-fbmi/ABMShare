@@ -1,0 +1,33 @@
+{
+    "initialize":
+    {
+        "synthpop_initialize":false,
+        "simulation_initialize":true,
+        "report_module_initialize":true
+    },
+    "auto_save_settings":
+    {
+        "value":true,
+        "auto_increment":true,
+        "dirname":"Simulation",
+        "location":"TODO..../sandbox/outputs",
+	"copy_files":
+	{
+	    "copy_loaded_pop":true
+	}
+    },
+    "synthpops_settings":
+    {
+        "filepath":"TODO..../sandbox/input_data/synthpops_configuration.json",
+        "mobility_filepath":"/TODO..../sandbox/input_data/data/NUTS2_mobility_data.csv"
+    },
+    "simulation_settings":
+    {
+        "filepath":"TODO..../sandbox/input_data/covasim_configuration.json",
+        "test":false
+    },
+    "report_settings":
+    {
+        "filepath":"TODO..../sandbox/input_data/report_configuration.json"
+    }
+}

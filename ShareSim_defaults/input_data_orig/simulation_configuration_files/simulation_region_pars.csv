@@ -1,0 +1,9 @@
+location_code,use,region_parent_name,name,popfile,pop_infected
+CZ01,true,Czechia,Region1,,2
+CZ02,true,Czechia,Region2,,0
+CZ03,true,Czechia,Region3,,0
+CZ04,true,Czechia,Region4,,0
+CZ05,true,Czechia,Region5,,2
+CZ06,true,Czechia,Region6,,2
+CZ07,true,Czechia,Region7,,0
+CZ08,true,Czechia,Region8,,0

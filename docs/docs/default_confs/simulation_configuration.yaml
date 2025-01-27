@@ -1,0 +1,18 @@
+---
+parallel_run: true
+test: false
+region_parameters:
+  filepath: "<Path_to_sandbox>/input_data/data/simulation/simulation_region_pars.csv"
+interventions:
+  filepath: "<Path_to_sandbox>/input_data/data/simulation/simulation_interventions.csv"
+variants:
+  filepath: "<Path_to_sandbox>/input_data/data/simulation_configuration_files/simulation_variants.csv"
+immunity:
+  filepath: "<Path_to_sandbox>/input_data/simulation_immunity_files/immunity_input_files.csv"
+mobility:
+  value: true
+  filepath: "<Path_to_sandbox>/input_data/data/NUTS2_mobility_data.csv"
+population_size:
+  filepath: "<Path_to_sandbox>/input_data/data/population_age_distributions.csv"
+global_parameters:
+  filepath: "<Path_to_sandbox>/input_data/data/simulation/simulation_global_pars.csv"

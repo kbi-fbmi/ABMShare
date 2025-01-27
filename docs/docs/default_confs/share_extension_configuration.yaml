@@ -1,0 +1,19 @@
+---
+initialize:
+  synthpop_initialize: true
+  simulation_initialize: true
+  report_module_initialize: true
+  test: false
+auto_save_settings:
+  value: true
+  auto_increment: true
+  dirname: Simulation
+  location: "<Path_to_sandbox>/sandbox/outputs"
+  copy_files:
+    copy_loaded_pop: true
+synthpops_settings:
+  filepath: "<Path_to_sandbox>/sandbox/input_data/synthpops_configuration.json"
+simulation_settings:
+  filepath: "<Path_to_sandbox>/sandbox/input_data/simulation_configuration.json"
+report_settings:
+  filepath: "<Path_to_sandbox>/sandbox/input_data/report_configuration.json"

@@ -1,0 +1,6 @@
+mkdocs==1.4.2
+mkdocstrings==0.19.1
+mkdocs-section-index
+markdown==3.3.4
+weasyprint
+mkpdfs-mkdocs

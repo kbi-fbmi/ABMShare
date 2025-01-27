@@ -1,0 +1,5 @@
+1. If it is in configuration
+2. copy all files based on configuration from host to remote server
+3. qsub string and send to server
+4. wait for job to finish
+5. copy results from remote server to local host. Maybe cron job with queue check?

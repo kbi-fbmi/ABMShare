@@ -1,0 +1,21 @@
+location_code,use,label,intervention_type,start_day,num_days,end_day,beta_change,layers,vaccine,sequence,num_doses,symp_prob,symp_quar_prob,asymp_prob,capacity,trace_probs,quar_period,daily_tests,symp_test,sensitivity,test_delay
+CZ01,true,mob_change,mobility_change,2020-03-01,,2020-05-19,,,,,,
+CZ01,false,mob_change,mobility_change,,"[10,25]",,,,,,,
+Czechia,false,mah,beta_change,2020-01-01,,2020-03-19,"[0.5]","[w,s]",,,,,,,,
+global,false,meh,beta_change,2020-01-10,15,,"[0.5,0.7]",,,,,,,,,
+global,false,bleh,vaccinate_distribution,,,,,,pfizer,age,50,,,,,,,,
+global,false,meh,testing_probability,2020-01-01,,2020-03-30,,,,,,0.1,0.3,0.01,,,,,
+global,false,contact tracing,contact_tracing,10,,,,,,,,,,,0.5,6,6,,
+CZ01,false,contact isolation,isolate_contacts,25,,83,"[0.7,1]","[s,w]",,,,,,,,,,,,,
+CZ01,false,contact isolation,isolate_contacts,25,,,0.7,"[s,w]",,,,,,,,,,,,,
+CZ01,false,pred day tetsing,per_day_testing,10,,2020-01-30,,,,,,,,,,,,90.5,1.0,1
+CZ01,false,pred day tetsing,per_day_testing,,,30,,,,,,,,,,,,80,1.0,1
+CZ01,false,pred day tetsing,per_day_testing,2020-01-01,,2020-01-30,,,,,,,,,,,,90.5,1.0,1
+global,false,meh,testing_probability,20,,2020-03-30,,,,,,0.1,0.3,0.01,,,,,
+CZ01,false,meh,testing_probability,2020-01-01,30,,,,,,,0.1,0.3,0.01,,,,,
+global,false,meh,testing_probability,2020-01-01,,2020-03-30,,,,,,0.1,0.3,0.01,,,,,
+global,false,contact tracing,contact_tracing,10,,,,,,,,,,,0.5,6,6,,
+CZ01,false,contact tracing,contact_tracing,,,,,,,,,,,,0.5,6,6,,
+global,false,contact tracing,contact_tracing,,"[10,30]",,,,,,,,,,0.5,6,6,,
+global,false,bleh,vaccinate_distribution,,,,,,pfizer,age,50,,,,,,,,
+global,false,bleh,vaccinate_distribution,10,,40,,,pfizer,age,50,,,,,,,,

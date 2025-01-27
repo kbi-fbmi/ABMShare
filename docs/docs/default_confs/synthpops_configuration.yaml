@@ -1,0 +1,22 @@
+---
+parallel_run: true
+pop_creator_settings:
+  pop_output_naming:
+    value: true
+    pop_name_prefix: test_
+    pop_name_suffix: ''
+    pop_output_type: obj
+    pop_output_dirpath: ''
+    pop_creator_dirpath: ''
+  parameters:
+    filepath: "<Path_to_sandbox>/sandbox/input_data/data/pars_file.csv"
+  pop_creator:
+    pop_creator_file:
+      value: true
+      filepath: "<Path_to_sandbox>/sandbox/input_data/data/synthpops_region.csv"
+    input_data_global:
+      value: true
+      filepath: "<Path_to_sandbox>/sandbox/input_data/data/synthpops_input_files.csv"
+      mobility_data:
+        value: true
+        filepath: "<Path_to_sandbox>/sandbox/input_data/data/NUTS2_mobility_data.csv"

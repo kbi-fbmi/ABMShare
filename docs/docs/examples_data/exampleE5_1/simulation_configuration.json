@@ -1,0 +1,126 @@
+{
+    "parallel_run":true,
+    "different_pars":
+    {
+        "value":true,
+        "interventions_different":true,
+        "variants_different":true,
+        "regions":[
+            { 
+                "sim_pars":{
+                    "label":"Region1",
+                    "popfile":"TODO: ASIGN PATH TO THE POPULATION OBJECT *.pop",                   
+                    "pop_infected":0
+                    }
+            },
+            {
+                "sim_pars":{
+                    "label":"Region2",
+                    "popfile":"TODO: ASIGN PATH TO THE POPULATION OBJECT *.pop",                   
+                    "pop_infected":10
+                    }
+                
+            },
+            {
+                "sim_pars":{
+                    "label":"Region3",
+                    "popfile":"TODO: ASIGN PATH TO THE POPULATION OBJECT *.pop",                    
+                    "pop_infected":10
+                    }
+                
+            },
+            {
+                "sim_pars":{
+                    "label":"Region4",
+                    "popfile":"TODO: ASIGN PATH TO THE POPULATION OBJECT *.pop",                   
+                    "pop_infected":10
+                    }
+                
+            },
+            {
+                "sim_pars":{
+                    "label":"Region5",
+                    "popfile":"TODO: ASIGN PATH TO THE POPULATION OBJECT *.pop",                   
+                    "pop_infected":10
+                    }
+                
+            },
+            {
+                "sim_pars":{
+                    "label":"Region6",
+                    "popfile":"TODO: ASIGN PATH TO THE POPULATION OBJECT *.pop",                  
+                    "pop_infected":0
+                    }
+                
+            },
+            {
+                "sim_pars":{
+                    "label":"Region7",
+                    "popfile":"TODO: ASIGN PATH TO THE POPULATION OBJECT *.pop",                 
+                    "pop_infected":0
+                    }
+                
+            },
+            {
+                "sim_pars":{
+                    "label":"Region8",
+                    "popfile":"TODO: ASIGN PATH TO THE POPULATION OBJECT *.pop",               
+                    "pop_infected":10
+                    }
+                
+            }
+        ]
+    },
+    "mobility_pars":
+    {
+        "value":true,
+        "filepath":"TODO..../sandbox/input_data/data/NUTS2_mobility_data.csv"
+    },
+    "population_pars":
+    {
+        "value":true,
+        "filepath":"TODO..../sandbox/input_data/data/population_age_distributions.csv"
+    },
+    "interventions":
+    {
+        "global_only":false,
+        "include_with_different":false,
+        "intervention_list":
+            [
+            ]
+    },    
+    "variants":{
+        "global_only":false,
+        "include_with_different":true,
+        "variant_list":
+        [
+            {
+                "variant":{
+                    "rel_beta":1.0,
+                    "rel_symp_prob":1.0,
+                    "rel_severe_prob":1.0,
+                    "rel_crit_prob":1.0,
+                    "rel_death_prob":1.0
+                },
+                "label":"",
+                "days":10,
+                "number_of_imports":10
+            }
+    ]},
+    "global_pars":
+    {   
+        "global_only":false,
+        "include_with_different":true,
+        "include_keys":["n_days","rand_seed","use_waning"],
+        "label":"testlabel_global",
+        "n_days":90,
+        "rand_seed":1042,
+        "use_waning":true
+    },
+    "save_pars":
+    {
+        "value":false,
+        "increment":true,
+        "dir_path":""            
+    }
+}

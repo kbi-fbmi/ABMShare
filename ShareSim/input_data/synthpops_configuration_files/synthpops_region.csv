@@ -1,0 +1,9 @@
+location_code,use,region_name,untrimmed_name,sheet_name,region_parent_name,notes,parent_dirpath,parent_filename,parent_filepath
+CZ01,true,Czechia_CZ01,Hlavní město Praha,Czech Republic,Czechia,,,,<Path_to_sandbox>/input_data/data/Czechia.json
+CZ02,true,Czechia_CZ02,Středočeský kraj,Czech Republic,Czechia,,,,<Path_to_sandbox>/input_data/data/Czechia.json
+CZ03,true,Czechia_CZ03,Jihozápad,Czech Republic,Czechia,,,,<Path_to_sandbox>/input_data/data/Czechia.json
+CZ04,true,Czechia_CZ04,Severozápad,Czech Republic,Czechia,,,,<Path_to_sandbox>/input_data/data/Czechia.json
+CZ05,true,Czechia_CZ05,Severovýchod,Czech Republic,Czechia,,,,<Path_to_sandbox>/input_data/data/Czechia.json
+CZ06,true,Czechia_CZ06,Jihovýchod,Czech Republic,Czechia,,,,<Path_to_sandbox>/input_data/data/Czechia.json
+CZ07,true,Czechia_CZ07,Střední Morava,Czech Republic,Czechia,,,,<Path_to_sandbox>/input_data/data/Czechia.json
+CZ08,true,Czechia_CZ08,Moravskoslezský kraj,Czech Republic,Czechia,,,,<Path_to_sandbox>/input_data/data/Czechia.json

@@ -1,0 +1,2 @@
+location_code,variant,use,label,days,start_day,end_day,num_days,number_of_imports,rescale
+global,omicron,true,omicron_variante,,,,"[5,90]",100,

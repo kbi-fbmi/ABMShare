@@ -1,0 +1,4 @@
+site/*
+.venv
+pdf/files*
+docs/downloads/synthpops_aditional_input_data

@@ -1,0 +1,41 @@
+site_name: abmSHARE Documentation
+nav:
+  - About: 
+    - index.md
+  - Tutorials:
+    - T1 Getting Started with abmSHARE: examples/exampleE1.md
+    - T2 Importing/Exporting data: examples/exampleE2.md
+    - T3 Ways for run: examples/exampleE3.md
+    - T4 Creating population: examples/exampleE4.md
+    - T4.1 Population input data: examples/exampleE4_1.md
+    - T5 Creating simulation: examples/exampleE5.md
+    - T5.1 Simulation - Interventions: examples/exampleE5A_1.md
+    - T5.2 Simulation - Intervention types: examples/exampleE5A_2.md
+    - T5.3 Simulation - Immunity and variants: examples/exampleE5B.md
+    - T6 Reporting outputs: examples/exampleE6.md
+  - Module Configurations Description:
+    - Main configuration file: Extension_settings.md
+    - Synthetic population configuration file: Synthetic_pop_settings.md
+    - Simulation configuration file: Simulation_settings.md
+    - Report module configuration file: Report_settings.md
+  - Downloads: 
+    - Downloads.md
+  - Parameters:
+    - Parameters.md
+  - Change Log: 
+    - ChangeLog.md
+theme: readthedocs
+plugins:
+  - search
+  - section-index
+markdown_extensions:
+  - toc:
+      permalink: "#"
+  - pymdownx.arithmatex:
+      generic: true
+  - tables
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

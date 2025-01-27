@@ -1,0 +1,94 @@
+{
+
+    "synthpops_pars":
+    {
+        "parallel_run":false,
+        "create_jsons":false,
+        "create_pop":true,
+        "region_pars":{
+            "regions":
+            [         
+                {
+                    "name_with_diacritic":"Hlavní město Praha",
+                    "name":"Czechia-Czechia_CZ01",
+                    "filename":"Czechia-Czechia_CZ01.json",
+                    "location_code":"CZ01",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ01"
+                },
+                {
+                    "name_with_diacritic":"Středočeský kraj",
+                    "name":"Czechia-Czechia_CZ02",
+                    "filename":"Czechia-Czechia_CZ02.json",
+                    "location_code":"CZ02",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ02"
+                },
+                {
+                    "name_with_diacritic":"Jihozápad",
+                    "name":"Czechia-Czechia_CZ03",
+                    "filename":"Czechia-Czechia_CZ03.json",
+                    "location_code":"CZ03",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ03"
+                },
+                {
+                    "name_with_diacritic":"Severozápad",
+                    "name":"Czechia-Czechia_CZ04",
+                    "filename":"Czechia-Czechia_CZ04.json",
+                    "location_code":"CZ04",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ04"
+                },
+                {
+                    "name_with_diacritic":"Severovýchod",
+                    "name":"Czechia-Czechia_CZ05",
+                    "filename":"Czechia-Czechia_CZ05.json",
+                    "location_code":"CZ05",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ05"
+                },
+                {
+                    "name_with_diacritic":"Jihovýchod",
+                    "name":"Czechia-Czechia_CZ06",
+                    "filename":"Czechia-Czechia_CZ06.json",
+                    "location_code":"CZ06",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ06"
+                },
+                {
+                    "name_with_diacritic":"Střední Morava",
+                    "name":"Czechia-Czechia_CZ07",
+                    "filename":"Czechia-Czechia_CZ07.json",
+                    "location_code":"CZ07",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ07"
+                },
+                {
+                    "name_with_diacritic":"Moravskoslezský kraj",
+                    "name":"Czechia-Czechia_CZ08",
+                    "filename":"Czechia-Czechia_CZ08.json",
+                    "location_code":"CZ08",
+                    "sheet_name":"Czech Republic",
+                    "country_location":"Czechia",
+                    "state_location":"Czechia_CZ08"
+                }
+            ]
+        },
+        "age_distribution":
+        {
+            "age_distribution_filepath":"CZ_NUTS2_population_distrib.xlsx",        
+            "age_distribution_brackets":
+            {
+                "num_bins":[16,20]
+            }
+        }
+    }
+}

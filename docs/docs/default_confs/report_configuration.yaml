@@ -1,0 +1,19 @@
+---
+create_report: true
+output_format: csv
+output_path: ''
+input_multisim:
+  filepath: ''
+  all_keys: true
+  keys: []
+  whole_simulation: true
+  separated_simulation: true
+  whole_variants: true
+  separated_variants: true
+reports:
+- keys:
+  - t
+  - new_deaths
+  - n_dead
+  output_format: ''
+  filename: ''

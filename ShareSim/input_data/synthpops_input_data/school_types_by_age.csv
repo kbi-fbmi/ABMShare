@@ -1,0 +1,5 @@
+school_type,min_age,max_age
+pk,3,5
+es,6,10
+hs,15,18
+uv,19,100

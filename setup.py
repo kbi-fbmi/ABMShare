@@ -18,6 +18,7 @@ setup(
     version="0.3.2",
     description="Based on Covasim and Synthpops by IDM COVID-19 Response Team",
     packages=find_packages(),
+    include_package_data=True,  # Include files specified in MANIFEST.in
     install_requires=requirements,  # Use the contents of the requirements.txt file
     classifiers=[
         "Development Status :: 3 - Alpha",

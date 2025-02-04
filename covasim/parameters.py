@@ -8,7 +8,7 @@ import sciris as sc
 from .settings import options as cvo # For setting global options
 from . import misc as cvm
 from . import defaults as cvd
-import extensions.utils as exut
+import abmshare.utils as exut
 
 __all__ = ['make_pars', 'reset_layer_pars', 'get_prognoses', 'get_variant_choices', 'get_vaccine_choices',
            'get_variant_pars', 'get_cross_immunity', 'get_vaccine_variant_pars', 'get_vaccine_dose_pars']

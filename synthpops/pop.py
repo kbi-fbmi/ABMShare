@@ -18,7 +18,7 @@ from . import workplaces as spw
 from . import contact_networks as spcnx
 from . import plotting as sppl
 from . import people as spp
-import extensions.utils as exut
+import abmshare.utils as exut
 
 
 __all__ = ['Pop', 'make_population', 'generate_synthetic_population']

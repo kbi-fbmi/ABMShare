@@ -245,13 +245,8 @@ if __name__=="__main__":
         "value":True,
         "processed":False
     }
-#     # conf_path="/storage/ssd2/sharesim/share-covasim/Tests/data/test_share_extension_configuration.json"
-    # conf_path="/home/user/testing_sandbox/input_data/share_extension_configuration.json"
-    conf_path="/storage/ssd2/sharesim/share-covasim/Tests/test_outputs3/ABM_share_meta/input_data/share_extension_configuration.json"
+    conf_path=""
     test= GridComputeController(config=conf_path,base_conf_path=conf_path,grid_user="user",test=True)
-#     # append
-#     # append_str="/storage/ssd2/sharesim/share-covasim/extensions/grid_compute_ex/grid_process.sh -f append_to_queue -a '-u user -o /home/user/sandbox/meta/outputs -i /storage/projects/cvut_fbmi_kbi/ABM_share/outputs/user/Simulation_2023_06_05_13_39'"
-#     # TODO: Handle exception to not continue
     print()
 
     

@@ -2,7 +2,6 @@ import abmshare.utils as exut
 import abmshare.defaults as exdf
 import numpy as np
 import pandas as pd
-import ast
 
 def get_popfiles(config:dict|str,code:str=None,popfile:str=None):
     """Get population files from configuration, single popfile, or as override from save_pars
@@ -45,7 +44,7 @@ def get_mobility_filepath(config:dict|str)->str|None:
         else: # When there is not provided mobility data, just return none            
             return None
     except:
-        print(f"There is problem with get_mobility_filepath")
+        print("There is problem with get_mobility_filepath")
         return None
 
 
@@ -62,7 +61,7 @@ def get_population_filepath(config:dict|str)->str|None:
     try:
         return exut.get_nested_value_from_dict(dictionary=config,keys=exdf.covasim_population_size_confkeys).get(exdf.confkeys['filepath'],None)
     except:
-        print(f"There is problem with get_population_filepath")
+        print("There is problem with get_population_filepath")
         return None
 
 def get_number_of_regions(config:dict|str)->int|None:
@@ -81,7 +80,7 @@ def get_number_of_regions(config:dict|str)->int|None:
                                         keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
         return len(data.loc[data['use'].isin(valid_true),'location_code'].values)
     except:
-        print(f"There is problem with get_number_of_regions")
+        print("There is problem with get_number_of_regions")
         return None
 
 def get_num_of_population(config:dict|str)->int|None:
@@ -103,7 +102,7 @@ def get_num_of_population(config:dict|str)->int|None:
         size=np.sum(pop_data.loc[data['location_code'].isin(location_codes),'population_size'].values)
         return size
     except:
-        print(f"There is problem with number of population")
+        print("There is problem with number of population")
         return None
 
 
@@ -169,7 +168,7 @@ def get_global_pars(config:dict|str,parameter:str=None)->dict|None:
             return combined_dict.get(parameter,None)
         return combined_dict
     except Exception as e:
-        print(f"There is problem with get_global_pars")
+        print("There is problem with get_global_pars")
         print(f"Exception: {e}")
         return None
 
@@ -225,7 +224,7 @@ def get_region_codes(config:dict|str)->list|None:
                                         keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
         return data.loc[data['use'].isin(valid_true),'location_code'].values
     except:
-        print(f"There is problem with get_region_codes")
+        print("There is problem with get_region_codes")
         return None
 
 def get_region_name(config:dict|str,code:str)->str|None:
@@ -387,7 +386,7 @@ def get_incoming_mobility_data_by_code(config:dict|str,code:str)->dict|None:
             for region_code in region_codes:
                  output[region_code]=mob_data.loc[mob_data['location_code'] == region_code, code].iloc[0]
         else:
-            raise Exception(f"There is no mobility data provided.")
+            raise Exception("There is no mobility data provided.")
         return output
     except:
         print(f"There is problem with get_region_parent_name for location code: {code}")
@@ -408,7 +407,7 @@ def get_variants(config:dict|str):
                                         keys=exdf.covasim_immunity_confkeys).get(exdf.confkeys['filepath'],None))
         return variants
     except:
-        print(f"There is problem with get_variants")
+        print("There is problem with get_variants")
         return None
 
 def get_immunity_files(config:dict|str):
@@ -435,7 +434,7 @@ def get_immunity_files(config:dict|str):
                 return []
         return output
     except:
-        print(f"There is problem with get_immunity_files")
+        print("There is problem with get_immunity_files")
         return []
 
 def get_all_csv_files(config:dict|str): 

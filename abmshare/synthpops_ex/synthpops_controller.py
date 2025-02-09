@@ -1,4 +1,3 @@
-import abmshare.defaults as exdf
 import abmshare.utils as exut
 import abmshare.synthpops_ex.region_config_creator as reg_creator
 

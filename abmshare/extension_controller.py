@@ -6,7 +6,6 @@ from abmshare import defaults as exdf
 from abmshare.grid_compute_ex import grid_compute_controller as gridproc
 from abmshare.validator import validator as val
 import abmshare.covasim_ex.immunity_process as exim
-import covasim as cv
 import os
 import sys
 # Check for the parameters file.
@@ -126,7 +125,7 @@ class ExtensionController():
                 temp=exut.load_config(self.simulation_configuration['filepath'])
                 if temp.get('immunity',False) and temp['immunity'].get('filepath',False):
                     self.immunity_process=exim.ImmunityProcessing(self.simulation_configuration['filepath'])
-            except Exception as e:
+            except Exception:
                 print("Immunity process could not be initialized.")
                 pass
             # simproc.MobilityMultiSim(extension_controller=self,configurationpath=self.covasim_configuration['filepath'],test=self.test,save_settings=self.save_settings,
@@ -159,7 +158,7 @@ class ExtensionController():
         '''
         configuration=configuration or self.configuration['auto_save_settings']
         settings = configuration.copy()
-        if not 'location' in settings or not settings['location']:
+        if 'location' not in settings or not settings['location']:
             # If there is no provided location, look for default
             settings['location'] = str(exut.merge_default_path(exdf.pathvalues['output_path']))
         if settings['dirname']:

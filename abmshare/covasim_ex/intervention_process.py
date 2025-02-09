@@ -4,7 +4,6 @@ import abmshare.defaults as exdf
 import abmshare.utils as exut
 import abmshare.covasim_ex.simulation_conf_getter as exscg
 from datetime import datetime, timedelta
-import numpy as np
 
 class MobilityIntervention:
     def __init__(self,days:list=None,start_day:str|datetime=None,end_day:str|datetime=None,label:str=None):
@@ -318,7 +317,7 @@ def calculate_daytime(start_day:str|datetime|int=None,end_day:str|datetime|int=N
     elif end_daytime is None: # If only end day is supplied so start_day is from beginning
         end_daytime=sim_end_datetime
     else:        
-        print(f"There is no possible combination for creating starting time")
+        print("There is no possible combination for creating starting time")
         return None
     
     if not exut.compare_two_types(start_daytime,end_daytime): # Compare to be same types

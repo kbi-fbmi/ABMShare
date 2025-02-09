@@ -24,12 +24,12 @@ def load_key(path:str=None):
 
 def generate_data(username:str=None,server:str=None,kerberos_user:str=None,input_path:str=None,output_path:str=None,server_script:str=None):
     data=exdf.grid_base_conf_structure
-    data['username']=username or input(f"\nAdd server ssh username: ")
-    data['server']=server or input(f"\nAdd ssh server name: ")
-    data['kerberos_user']=kerberos_user or input(f"\nAdd kerberos user name: ") # Main name for sudo user
-    data['input_path_server']=input_path or input(f"\nAdd ssh input path directory: ")
-    data['output_path_server']=output_path or input(f"\nAdd ssh output path directory: ")
-    data['remote_script_path']=server_script or input(f"\nAdd remote qsub script path directory: ")
+    data['username']=username or input("\nAdd server ssh username: ")
+    data['server']=server or input("\nAdd ssh server name: ")
+    data['kerberos_user']=kerberos_user or input("\nAdd kerberos user name: ") # Main name for sudo user
+    data['input_path_server']=input_path or input("\nAdd ssh input path directory: ")
+    data['output_path_server']=output_path or input("\nAdd ssh output path directory: ")
+    data['remote_script_path']=server_script or input("\nAdd remote qsub script path directory: ")
     return data
 
 def save_conf(path:str=None,data:dict=None,key_path:str=None):
@@ -39,7 +39,7 @@ def save_conf(path:str=None,data:dict=None,key_path:str=None):
     try:
         key=load_key(key_path)
     except:
-        print(f"\nKey not found, generating new key")
+        print("\nKey not found, generating new key")
         generate_key()
         key=load_key()
     fernet=Fernet(key)
@@ -62,10 +62,10 @@ def check_files(key_path:str=None,conf_path:str=None):
     key_path = key_path or exut.merge_default_path(".key/key")
     conf_path = conf_path or exut.merge_filepathGC(exdf.grid_base_conf_name)
     if not exut.file_validator(key_path):
-        print(f"\nKey not found, generating new key")
+        print("\nKey not found, generating new key")
         generate_key()
     if not exut.file_validator(conf_path):
-        print(f"\nConf file not found, generate new conf file manually with grid_utils")
+        print("\nConf file not found, generate new conf file manually with grid_utils")
         return False
     return True
 

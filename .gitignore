@@ -196,3 +196,4 @@ Tests/test_outputs3/ABM_share_meta/output_data/*
 
 outputs/
 .venv
+local_testing/

@@ -1,6 +1,4 @@
-import abmshare.validator.validator_defaults as vd
 import abmshare.utils as exut
-from abmshare.validator.validator_defaults import TypeValidationError
 
 
 def validate_type(value, expected_type, optional=False,filename:str=None,keys:list=None):

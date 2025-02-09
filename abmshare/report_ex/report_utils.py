@@ -109,7 +109,7 @@ def sum_dataframes(basedf,newdf):
     return basedf
 
 def save_whole_variant_output(dataframe_list,variant_names,dirpath,filename=None):
-    filename=filename or f"FullSimulation_variant_results.xlsx"
+    filename=filename or "FullSimulation_variant_results.xlsx"
     writer = pd.ExcelWriter(exut.merge_twoPaths(dirpath,filename), engine = 'xlsxwriter')
     for i,dataframe in enumerate(dataframe_list):
         dataframe.to_excel(writer,sheet_name=variant_names[i])

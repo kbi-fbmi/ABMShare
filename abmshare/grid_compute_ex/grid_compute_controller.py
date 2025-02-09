@@ -16,7 +16,7 @@ class GridComputeSettings:
     
     def __init__(self,key_path:str=None,conf_path:str=None):
         if not grut.check_files():
-            print(f"First you need to generate key and conf file for grid computing")
+            print("First you need to generate key and conf file for grid computing")
             raise Exception("Key or conf file not found")
         self.__key=grut.load_key(key_path)
         self.__conf=grut.load_conf_to_dict(path=conf_path,key=self.__key) # decrypted data
@@ -182,7 +182,7 @@ class GridComputeController:
                 try:
                     grut.execute_shell_script_and_check_output(command=f" sudo -u {self.grid_settings.get_server_kerberos_name()} {exut.merge_filepathGC(exdf.grid_process_script)} -f {exdf.grid_script_functions['credentials']}")
                 except:
-                    print(f"You have no valid kerberos ticket, please contact administrator")
+                    print("You have no valid kerberos ticket, please contact administrator")
                     return
         # Copy to server
         command=f"{exut.merge_filepathGC(exdf.grid_process_script)} -f {exdf.grid_script_functions['copy_to_remote']} -i {self.path} -u {self.grid_settings.get_user_name()} \
@@ -190,9 +190,9 @@ class GridComputeController:
         if not self.test:
             try:
                 grut.execute_shell_script(command=command)
-                print(f"Files succesfully coppied to remote server.")
+                print("Files succesfully coppied to remote server.")
             except:
-                print(f"Error while copying to remote server.")
+                print("Error while copying to remote server.")
                 return
 
     def process_qsub(self):
@@ -209,14 +209,14 @@ class GridComputeController:
         cmd_str+=f" select=1:ncpus={n_cpus}:mem={mem}"
         cmd_str+=f":scratch_ssd={ssd_capacity}"
         cmd_str+=f" -N {job_name} -m n -W umask=002"
-        cmd_str+=f" -W group_list=cvut_fbmi_kbi"
+        cmd_str+=" -W group_list=cvut_fbmi_kbi"
         # Command for qsub
         cmd_str+=f" -- {self.grid_settings.get_server_script_path()}\
  -f {grut.get_folder_name(self.path)}\
  -u {os.getlogin()}\
  -c {os.path.basename(self.to_copy_files['mainconfig'])}'"
         if self.test:
-            cmd_str+=f" -d true"
+            cmd_str+=" -d true"
         # queue append string
         # self.queue_append_string=f"-a '-u {os.getlogin()} -o {exdf.base_local_output_path(os.getlogin())} -i {exut.merge_multiple_paths(self.grid_settings.get_server_output_path(),[os.getlogin(),os.path.basename(self.path)])}'"
         # print(cmd_str)
@@ -227,18 +227,18 @@ class GridComputeController:
         if not self.test:
             try:
                 grut.execute_shell_script(command=command)
-                print(f"Job succesfully submited to remote server.")
+                print("Job succesfully submited to remote server.")
             except:
-                print(f"Error while submitting job to remote server.")
+                print("Error while submitting job to remote server.")
                 return
     
     def append_to_queue(self):
         try:
             grut.add_to_queue(user_name=os.getlogin(),local_location=exdf.base_local_output_path(os.getlogin()),
                               remote_location=exut.merge_multiple_paths(self.grid_settings.get_server_output_path(),[os.getlogin(),os.path.basename(self.path)]))
-            print(f"Job succesfully submited to queue for download.")
+            print("Job succesfully submited to queue for download.")
         except:
-            print(f"Error while appending job to queue.")
+            print("Error while appending job to queue.")
 
 if __name__=="__main__":
     grid_compute_settings={

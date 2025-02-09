@@ -1,9 +1,4 @@
-import abmshare.defaults as exdf
 import abmshare.utils as exut
-import pandas as pd
-import os
-import numpy as np
-import covasim as cv
 import covasim.parameters as cvpar
 
 class ImmunityProcessing():

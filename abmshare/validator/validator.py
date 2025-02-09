@@ -1,6 +1,5 @@
 import abmshare.validator.validator_defaults as vd
 import abmshare.utils as exut
-import abmshare.defaults as exdf
 import abmshare.validator.json_validator as jv
 import abmshare.validator.csv_validator as cv
 

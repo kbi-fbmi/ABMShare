@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 import abmshare.defaults as exdf
 import abmshare.utils as exut
-import pandas as pd
 
 class Grid_change_path:
     def __init__(self,wait:bool=False):

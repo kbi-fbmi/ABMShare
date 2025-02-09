@@ -2,7 +2,6 @@ import abmshare.utils as exut
 import abmshare.defaults as exdf
 import abmshare.synthpops_ex.synthpops_conf_getter as spcg
 from abmshare.synthpops_ex.region import Region
-import abmshare.extension_controller as extc
 import multiprocessing as mp
 
 class RegionConfigCreator:

@@ -1,7 +1,6 @@
 import abmshare.utils as exut
 import abmshare.defaults as exdf
 import pandas as pd
-import copy
 # This utils script is for getting selected values from configuration
 
 
@@ -45,7 +44,7 @@ def get_parent_location(config: dict | str, code: str = None):
             output = calculate_filepath(data, id, dirpath=exdf.synthpops_region_csv_columns['parent_dirpath'], filename=exdf.synthpops_region_csv_columns['parent_filename'],
                                         filepath=exdf.synthpops_region_csv_columns['parent_filepath'], region_parent_name=exdf.synthpops_region_csv_columns['region_parent_name'])
     except:
-        print(f"There is not provided parent location")
+        print("There is not provided parent location")
     if output != "" and not None:
         if isinstance(output, list):
             return list(set(output))
@@ -124,7 +123,7 @@ def get_all_regions(config:dict|str,return_codes:bool=True):
             if get_region_true(config,data[exdf.synthpops_region_csv_columns['location_code']][id]):
                     output.append(data[exdf.synthpops_region_csv_columns['location_code']][id])
     except:
-        print(f"There is an error durring parsing synthpops csv input files")
+        print("There is an error durring parsing synthpops csv input files")
         return False
     return output
 
@@ -168,7 +167,7 @@ def get_region_specific_csv_files(config:dict|str,location_code:str=None,mapped_
                         output.append(data[col_name][id]) if data[col_name][id]!="" else None
                         mapped_output[col_name]=data[col_name][id] if data[col_name][id]!="" else None
     except:
-        print(f"There is an error durring parsing synthpops csv input files")
+        print("There is an error durring parsing synthpops csv input files")
         return list()
     if mapped_output:
         return mapped_output
@@ -180,7 +179,7 @@ def get_synthpops_parameters(config:str|dict,location_code:str=None,region_paren
     pars=dict()
     # try:
     filepath = exut.get_nested_value_from_dict(dictionary=config,keys=exdf.synthpops_parameters_confkeys).get(exdf.confkeys['filepath'],None)
-    data = exut.load_datafile(filepath) if filepath is not None else print(f"There is no filepath for synthpops parameters") # Pars data
+    data = exut.load_datafile(filepath) if filepath is not None else print("There is no filepath for synthpops parameters") # Pars data
 
     if location_code is not None and exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],location_code) is not None:
         row=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],location_code)

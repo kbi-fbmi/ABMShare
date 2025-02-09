@@ -1,4 +1,3 @@
-import abmshare.defaults as exdf
 import abmshare.utils as exut
 import abmshare.covasim_ex.simulation_creator as sim_creator
 

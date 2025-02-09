@@ -1,11 +1,6 @@
 import numpy as np
 import pandas as pd
 import abmshare.defaults as exdf
-import abmshare.utils as exut
-import covasim as cv
-import warnings
-from abmshare.covasim_ex.region import Region
-import abmshare.covasim_ex.simulation_conf_getter as exscg
 import random as rnd
 # warnings.simplefilter(action='ignore', category=FutureWarning)
 

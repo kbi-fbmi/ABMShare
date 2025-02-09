@@ -3,7 +3,6 @@ import abmshare.utils as exut
 import abmshare.defaults as exdf
 from abmshare.validator.validator_defaults import TypeValidationError
 import pandas as pd
-import ast
 
 
 def validate_simulation_csv(filepath:str,rule:dict,keys:list):

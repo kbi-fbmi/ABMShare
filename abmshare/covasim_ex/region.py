@@ -2,13 +2,11 @@
 from abmshare.covasim_ex.intervention_process import MobilityIntervention
 import abmshare.defaults as exdf
 import abmshare.utils as exut
-import os
 import covasim as cv
 import pandas as pd
 import numpy as np
 import synthpops as sp
 import sciris as sc
-from pathlib import Path
 
 class Region:
     def __init__(self,
@@ -77,7 +75,7 @@ class Region:
         for key, value in self.region_pars.items():
             if key in exdf.covasim_constructor_pars_mapping.keys():
                 self.constructor_pars[exdf.covasim_constructor_pars_mapping[key]]=value
-            elif key in exdf.covasim_pars_all and not key in exdf.covasim_exclude_simulation_pars:
+            elif key in exdf.covasim_pars_all and key not in exdf.covasim_exclude_simulation_pars:
                 self.simulation_pars[key]=value            
             elif key in exdf.covasim_exclude_simulation_pars: # Only for key use
                 continue

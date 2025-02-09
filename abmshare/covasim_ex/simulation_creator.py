@@ -1,5 +1,3 @@
-from ctypes import sizeof
-import numpy as np
 import covasim as cv
 import abmshare.utils as exut
 import multiprocessing as mp
@@ -8,7 +6,6 @@ import abmshare.covasim_ex.mobility as mb
 import abmshare.covasim_ex.simulation_conf_getter as exscg
 from abmshare.covasim_ex.region import Region
 import abmshare.covasim_ex.intervention_process as exip
-import abmshare.covasim_ex.immunity_process as exim
 from pytictoc import TicToc
 import datetime
 import functools
@@ -171,7 +168,7 @@ class Simulation_creator():
         
     def save_multisim_object(self):
         if not self.save_settings:
-            print(f"Save settings is not defined. Nowhere to save simulation.")
+            print("Save settings is not defined. Nowhere to save simulation.")
         else:
             self.save_settings['sim_location']=exut.merge_twoPaths(self.save_settings['location'],exdf.default_multisim_object_rel_path)
             self.multisim_result.save(self.save_settings['sim_location'])

@@ -28,3 +28,4 @@ deepdiff
 pyyaml 
 cryptography
 bz2file
+ipykernel # For notebooks

@@ -103,9 +103,9 @@ def load_datafile(filepath: str|pd.DataFrame):
             if df[col].dtype == object:  # Typically, object type columns are strings
                 df[col] = df[col].str.strip()
         return df         
-    except NameError as e:
+    except NameError:
         raise NameError(f"You must use .xlsx or .csv datafiles, file:{filepath} is not supported.")
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         raise FileNotFoundError(f"File {filepath} not found")
 
 
@@ -204,7 +204,7 @@ def merge_filepathGC(path:str=None):
         path(str)                           : path for merge with default
     '''
     if path is None:
-        return  os.path.abspath(__file__+f"/../../")
+        return  os.path.abspath(__file__+"/../../")
     this_dir = os.path.abspath(
         __file__+f"/../../{exdf.pathvalues['grid_compute']}")  # Example dir
     return os.path.join(this_dir, path)
@@ -469,8 +469,8 @@ def sort_sims_by_synthpops_location(conf: dict, save_settings_location: str):
         location_codes = [x['location_code'] for x in conf]
         if location_codes == None or len(location_codes) == 0:
             raise Exception("An exception occurred")
-    except Exception as e:
-        print(f" There was not location_code key in region config file. Please check it.\
+    except Exception:
+        print(" There was not location_code key in region config file. Please check it.\
 This can cause unexpected behaviour of the program.")
         file_list = sorted(file_list)
         return file_list
@@ -646,7 +646,7 @@ def assign_intervention_keys(intervention: dict, default_keys: list, default_val
                     intervention[key] = default_values[key]
                 else:
                     intervention[key] = None
-        except Exception as e:
+        except Exception:
             print(
                 f"An error occured and cannot assign intervention_keys for {intervention}")
 
@@ -723,7 +723,7 @@ def create_dirs_based_on_dict(basepath:str,dir_structure:dict) -> None:
                 if file is not None:
                     try:
                         shutil.copy(file, new_dir)
-                    except Exception as e:
+                    except Exception:
                         print(f"Cannot copy {file} to {new_dir}")
 
 def get_logging_file(folder_path:str):
@@ -994,7 +994,7 @@ def get_all_csv_files(config:dict|str,config_combos:list,return_dict:bool=False,
                 output[file[0]]=get_nested_value_from_dict(dictionary=config,keys=file)
             else:
                 for f in filenames:
-                    if f in file and not "mobility_data" in file: # Only for validator method in
+                    if f in file and "mobility_data" not in file: # Only for validator method in
                         output[f]=get_nested_value_from_dict(dictionary=config,keys=file)
         elif file_validator(get_nested_value_from_dict(dictionary=config,keys=file)):
             output.append(get_nested_value_from_dict(dictionary=config,keys=file))

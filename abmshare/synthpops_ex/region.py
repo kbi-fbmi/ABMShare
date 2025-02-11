@@ -130,7 +130,7 @@ class Region:
 
 
     def prepare_region_config(self):
-        self.region_config=exut.load_config(self.parent_config)
+        self.region_config=exut.load_config(self.parent_config)                
 
     def process_region_config(self):
         for var in self.__dict__:
@@ -141,6 +141,8 @@ class Region:
                 elif isinstance(value,float) and np.isnan(value) or not value:
                     value=[""]
                 self.region_config[exdf.synthpops_region_pars_mapped[var]]=value
+        if exut.file_validator(self.parent_config):
+            self.region_config['parent']=self.parent_config
 
     def load_synthpops_csv_data(self):
         '''
@@ -164,29 +166,29 @@ class Region:
                 func=getattr(self,exdf.synthpops_one_file_data[key])
                 self.region_config[key]=func()
 
-
     def load_pop_age_distribution_csv(self):
         '''
         Method for parsing csv age_distribution file.              
         '''        
-        num_of_bins=exdf.population_age_distributions_bins
-        data=exut.load_datafile(self.data_files['population_age_distributions']).iloc[exut.get_index_by_column_and_value(df=exut.load_datafile(self.data_files['population_age_distributions']),column=exdf.synthpops_region_csv_columns['location_code'],value=self.location_code)][3:]
-        output=[]
+        num_of_bins = exdf.population_age_distributions_bins
+        data = exut.load_datafile(self.data_files['population_age_distributions'])
+        data = data.iloc[exut.get_index_by_column_and_value(df=data, column=exdf.synthpops_region_csv_columns['location_code'], value=self.location_code)][3:]
+        output = []
         for bin in num_of_bins:
-            max=-1
-            distrib=copy.deepcopy(exdf.population_age_distribution_default)
-            distrib['num_bins']=bin
+            max = -1
+            distrib = copy.deepcopy(exdf.population_age_distribution_default)
+            distrib['num_bins'] = bin
             if bin != len(data):
-                max=bin
-            for i,column in enumerate(data.index):
-                if len(column.split('_'))==3:
-                    _prefix,pre,pos = column.split('_')
+                max = bin
+            for i, column in enumerate(data.index):
+                if len(column.split('_')) == 3:
+                    _prefix, pre, pos = column.split('_')
                 else:
-                    pre,pos = column.split('_')
-                if max-1 == i or i == len(data)-1:
-                    distrib['distribution'].append([int(pre),100,np.sum(data[i:])]) # add mean for data
+                    pre, pos = column.split('_')
+                if max - 1 == i or i == len(data) - 1:
+                    distrib['distribution'].append([int(pre), 100, np.sum(data.iloc[i:])]) # add mean for data
                     break            
-                distrib['distribution'].append([int(pre),int(pos),data[i]])
+                distrib['distribution'].append([int(pre), int(pos), data.iloc[i]])
             output.append(distrib)
         return output
     
@@ -281,17 +283,18 @@ class Region:
         for i,row in data.iterrows():
             output.append(float(row['distribution']))
         return output
-
+    
     def load_school_size_distribution(self):
-        csv_data_name="school_size_distribution_by_type"
-        data=exut.load_datafile(self.data_files[csv_data_name])
+        csv_data_name = "school_size_distribution_by_type"
+        data = exut.load_datafile(self.data_files[csv_data_name])
         data.columns = map(str.lower, data.columns)
-        output=[]
-        pattern={"school_type":"","size_distribution":[]}
-        for i,row in data.iterrows():
-            pattern["school_type"]=row['school_type']
-            pattern["size_distribution"]=[float(x) for x in (row[1].split(","))]
-            output.append(pattern.copy())
+        output = []
+        for _, row in data.iterrows():
+            pattern = {
+                "school_type": row['school_type'],
+                "size_distribution": [float(x) for x in row['size_distribution'].split(",")]
+            }
+            output.append(pattern)
         return output
     
     def load_school_types(self):

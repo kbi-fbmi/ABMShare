@@ -350,9 +350,11 @@ def load_configuration_from_filepath(filepath:str,check_constraints:bool=None):
         _type_: json dictionary
     """
     logger.debug(f"Opening region configuration from filepath [{filepath}]")
-    f = open(filepath, 'r')
-    json_obj = json.load(f)
-    return load_location_from_json(json_obj, check_constraints=check_constraints)
+    # f = open(filepath, 'r')
+    # json_obj = json.load(f)
+    with open(filepath, 'r') as f:
+        return load_location_from_json(json.load(f), check_constraints=check_constraints)
+    # return load_location_from_json(json_obj, check_constraints=check_constraints)
 
 def save_location_to_filepath(location, abs_filepath):
     """

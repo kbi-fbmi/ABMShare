@@ -5,7 +5,7 @@ import yaml
 import pandas as pd
 from pathlib import Path
 
-class ResursiveChangePaths():
+class RecursiveChangePaths():
 
   def __init__(self, directory, pattern, replacement):
     self.directory = directory

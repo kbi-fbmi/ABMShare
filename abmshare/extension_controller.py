@@ -53,7 +53,7 @@ class ExtensionController():
         #Handle test manually
         try:
             # self.test = self.simulation_configuration.get('test', self.test)
-            if self.test==True: pass
+            if self.test: pass
             else: self.test =self.configuration['initialize'].get('test', self.test)
         except:
             self.test=False
@@ -67,7 +67,7 @@ class ExtensionController():
             raise NotImplementedError("You need to provide save_settings, for simulation running.")
 
         if self.grid_compute and self.grid_user:  
-            if self.validate==True: # If validate only
+            if self.validate: # If validate only
                 val.process(self.configuration,self.simulation_configuration['filepath'],self.synthpops_configuration['filepath'],self.report_configuration['filepath'])
                 print("Validation process has been finished")
                 return
@@ -79,7 +79,7 @@ class ExtensionController():
         
 
         # Handle validation, for locall run
-        if self.validate==True: # If validate only
+        if self.validate: # If validate only
             val.process(self.configuration,self.simulation_configuration['filepath'],self.synthpops_configuration['filepath'],self.report_configuration['filepath'])
             print("Validation process has been finished")
             return

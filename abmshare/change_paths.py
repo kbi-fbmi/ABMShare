@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import jsbeautifier
 import yaml
 import pandas as pd
 from pathlib import Path
@@ -40,8 +41,11 @@ class RecursiveChangePaths():
                   data = json.load(file)
               modified_data = json.dumps(data)
               modified_data = self.replace_pattern(modified_data, pattern, replacement)
+              options = jsbeautifier.default_options()
+              options.indent_size = 2
+              pretty_json=jsbeautifier.beautify(json.dumps(modified_data), options)
               with open(file_path, "w", encoding="utf-8") as file:
-                  file.write(modified_data)
+                  file.write(pretty_json)
               print(f"Processed JSON file: {file_path}")
 
           # Read and process YAML files

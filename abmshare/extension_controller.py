@@ -53,17 +53,20 @@ class ExtensionController():
         #Handle test manually
         try:
             # self.test = self.simulation_configuration.get('test', self.test)
-            if self.test: pass
-            else: self.test =self.configuration['initialize'].get('test', self.test)
-        except:
+            if self.test: 
+                pass
+            else: 
+                self.test =self.configuration['initialize'].get('test', self.test)
+        except Exception:
             self.test=False
 
-        #Handle save options        
+        #Handle save options       
+    def start(self): 
         try:
             if exdf.confkeys['auto_save_settings'] in self.configuration and self.validate!=True:
                 self.save_settings=self.load_save_settings_parse()
                 self.save_configuration()
-        except:
+        except Exception:
             raise NotImplementedError("You need to provide save_settings, for simulation running.")
 
         if self.grid_compute and self.grid_user:  
@@ -94,9 +97,8 @@ class ExtensionController():
             filepath=exut.get_logging_file(file_path)
             self.log_file=open(filepath, 'w')
             sys.stdout = self.log_file
-        except:
+        except Exception:
             pass
-        # try:
         if self.configuration['initialize']['synthpop_initialize']:
             self.initialized_modules['synthpops']=True
             if self.mobility==None:
@@ -104,16 +106,6 @@ class ExtensionController():
             print("*******************************************")
             print("Running pop creation process")
             syntproc.SynthpopsExtensionController(configuration=self.synthpops_configuration['filepath'],save_settings=self.save_settings,test=self.test,mobility=self.mobility)
-        # except Exception as e:
-        #     print("Pop Creation processs could not be finished.")
-        #     print(e)
-        # try:
-        # if self.configuration['initialize']['simulation_initialize']:
-        #     self.initialized_modules['multisim']=True
-        #     print("*******************************************")
-        #     print("Running multisim simulation process")
-        #     mobsim.MobilityMultiSim(extension_controller=self,configurationpath=self.covasim_configuration['filepath'],test=self.test,save_settings=self.save_settings,
-                                    # override_pop_location=self.override_save_settings,initialized_modules=self.initialized_modules)
         if self.configuration['initialize']['simulation_initialize']:
             if self.mobility==None:
                 self.mobility=exut.get_nested_value_from_dict(exut.load_config(self.synthpops_configuration['filepath']),exdf.synthpops_mobility_bool) if not None else False
@@ -128,13 +120,8 @@ class ExtensionController():
             except Exception:
                 print("Immunity process could not be initialized.")
                 pass
-            # simproc.MobilityMultiSim(extension_controller=self,configurationpath=self.covasim_configuration['filepath'],test=self.test,save_settings=self.save_settings,
-            #                         override_pop_location=self.override_save_settings,initialized_modules=self.initialized_modules)
             simproc.SimulationExtensionController(configuration=self.simulation_configuration['filepath'],save_settings=self.save_settings,
                                                   override_pop_location=self.override_save_settings,test=self.test,mobility=self.mobility)
-        # except Exception as e: 
-        #         print("Multisimulation process could not be finished.")
-        #         print(e)
         try:
             if self.configuration['initialize']['report_module_initialize']:
                 self.initialized_modules['report']=True
@@ -148,8 +135,8 @@ class ExtensionController():
         if self.log_file:
             try:
                 self.file.close()
-            except:
-                pass
+            except Exception:
+                print ("Could not close the logging file")
             
     def load_save_settings_parse(self,configuration:dict=None):
         '''
@@ -180,19 +167,19 @@ class ExtensionController():
         exut.directory_validator(location)
         try:
             exut.save_file(location,"MainConfiguration",".json",self.configuration)
-        except:
+        except Exception:
             pass
         try:
             exut.save_file(location,"SimulationConfiguration",".json",exut.load_config(self.simulation_configuration['filepath']))
-        except:
+        except Exception:
             pass
         try:
             exut.save_file(location,"SynthpopsConfiguration",".json",exut.load_config(self.synthpops_configuration['filepath']))
-        except:
+        except Exception:
             pass
         try:
             exut.save_file(location,"ReportModuleConfiguration",".json",exut.load_config(self.report_configuration['filepath']))
-        except:
+        except Exception:
             pass
 
     def check_override(self):

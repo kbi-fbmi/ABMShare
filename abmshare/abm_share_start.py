@@ -30,4 +30,5 @@ if __name__=="__main__":
 
 
     meh = exct.ExtensionController(configuration=args.config,grid_compute=grid_compute,grid_user=user,validate=args.validate,test=args.test) #args.config
+    meh.start()
     print("Everything is done")

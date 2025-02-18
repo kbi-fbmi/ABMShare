@@ -345,6 +345,8 @@ def process_interventions(interventions:list,config:dict)->list:
     Returns:
         list: _description_
     """
+    if not interventions:
+        return []
     intervention_list=[]
     for intervention in interventions:
         if intervention[exdf.confkeys['type']]==exdf.intervention_names_mapping['beta_change']: # SHOULD BE ALSO VALIDATION

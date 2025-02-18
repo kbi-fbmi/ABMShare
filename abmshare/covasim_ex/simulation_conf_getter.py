@@ -156,10 +156,11 @@ def get_global_pars(config:dict|str,parameter:str=None)->dict|None:
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
                                         keys=exdf.covasim_global_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        additive_pars=exut.get_nested_value_from_dict(dictionary=config,
-                                                        keys=exdf.covasim_global_parameters)
+        # additive_pars=exut.get_nested_value_from_dict(dictionary=config,
+        #                                                 keys=exdf.covasim_global_parameters)
         data_pars = data.iloc[0].to_dict()
-        combined_dict = {**additive_pars, **data_pars}
+        # combined_dict = {**additive_pars, **data_pars}
+        combined_dict = data_pars
         keys_to_remove=[key for key in combined_dict.keys() if key not in exdf.covasim_pars_all]
         for key in keys_to_remove: 
             print(f"Removing invalid key: {key} from global pars.")

@@ -76,16 +76,22 @@ class Simulation_creator():
             for region in self.region_objects.values():
                 # Prepare mobility keys to exclude
                 actual_date=datetime.datetime.strptime(region.cv_simulation.date(t),'%Y-%m-%d')
-                if t==0:print(f"Starting simulation date:{actual_date}") 
+                if t==0:
+                    print(f"Starting simulation date:{actual_date}") 
                 region.run_step()
                 # Now handle mobility intervention when is turned
                 for change in region.mobility_intervention_list:
-                    if not self.mobility:break #NOTE: narovnak na ohybak
+                    if not self.mobility:
+                        break #NOTE: narovnak na ohybak
                     if (change.start_day <= t <= change.end_day):
                         exclude_regions.append(region.location_code)
             # Handle all intervention. Exclude from sync those, which are locked down
             if len(set(exclude_regions)) < len(self.region_objects) and self.mobility:
                 mb.interactions({key:self.region_objects[key] for key in self.region_objects.keys() if key not in exclude_regions},init=False)
+            # Print
+            print(f"Actually infected: {int(sum([sum(region.cv_simulation.results['new_infections']) for region in self.region_objects.values()]))}\n"+
+                  f"Total deaths: {int(sum([sum(region.cv_simulation.results['cum_deaths']) for region in self.region_objects.values()]))}\n"+
+                  f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")
         # Finalize sims
         for val in self.region_objects.values():
             val.finalize_simulation()
@@ -159,6 +165,10 @@ class Simulation_creator():
                 keys_not_excluded = [key for key in self.region_objects_result.keys() if key not in self.shared_mobility_exclude]
                 relevant_region_objects = {key: self.region_objects_result[key] for key in keys_not_excluded}
                 mb.interactions(relevant_region_objects, init=False)
+            # Print
+            print(f"Actually infected: {int(sum([sum(region.cv_simulation.results['new_infections']) for region in self.region_objects.values()]))}\n"+
+                  f"Total deaths: {int(sum([sum(region.cv_simulation.results['n_dead']) for region in self.region_objects.values()]))}\n"+
+                  f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")
 
         # Finalize sims after all days are simulated
         self.region_objects = dict(self.region_objects_result)
@@ -174,15 +184,15 @@ class Simulation_creator():
             self.multisim_result.save(self.save_settings['sim_location'])
 
 if __name__=="__main__":
-    config="/storage/ssd2/sharesim/share-covasim/Tests/test_outputs3/ABM_share_meta/input_data/new_simulation.json"
+    config="/home/jedimik/Github/ABMShare/new_simulation.json"
     save_settings={
         "value": True,
         "auto_increment": True,
         "dirname": "Simulation",
-        "location": "/storage/ssd2/sharesim/share-covasim/Outputs/CovTesting",
+        "location": "/home/jedimik/Github/ABMShare/local_testing/outputs",
         "copy_files": {
             "copy_loaded_pop": True
         }
     }
-    meh=Simulation_creator(configuration=config,save_settings=save_settings,override_pop_location=False,test=True)
+    meh=Simulation_creator(configuration=config,save_settings=save_settings,override_pop_location=False,test=True,parallel_run=True)
     print()

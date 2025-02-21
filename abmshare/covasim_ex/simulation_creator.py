@@ -184,17 +184,3 @@ class Simulation_creator():
         else:
             self.save_settings['sim_location']=exut.merge_twoPaths(self.save_settings['location'],exdf.default_multisim_object_rel_path)
             self.multisim_result.save(self.save_settings['sim_location'])
-
-# if __name__=="__main__":
-#     config="/home/jedimik/Github/ABMShare/new_simulation.json"
-#     save_settings={
-#         "value": True,
-#         "auto_increment": True,
-#         "dirname": "Simulation",
-#         "location": "/home/jedimik/Github/ABMShare/local_testing/outputs",
-#         "copy_files": {
-#             "copy_loaded_pop": True
-#         }
-#     }
-#     meh=Simulation_creator(configuration=config,save_settings=save_settings,override_pop_location=False,test=True,parallel_run=True)
-#     print()

@@ -89,10 +89,10 @@ class Simulation_creator():
             if len(set(exclude_regions)) < len(self.region_objects) and self.mobility:
                 mb.interactions({key:self.region_objects[key] for key in self.region_objects.keys() if key not in exclude_regions},init=False)
             # Print
-            print(f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\n"+
-                  f"Today new deaths: {sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()])}\n"+
-                  f"Totall dead: {int(sum([max(region.cv_simulation.results['n_dead']) for region in self.region_objects.values()]))}\n"+
-                  f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")
+            print(f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\t\t"+
+                  f"Today new deaths: {sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()])}\t\t"+
+                  f"Totall dead: {int(sum([max(region.cv_simulation.results['n_dead']) for region in self.region_objects.values()]))}\t\t\n")
+                #   f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")
         # Finalize sims
         for val in self.region_objects.values():
             val.finalize_simulation()
@@ -167,10 +167,10 @@ class Simulation_creator():
                 relevant_region_objects = {key: self.region_objects_result[key] for key in keys_not_excluded}
                 mb.interactions(relevant_region_objects, init=False)
             # Print
-            print(f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\n"+
-                  f"Today new deaths: {sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()])}\n"+
-                  f"Totall dead: {int(sum([max(region.cv_simulation.results['n_dead']) for region in self.region_objects.values()]))}\n"+
-                  f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")
+            print(f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\t\t"+
+                  f"Today new deaths: {sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()])}\t\t"+
+                  f"Totall dead: {int(sum([max(region.cv_simulation.results['n_dead']) for region in self.region_objects.values()]))}\t\t\n")
+                #   f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")
 
         # Finalize sims after all days are simulated
         self.region_objects = dict(self.region_objects_result)

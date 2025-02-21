@@ -23,11 +23,16 @@ class Report_ex_controller():
         self.save_settings=save_settings
         # Handle simulation object
         if simulation is None and self.save_settings is None:
-            simulation = exru.load_sim(self.configuration[exdf.confkeys['input_multisim']]['filepath'])
+            simulation = exru.load_sim(self.configuration[exdf.confkeys['input_multisim']]['filepath'])        
         elif self.save_settings:
             simulation = exru.load_sim(self.save_settings['sim_location'])
+        elif isinstance(simulation,str) and exut.file_validator(simulation):
+            try:
+                simulation = exru.load_sim(simulation)
+            except Exception as e:
+                print(f"An error occured while loading simulation, error msg: {e}")
         elif save_name is not None:
-            simulation = exru.load_sim(save_name)
+            simulation = exru.load_sim(save_name)    
         # Handle some pars
         self.simulation = simulation
         self.report_list=[]       
@@ -123,9 +128,12 @@ class Report_ex_controller():
                     if i == 0:
                         output = copy.deepcopy(dflist)
                     else:
-                        exru.sum_dataframes(output, dflist)
+                        exru.sum_dataframes(output, dflist)                        
                 else:
                     return "", []  # If the loop is executed but the condition is not met, it will return empty values
+        for i in range(len(output)):
+            output[i]['date']=dflist[0]['date']
+            output[i]['day']=dflist[0]['day']
         return output, variant_names
 
     def process_whole_variants(self,output,variant_names,dirpath,filename=None):

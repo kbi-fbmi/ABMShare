@@ -833,8 +833,7 @@ report_keys_without_date=[
 "frac_vaccinated",
 "pop_nabs",
 "pop_protection",
-"pop_symp_protection",
-"t"
+"pop_symp_protection"
 ]
 
 person_keys=[

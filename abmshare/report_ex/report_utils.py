@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import copy
+from datetime import datetime,timedelta
 
 def load_sim(filepath): 
     '''
@@ -70,11 +71,21 @@ def save_whole(simulations,dirpath,filename=None,extension=".csv"):
         filename="FullSimulation"
     filepath=exut.merge_twoPaths(dirpath,filename)
     try:
-        df=copy.deepcopy(simulations.sims[0].to_df())
+        # df=copy.deepcopy(simulations.sims[0].to_df())
+        df=simulations.sims[0].to_df()
+        df=df[exdf.report_keys_without_date]
         for i,sim in enumerate(simulations.sims):
             if i != 0:
                 df2=sim.to_df()
-                df=df.add(df2[exdf.report_keys_without_date])
+                df[exdf.report_keys_without_date]=df[exdf.report_keys_without_date].add(df2[exdf.report_keys_without_date])
+        
+        # Add date and time
+        # df['date']=simulations.sims[0].date(simulations.sims[0].t)
+        # t = np.arange(datetime(1985,7,1), datetime(2015,7,1), timedelta(days=1)).astype(datetime)
+        df['date']= np.arange(datetime.strptime((simulations.sims[0].date(0)),"%Y-%m-%d"),
+                  datetime.strptime((simulations.sims[0].date(simulations.sims[0].t+1)),"%Y-%m-%d"),
+                  timedelta(days=1)).astype(datetime)
+        df['t']=np.arange(1,int(simulations.sims[0].t)+1)
         exut.save_file(dirpath,filename,extension,df)
     except:
         print(f"Cannot create whole simulation summary at:{os.path.join(dirpath,filename)}.{extension}")
@@ -106,7 +117,7 @@ def create_single_variant_output(simulation, dirpath):
 def sum_dataframes(basedf,newdf):
     for i,data in enumerate(basedf):
         basedf[i]=basedf[i].add(newdf[i][exdf.variant_result_keys])
-    return basedf
+    # return basedf
 
 def save_whole_variant_output(dataframe_list,variant_names,dirpath,filename=None):
     filename=filename or "FullSimulation_variant_results.xlsx"

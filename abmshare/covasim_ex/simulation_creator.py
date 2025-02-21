@@ -90,9 +90,9 @@ class Simulation_creator():
                 mb.interactions({key:self.region_objects[key] for key in self.region_objects.keys() if key not in exclude_regions},init=False)
             # Print
             print(f"Day:{t}"+
-                  f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\t\t"+
-                  f"Cummulative infections:{sum([max(region.cv_simulation.results['cum_infections']) for region in self.region_objects.values()])}\t\t"+
-                  f"Today new deaths: {sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()])}\t\t"+
+                  f"Today new infections: {int(sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()]))}\t\t"+
+                  f"Cummulative infections:{int(sum([max(region.cv_simulation.results['cum_infections']) for region in self.region_objects.values()]))}\t\t"+
+                  f"Today new deaths: {int(sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()]))}\t\t"+
                   f"Totall dead: {int(sum([max(region.cv_simulation.results['n_dead']) for region in self.region_objects.values()]))}\t\t\n")
                 #   f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")
         # Finalize sims
@@ -170,9 +170,9 @@ class Simulation_creator():
                 mb.interactions(relevant_region_objects, init=False)
             # Print
             print(f"Day:{t}"+
-                  f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\t\t"+
-                  f"Cummulative infections:{sum([max(region.cv_simulation.results['cum_infections']) for region in self.region_objects.values()])}\t\t"+
-                  f"Today new deaths: {sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()])}\t\t"+
+                  f"Today new infections: {int(sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()]))}\t\t"+
+                  f"Cummulative infections:{int(sum([max(region.cv_simulation.results['cum_infections']) for region in self.region_objects.values()]))}\t\t"+
+                  f"Today new deaths: {int(sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()]))}\t\t"+
                   f"Totall dead: {int(sum([max(region.cv_simulation.results['n_dead']) for region in self.region_objects.values()]))}\t\t\n")
                 #   f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")
 

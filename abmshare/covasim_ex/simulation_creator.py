@@ -71,7 +71,7 @@ class Simulation_creator():
             mb.interactions(self.region_objects,init=True)
         # Run sims
         for t in range(self.simulation_days):            
-            print(f"Running sim for day:{t}")            
+            # print(f"Running sim for day:{t}")            
             exclude_regions=[]
             for region in self.region_objects.values():
                 # Prepare mobility keys to exclude
@@ -89,7 +89,9 @@ class Simulation_creator():
             if len(set(exclude_regions)) < len(self.region_objects) and self.mobility:
                 mb.interactions({key:self.region_objects[key] for key in self.region_objects.keys() if key not in exclude_regions},init=False)
             # Print
-            print(f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\t\t"+
+            print(f"Day:{t}"+
+                  f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\t\t"+
+                  f"Cummulative infections:{sum([max(region.cv_simulation.results['cum_infections']) for region in self.region_objects.values()])}\t\t"+
                   f"Today new deaths: {sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()])}\t\t"+
                   f"Totall dead: {int(sum([max(region.cv_simulation.results['n_dead']) for region in self.region_objects.values()]))}\t\t\n")
                 #   f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")
@@ -157,7 +159,7 @@ class Simulation_creator():
 
         # Run the simulation in parallel and synchro mobility
         for t in range(self.simulation_days):
-            print(f"Running multisimulation for day:{t}")
+            # print(f"Running multisimulation for day:{t}")
             # Run the simulations in parallel for this day
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 results = list(executor.map(lambda obj: self.sim_simulation_process(obj, t), self.region_objects.values()))
@@ -167,7 +169,9 @@ class Simulation_creator():
                 relevant_region_objects = {key: self.region_objects_result[key] for key in keys_not_excluded}
                 mb.interactions(relevant_region_objects, init=False)
             # Print
-            print(f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\t\t"+
+            print(f"Day:{t}"+
+                  f"Today new infections: {sum([region.cv_simulation.results['new_infections'][t] for region in self.region_objects.values()])}\t\t"+
+                  f"Cummulative infections:{sum([max(region.cv_simulation.results['cum_infections']) for region in self.region_objects.values()])}\t\t"+
                   f"Today new deaths: {sum([region.cv_simulation.results['new_deaths'][t] for region in self.region_objects.values()])}\t\t"+
                   f"Totall dead: {int(sum([max(region.cv_simulation.results['n_dead']) for region in self.region_objects.values()]))}\t\t\n")
                 #   f"From totall population length: {int(sum([region.population_size for region in self.region_objects.values()]))}\n")

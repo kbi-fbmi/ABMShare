@@ -42,8 +42,8 @@ dependencies = [
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = ["abmshare","covasim","synthpops","covasim_ex","report_ex","synthpops_ex","validator"]
+[tool.setuptools.packages]
+find = {}
 
 [dependency-groups]
 dev = [

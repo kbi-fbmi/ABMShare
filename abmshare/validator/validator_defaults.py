@@ -1,5 +1,6 @@
 import abmshare.defaults as exdf
 
+
 class ValidationError(Exception):
     pass
 
@@ -31,7 +32,7 @@ simulation_json_validation={
         },
         "filepath": {"type": str, "allowed": (".csv",".xlsx"),
                      "optional":True},
-    }
+    },
 }
 
 synthpops_json_validation = {
@@ -44,26 +45,26 @@ synthpops_json_validation = {
             "pop_name_suffix": {"type": str, "optional": True},
             "pop_output_type": {"type": str},
             "pop_output_dirpath": {"type": str, "optional": True},
-            "pop_creator_dirpath": {"type": str, "optional": True}
+            "pop_creator_dirpath": {"type": str, "optional": True},
         },
         "parameters": {
-            "filepath": {"type": str, "allowed": (".csv", ".xlsx")}
+            "filepath": {"type": str, "allowed": (".csv", ".xlsx")},
         },
         "pop_creator": {
             "pop_creator_file": {
                 "value": {"type": bool},
-                "filepath": {"type": str, "allowed": (".csv", ".xlsx")}
+                "filepath": {"type": str, "allowed": (".csv", ".xlsx")},
             },
             "input_data_global": {
                 "value": {"type": bool},
                 "filepath": {"type": str, "allowed": (".csv", ".xlsx")},
                 "mobility_data": {
                     "value": {"type": bool},
-                    "filepath": {"type": str, "allowed": (".csv", ".xlsx")}
-                }
-            }
-        }
-    }
+                    "filepath": {"type": str, "allowed": (".csv", ".xlsx")},
+                },
+            },
+        },
+    },
 }
 
 share_extension_json_validation = {
@@ -71,7 +72,7 @@ share_extension_json_validation = {
         "synthpop_initialize": {"type": bool},
         "simulation_initialize": {"type": bool},
         "report_module_initialize": {"type": bool},
-        "test":{ "type": bool, "optional": True}
+        "test":{ "type": bool, "optional": True},
     },
     "auto_save_settings": {
         "value": {"type": bool},
@@ -79,39 +80,39 @@ share_extension_json_validation = {
         "dirname": {"type": str},
         "location": {"type": str},
         "copy_files": {
-            "copy_loaded_pop": {"type": bool}
-        }
+            "copy_loaded_pop": {"type": bool},
+        },
     },
     "synthpops_settings": {
-        "filepath": {"type": str, "allowed": (".json",".yaml")}
+        "filepath": {"type": str, "allowed": (".json",".yaml")},
     },
     "simulation_settings": {
         "filepath": {"type": str, "allowed": (".json",".yaml")},
-        "test": {"type": bool, "optional": True}
+        "test": {"type": bool, "optional": True},
     },
     "report_settings": {
-        "filepath": {"type": str, "allowed": (".json",".yaml")}
-    }
+        "filepath": {"type": str, "allowed": (".json",".yaml")},
+    },
 }
 
 report_json_validation = {
     "create_report": {"type": bool},
     "output_format": {"type": str, "allowed": ["csv", "xlsx"]},
     "output_path": {"type": str, "optional": True},
-    "input_multisim": {                
+    "input_multisim": {
             "filepath": {"type": str, "optional": True},
             "all_keys": {"type": bool},
             "keys": {"type": list, "element_type": str},
             "whole_simulation": {"type": bool},
             "separated_simulation": {"type": bool},
             "whole_variants": {"type": bool},
-            "separated_variants": {"type": bool},        
+            "separated_variants": {"type": bool},
     },
     "reports": {
             "keys": {"type": list, "element_type": str,"optional":True},
             "output_format": {"type": str, "optional": True, "allowed": ["csv", "xlsx"]},
             "filename": {"type": str, "optional": True},
-    }
+    },
 }
 
 simulation_data_files=exdf.covasim_data_files
@@ -126,7 +127,7 @@ simulation_data_files_names=[x[0] for x in exdf.covasim_data_files]
 #     exdf.covasim_global_parameters_confkeys
 # ]]
 
-simulation_input_files=['popfile']
+simulation_input_files=["popfile"]
 
 simulation_region_cols={
     "location_code":str,
@@ -185,19 +186,19 @@ simulation_parameters = {
     "iso_factor": float,
     "quar_factor": float,
     "quar_period": int,
-    "interventions": list,  
-    "analyzers": list,  
+    "interventions": list,
+    "analyzers": list,
     "timelimit": int,
     "n_beds_hosp": int,
     "n_beds_icu": int,
     "no_hosp_factor": float,
-    "no_icu_factor": float
+    "no_icu_factor": float,
 }
 
 
 simulation_region_csv_cols_with_types= {**simulation_region_cols,**simulation_parameters}
 simulation_empty_allowed=[
-    'popfile',
+    "popfile",
     "pop_size",
     "pop_infected",
     "pop_type",
@@ -251,7 +252,7 @@ simulation_empty_allowed=[
     "n_beds_hosp",
     "n_beds_icu",
     "no_hosp_factor",
-    "no_icu_factor"
+    "no_icu_factor",
 ]
 
 simulation_interventions_csv_cols_with_types = {
@@ -262,7 +263,7 @@ simulation_interventions_csv_cols_with_types = {
         "label": {"allowed_type": str, "optional": True},
         "start_day": {"allowed_type": [str, int], "optional": False},
         "end_day": {"allowed_type": [str, int], "optional": False},
-        "num_days": {"allowed_type": [int, list], "optional": False}
+        "num_days": {"allowed_type": [int, list], "optional": False},
     },
     "beta_change": {
         "location_code": {"allowed_type": str, "optional": False},
@@ -273,7 +274,7 @@ simulation_interventions_csv_cols_with_types = {
         "end_day": {"allowed_type": [str, int], "optional": False},
         "num_days": {"allowed_type": [int, list], "optional": False},
         "beta_change": {"allowed_type": [float, list], "optional": False},
-        "layers": {"allowed_type": list, "optional": True}
+        "layers": {"allowed_type": list, "optional": True},
     },
     "isolate_contacts": {
         "location_code": {"allowed_type": str, "optional": False},
@@ -284,7 +285,7 @@ simulation_interventions_csv_cols_with_types = {
         "changes": {"allowed_type": [float, list], "optional": False},
         "layers": {"allowed_type": list, "optional": False},
         "start_day": {"allowed_type": [str, int], "optional": False},
-        "end_day": {"allowed_type": [str, int], "optional": False}
+        "end_day": {"allowed_type": [str, int], "optional": False},
     },
     "per_day_testing": {
         "location_code": {"allowed_type": str, "optional": False},
@@ -302,8 +303,8 @@ simulation_interventions_csv_cols_with_types = {
         "test_delay": {"allowed_type": int, "optional": True, "default": 0},
         "start_day": {"allowed_type": [int,str], "optional": True, "default": 0},
         "end_day": {"allowed_type": [int,str], "optional": True},
-        "num_days": {"allowed_type": [int, list], "optional": False}
-    },    
+        "num_days": {"allowed_type": [int, list], "optional": False},
+    },
     "testing_probability": {
         "location_code": {"allowed_type": str, "optional": False},
         "use": {"allowed_type": bool, "optional": False, "default": True},
@@ -321,8 +322,8 @@ simulation_interventions_csv_cols_with_types = {
         "test_delay": {"allowed_type": int, "optional": True, "default": 0},
         "start_day": {"allowed_type": [int,str], "optional": True, "default": 0},
         "end_day": {"allowed_type": [int,str], "optional": True},
-        "num_days": {"allowed_type": [int, list], "optional": False}
-    },    
+        "num_days": {"allowed_type": [int, list], "optional": False},
+    },
     "contact_tracing": {
         "location_code": {"allowed_type": str, "optional": False},
         "use": {"allowed_type": bool, "optional": False, "default": True},
@@ -335,8 +336,8 @@ simulation_interventions_csv_cols_with_types = {
         "presumptive": {"allowed_type": bool, "optional": True, "default": False},
         "capacity": {"allowed_type": int, "optional": True},
         "quar_period": {"allowed_type": int, "optional": True},
-        "num_days": {"allowed_type": [int, list], "optional": True}
-    },    
+        "num_days": {"allowed_type": [int, list], "optional": True},
+    },
     "vaccinate_distribution":
     {
         "location_code": {"allowed_type": str, "optional": False},
@@ -349,20 +350,20 @@ simulation_interventions_csv_cols_with_types = {
         "num_doses":{ "allowed_type": [int,float], "optional": False},
         "booster":{ "allowed_type": bool, "optional": True, "default": False},
         "sequence":{ "allowed_type": str, "optional": True},
-        "label":{ "allowed_type": str, "optional": True},        
+        "label":{ "allowed_type": str, "optional": True},
     },
     "simple_vaccination":
     {
         "location_code": {"allowed_type": str, "optional": False},
         "use": {"allowed_type": bool, "optional": False, "default": True},
-        "label":{ "allowed_type": str, "optional": True},      
+        "label":{ "allowed_type": str, "optional": True},
         "intervention_type": {"allowed_type": str, "optional": False, "default": "simple_vaccination"},
         "start_day": {"allowed_type": [int,str], "optional": True, "default": 0},
         "end_day": {"allowed_type": [int,str], "optional": True},
         "num_days": {"allowed_type": [int, list], "optional": True},
         "rel_sus":{ "allowed_type": float, "optional": False},
-        "rel_symp":{ "allowed_type": float, "optional": False},        
-    }
+        "rel_symp":{ "allowed_type": float, "optional": False},
+    },
 
 }
 
@@ -382,10 +383,10 @@ synthpops_region_cols={
     "notes":str,
     "parent_dirpath":str,
     "parent_filename":str,
-    "parent_filepath":str    
+    "parent_filepath":str,
 }
 
-synthpops_region_config_files=exdf.synthpops_region_csv_columns['parent_filepath']
+synthpops_region_config_files=exdf.synthpops_region_csv_columns["parent_filepath"]
 synthpops_pars_cols={
     "location_code":str,
     "n": int,  # The number of people to create
@@ -424,10 +425,10 @@ synthpops_pars_cols={
 
 synthpops_empty_allowed=[
     #Region pars
-    exdf.synthpops_region_csv_columns['parent_dirpath'],
-    exdf.synthpops_region_csv_columns['parent_filename'],
-    exdf.synthpops_region_csv_columns['parent_filepath'],
-    exdf.synthpops_region_csv_columns['notes'],
+    exdf.synthpops_region_csv_columns["parent_dirpath"],
+    exdf.synthpops_region_csv_columns["parent_filename"],
+    exdf.synthpops_region_csv_columns["parent_filepath"],
+    exdf.synthpops_region_csv_columns["notes"],
     #Pars cols
     "n",
     "ltcf_pars",
@@ -460,13 +461,13 @@ synthpops_empty_allowed=[
     "household_method",
     "smooth_ages",
     "window_length",
-    "do_make"
+    "do_make",
 ]
 
 synthpops_data_files=exdf.synthpops_data_files
 synthpops_data_files_names=[
     "pop_creator_file",
     "input_data_global",
-    "parameters"
+    "parameters",
 ]
 # simulation_data_files=[x[0] for x in exdf.covasim_data_files]

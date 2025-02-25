@@ -1,3 +1,1 @@
-from covasim import immunity
-from covasim import parameters
-from covasim import sim 
+from covasim import immunity, parameters, sim

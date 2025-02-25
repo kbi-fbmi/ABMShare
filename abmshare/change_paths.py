@@ -1,10 +1,12 @@
+import json
 import os
 import re
-import json
-import jsbeautifier
-import yaml
-import pandas as pd
 from pathlib import Path
+
+import jsbeautifier
+import pandas as pd
+import yaml
+
 
 class RecursiveChangePaths():
 

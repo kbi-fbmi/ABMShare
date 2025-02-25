@@ -1,21 +1,19 @@
-"""
-Modeling Seattle Metro Long Term Care Facilities
+"""Modeling Seattle Metro Long Term Care Facilities
 
 """
+
 
 import numpy as np
 import sciris as sc
-from collections import Counter
-from .config import logger as log, checkmem
-from . import defaults as spd
-from . import sampling as spsamp
-from . import data_distributions as spdata
+
 from . import base as spb
+from . import data_distributions as spdata
+from . import sampling as spsamp
+from .config import logger as log
 
 
 def generate_ltcfs(n, with_facilities, loc_pars, expected_age_dist, ages_left_to_assign):
-    """
-    Generate residents living in long term care facilities and their ages.
+    """Generate residents living in long term care facilities and their ages.
 
     Args:
         n (int)                   : The number of people to generate in the population
@@ -23,8 +21,9 @@ def generate_ltcfs(n, with_facilities, loc_pars, expected_age_dist, ages_left_to
         loc_pars (dict)           : A dictionary of location parameters
         expected_age_dist (dict)  : The expected age distribution
         ages_left_to_assign (dic) : The counter of ages for the generated population left to place in a residence
+
     """
-    log.debug('generate_ltcfs()')
+    log.debug("generate_ltcfs()")
     # initialize an empty list for facilities
     facilities = []
 
@@ -85,8 +84,7 @@ def generate_ltcfs(n, with_facilities, loc_pars, expected_age_dist, ages_left_to
 
 
 def assign_facility_staff(datadir, location, state_location, country_location, ltcf_staff_age_min, ltcf_staff_age_max, facilities, workers_by_age_to_assign_count, potential_worker_uids_by_age, potential_worker_uids, facilities_by_uids, age_by_uid, use_default=False):
-    """
-    Assign Long Term Care Facility staff to the generated facilities with residents.
+    """Assign Long Term Care Facility staff to the generated facilities with residents.
 
     Args:
         datadir (string)                      : The file path to the data directory.
@@ -104,8 +102,9 @@ def assign_facility_staff(datadir, location, state_location, country_location, l
 
     Returns:
         list: A list of lists with the facility staff IDs for each facility.
+
     """
-    log.debug('assign_facility_staff()')
+    log.debug("assign_facility_staff()")
     resident_to_staff_ratio_distr = spdata.get_long_term_care_facility_resident_to_staff_ratios_distr(datadir, location=location, state_location=state_location, country_location=country_location, use_default=use_default)
     resident_to_staff_ratio_distr = spb.norm_dic(resident_to_staff_ratio_distr)
     resident_to_staff_ratio_brackets = spdata.get_long_term_care_facility_resident_to_staff_ratios_brackets(datadir, location=location, state_location=state_location, country_location=country_location, use_default=use_default)
@@ -147,8 +146,7 @@ def assign_facility_staff(datadir, location, state_location, country_location, l
 
 
 def remove_ltcf_residents_from_potential_workers(facilities_by_uids, potential_worker_uids, potential_worker_uids_by_age, workers_by_age_to_assign_count, age_by_uid):
-    """
-    Remove facilities residents from potential workers
+    """Remove facilities residents from potential workers
 
     Args:
         facilities_by_uids (list)             : A list of lists, where each sublist represents a skilled nursing or long term care facility and the ids of the residents living within it
@@ -160,8 +158,9 @@ def remove_ltcf_residents_from_potential_workers(facilities_by_uids, potential_w
     Returns:
         Updated dictionaries for potential worker ids, lists of potential worker
         ids mapped to age, and the number of workers left to assign by age.
+
     """
-    log.debug('remove_ltcf_residents_from_potential_workers()')
+    log.debug("remove_ltcf_residents_from_potential_workers()")
     for nf, fc in enumerate(facilities_by_uids):
         for uid in fc:
             aindex = age_by_uid[uid]
@@ -176,8 +175,7 @@ def remove_ltcf_residents_from_potential_workers(facilities_by_uids, potential_w
 
 # Age resampling method
 def ltcf_resample_age(exp_age_distr, a):
-    """
-    Resampling younger ages to better match data
+    """Resampling younger ages to better match data
 
     Args:
         exp_age_distr (dict) : age distribution
@@ -194,6 +192,7 @@ def ltcf_resample_age(exp_age_distr, a):
         produced, so this function can be customized to correct for that. It
         is currently customized to model well the age distribution for
         Seattle, Washington.
+
     """
     # exp_age_distr = np.array(list(exp_age_distr_dict.values()), dtype=np.float64)
     a = spsamp.resample_age(exp_age_distr, a)
@@ -222,8 +221,7 @@ def ltcf_resample_age(exp_age_distr, a):
 
 
 def get_ltcf_sizes(popdict, keys_to_exclude=[]):
-    """
-    Get long term care facility sizes, including both residents and staff.
+    """Get long term care facility sizes, including both residents and staff.
 
     Args:
         popdict (dict)         : population dictionary
@@ -238,39 +236,37 @@ def get_ltcf_sizes(popdict, keys_to_exclude=[]):
         'ltcf_staff' for staff. If either role is included in the parameter
         keys_to_exclude, then individuals with that value equal to 1 will not
         be counted.
+
     """
-    log.debug('get_ltcf_sizes()')
+    log.debug("get_ltcf_sizes()")
     ltcf_sizes = dict()
     for i, person in popdict.items():
-        if person['ltcfid'] is not None:
-            ltcf_sizes.setdefault(person['ltcfid'], 0)
+        if person["ltcfid"] is not None:
+            ltcf_sizes.setdefault(person["ltcfid"], 0)
 
             # include facility residents
-            if person['ltcf_res'] is not None and 'ltcf_res' not in keys_to_exclude:
-                ltcf_sizes[person['ltcfid']] += 1
-            # include facility staff
-            elif person['ltcf_staff'] is not None and 'ltcf_staff' not in keys_to_exclude:
-                ltcf_sizes[person['ltcfid']] += 1
+            if person["ltcf_res"] is not None and "ltcf_res" not in keys_to_exclude or person["ltcf_staff"] is not None and "ltcf_staff" not in keys_to_exclude:
+                ltcf_sizes[person["ltcfid"]] += 1
 
     return ltcf_sizes
 
 
 class LongTermCareFacility(spb.LayerGroup):
-    """
-    A class for individual long term care facilities and methods to operate on each.
+    """A class for individual long term care facilities and methods to operate on each.
 
     Args:
         kwargs (dict): data dictionary of the long term care facility
+
     """
 
     def __init__(self, ltcfid=None, resident_uids=np.array([], dtype=int), staff_uids=np.array([], dtype=int), **kwargs):
-        """
-        Class constructor for empty long term care facility (ltcf).
+        """Class constructor for empty long term care facility (ltcf).
 
         Args:
             **ltcfid (int)             : ltcf id
             **resident_uids (np.array) : ids of ltcf members
             **staff_uids (np.array)    : ages of ltcf members
+
         """
         super().__init__(ltcfid=ltcfid, resident_uids=resident_uids, staff_uids=staff_uids, **kwargs)
         self.validate()
@@ -278,11 +274,10 @@ class LongTermCareFacility(spb.LayerGroup):
         return
 
     def validate(self):
-        """
-        Check that information supplied to make a long term care facility is valid and update
+        """Check that information supplied to make a long term care facility is valid and update
         to the correct type if necessary.
         """
-        for key in ['resident_uids', 'staff_uids']:
+        for key in ["resident_uids", "staff_uids"]:
             if key in self.keys():
                 try:
                     self[key] = sc.promotetoarray(self[key], dtype=int)
@@ -291,7 +286,7 @@ class LongTermCareFacility(spb.LayerGroup):
                     errmsg = f"Error: Could not convert ltcf key {key} to an np.array() with type int. This key only takes arrays with int values."
                     raise TypeError(errmsg)
 
-        for key in ['ltcfid']:
+        for key in ["ltcfid"]:
             if key in self.keys():
                 if not isinstance(self[key], (int, np.int32, np.int64)):
                     if self[key] is not None:
@@ -301,23 +296,23 @@ class LongTermCareFacility(spb.LayerGroup):
 
     @property
     def member_uids(self):
-        """
-        Return ids of all ltcf members: residents and staff.
+        """Return ids of all ltcf members: residents and staff.
 
         Returns:
             np.ndarray : ltcf member ids
+
         """
-        return np.concatenate((self['resident_uids'], self['staff_uids']))
+        return np.concatenate((self["resident_uids"], self["staff_uids"]))
 
     def member_ages(self, age_by_uid):
-        """
-        Return ages of all ltcf members: residents and staff.
+        """Return ages of all ltcf members: residents and staff.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray : ltcf member ages
+
         """
         return np.concatenate((self.resident_ages(age_by_uid), self.staff_ages(age_by_uid)))
 
@@ -326,33 +321,32 @@ class LongTermCareFacility(spb.LayerGroup):
         return len(self.member_uids)
 
     def resident_ages(self, age_by_uid):
-        """
-        Return ages of ltcf residents.
+        """Return ages of ltcf residents.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray : ltcf resident ages
+
         """
-        return super().member_ages(age_by_uid, self['resident_uids'])
+        return super().member_ages(age_by_uid, self["resident_uids"])
 
     def staff_ages(self, age_by_uid):
-        """
-        Return ages of ltcf staff.
+        """Return ages of ltcf staff.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray : ltcf staff ages
+
         """
-        return super().member_ages(age_by_uid, self['staff_uids'])
+        return super().member_ages(age_by_uid, self["staff_uids"])
 
 
 def get_ltcf(pop, ltcfid):
-    """
-    Return ltcf with id: ltcfid.
+    """Return ltcf with id: ltcfid.
 
     Args:
         pop (sp.Pop) : population
@@ -360,6 +354,7 @@ def get_ltcf(pop, ltcfid):
 
     Returns:
         sp.LongTermCareFacility: A populated ltcf.
+
     """
     if not isinstance(ltcfid, int):
         raise TypeError(f"ltcfid must be an int. Instead supplied wpid with type: {type(ltcfid)}.")
@@ -369,31 +364,31 @@ def get_ltcf(pop, ltcfid):
 
 
 def add_ltcf(pop, ltcf):
-    """
-    Add a ltcf to the list of ltcfs.
+    """Add a ltcf to the list of ltcfs.
 
     Args:
         pop (sp.Pop)                   : population
         ltcf (sp.LongTermCareFacility) : ltcf with at minimum the ltcfid, resident_uids and staff_uids.
+
     """
     if not isinstance(ltcf, LongTermCareFacility):
-        raise ValueError('ltcf is not a sp.LongTermCareFacility object.')
+        raise ValueError("ltcf is not a sp.LongTermCareFacility object.")
 
     # ensure ltcfid to match the index in the list
-    if ltcf['ltcfid'] != len(pop.ltcfs):
-        ltcf['ltcfid'] = len(pop.ltcfs)
+    if ltcf["ltcfid"] != len(pop.ltcfs):
+        ltcf["ltcfid"] = len(pop.ltcfs)
     pop.ltcfs.append(ltcf)
     pop.n_ltcfs = len(pop.ltcfs)
     return
 
 
 def initialize_empty_ltcfs(pop, n_ltcfs=None):
-    """
-    Array of empty ltcfs.
+    """Array of empty ltcfs.
 
     Args:
         pop (sp.Pop)  : population
         n_ltcfs (int) : the number of ltcfs to initialize
+
     """
     if n_ltcfs is not None and isinstance(n_ltcfs, int):
         pop.n_ltcfs = n_ltcfs
@@ -405,13 +400,13 @@ def initialize_empty_ltcfs(pop, n_ltcfs=None):
 
 
 def populate_ltcfs(pop, resident_lists, staff_lists):
-    """
-    Populate all of the ltcfs. Store each ltcf at the index corresponding to it's ltcfid.
+    """Populate all of the ltcfs. Store each ltcf at the index corresponding to it's ltcfid.
 
     Args:
         pop (sp.Pop)          : population
         residents_list (list) : list of lists where each sublist represents a ltcf and contains the ids of the residents
         staff_lists (list)    : list of lists where each sublist represents a ltcf and contains the ids of the staff
+
     """
     initialize_empty_ltcfs(pop, len(resident_lists))
 
@@ -428,6 +423,6 @@ def populate_ltcfs(pop, resident_lists, staff_lists):
                       )
         ltcf = LongTermCareFacility()
         ltcf.set_layer_group(**kwargs)
-        pop.ltcfs[ltcf['ltcfid']] = sc.dcp(ltcf)
+        pop.ltcfs[ltcf["ltcfid"]] = sc.dcp(ltcf)
 
     return

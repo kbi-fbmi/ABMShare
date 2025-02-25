@@ -1,14 +1,15 @@
-"""
-This module generates the household, school, and workplace contact networks.
+"""This module generates the household, school, and workplace contact networks.
 """
 
-import sciris as sc
+import networkx as nx
 import numpy as np
 import pandas as pd
-import networkx as nx
+import sciris as sc
+
 from . import data_distributions as spdata
 from . import schools as spsch
-from .config import logger as log, checkmem
+from .config import checkmem
+from .config import logger as log
 
 
 def make_contacts(pop,
@@ -23,7 +24,7 @@ def make_contacts(pop,
                   use_two_group_reduction=False,
                   average_LTCF_degree=20,
                   with_school_types=False,
-                  school_mixing_type='random',
+                  school_mixing_type="random",
                   average_class_size=20,
                   inter_grade_mixing=0.1,
                   average_student_teacher_ratio=20,
@@ -33,8 +34,7 @@ def make_contacts(pop,
                   school_type_by_age=None,
                   workplaces_by_industry_codes=None,
                   max_contacts=None):
-    """
-    From microstructure objects (dictionary mapping ID to age, lists of lists in different settings, etc.), create a dictionary of individuals.
+    """From microstructure objects (dictionary mapping ID to age, lists of lists in different settings, etc.), create a dictionary of individuals.
     Each key is the ID of an individual which maps to a dictionary for that individual with attributes such as their age, household ID (hhid),
     school ID (scid), workplace ID (wpid), workplace industry code (wpindcode) if available, and contacts in different layers.
 
@@ -76,8 +76,9 @@ def make_contacts(pop,
 
         If with_school_types==False, completely random schools will be generated with respect to the average_class_size,
         but other parameters such as average_additional_staff_degree will not be used.
+
     """
-    log.debug('make_contacts_from_microstructure_objects()')
+    log.debug("make_contacts_from_microstructure_objects()")
     popdict = {}
 
     grade_age_mapping = {i: i + 5 for i in range(13)}
@@ -94,11 +95,11 @@ def make_contacts(pop,
         school_mixing_type_dic = dict.fromkeys(school_types, school_mixing_type)
     elif isinstance(school_mixing_type, dict):
         school_mixing_type_dic = sc.dcp(school_mixing_type)
-        school_mixing_type_dic = sc.mergedicts(dict.fromkeys(school_types, 'random'), school_mixing_type_dic)  # if the dictionary given doesn't specify the mixing type for an expected school type, set the mixing type for that school type to random by default
+        school_mixing_type_dic = sc.mergedicts(dict.fromkeys(school_types, "random"), school_mixing_type_dic)  # if the dictionary given doesn't specify the mixing type for an expected school type, set the mixing type for that school type to random by default
 
     age_and_class_clustered_flag = False
     for school_type in school_mixing_type_dic:
-        if school_mixing_type_dic[school_type] == 'age_and_class_clustered':
+        if school_mixing_type_dic[school_type] == "age_and_class_clustered":
             age_and_class_clustered_flag = True
 
     if not isinstance(average_class_size, dict):
@@ -111,7 +112,7 @@ def make_contacts(pop,
     if age_and_class_clustered_flag:
         if average_class_size < average_student_teacher_ratio:
             actual_classroom_size = max(average_class_size, average_student_teacher_ratio)
-            average_class_size_by_mixing_type['age_and_class_clustered'] = actual_classroom_size
+            average_class_size_by_mixing_type["age_and_class_clustered"] = actual_classroom_size
             warning_msg = f"average_class_size: {average_class_size} < average_student_teacher_ratio: {average_student_teacher_ratio}. \n In schools with mixing type 'age_and_class_clustered', synthpops will use the larger of the two to define the classroom sizes."
             log.warning(warning_msg)
 
@@ -128,43 +129,43 @@ def make_contacts(pop,
 
     # Handle trimming
     do_trim = max_contacts is not None
-    max_contacts = sc.mergedicts({'W': 20}, max_contacts)
+    max_contacts = sc.mergedicts({"W": 20}, max_contacts)
     trim_keys = max_contacts.keys()
 
     # Handle LTCF
     use_ltcf = facilities_by_uid_lists is not None
     if use_ltcf:
-        layer_keys = ['H', 'S', 'W', 'C', 'LTCF']
+        layer_keys = ["H", "S", "W", "C", "LTCF"]
     else:
-        layer_keys = ['H', 'S', 'W', 'C']
+        layer_keys = ["H", "S", "W", "C"]
 
-    log.debug('  starting...' + checkmem())
+    log.debug("  starting..." + checkmem())
 
     # TODO: include age-based sex ratios
     sexes = np.random.randint(2, size=len(age_by_uid))
 
     for u, uid in enumerate(age_by_uid):
         popdict[uid] = {}
-        popdict[uid]['age'] = int(age_by_uid[uid])
-        popdict[uid]['sex'] = sexes[u]
-        popdict[uid]['loc'] = None
-        popdict[uid]['contacts'] = {}
+        popdict[uid]["age"] = int(age_by_uid[uid])
+        popdict[uid]["sex"] = sexes[u]
+        popdict[uid]["loc"] = None
+        popdict[uid]["contacts"] = {}
         if use_ltcf:
-            popdict[uid]['ltcf_res'] = None
-            popdict[uid]['ltcf_staff'] = None
-        popdict[uid]['hhid'] = None
-        popdict[uid]['scid'] = None
-        popdict[uid]['sc_student'] = None
-        popdict[uid]['sc_teacher'] = None
-        popdict[uid]['sc_staff'] = None
-        popdict[uid]['sc_type'] = None
-        popdict[uid]['sc_mixing_type'] = None
-        popdict[uid]['wpid'] = None
-        popdict[uid]['wpindcode'] = None
+            popdict[uid]["ltcf_res"] = None
+            popdict[uid]["ltcf_staff"] = None
+        popdict[uid]["hhid"] = None
+        popdict[uid]["scid"] = None
+        popdict[uid]["sc_student"] = None
+        popdict[uid]["sc_teacher"] = None
+        popdict[uid]["sc_staff"] = None
+        popdict[uid]["sc_type"] = None
+        popdict[uid]["sc_mixing_type"] = None
+        popdict[uid]["wpid"] = None
+        popdict[uid]["wpindcode"] = None
         if use_ltcf:
-            popdict[uid]['ltcfid'] = None
+            popdict[uid]["ltcfid"] = None
         for k in layer_keys:
-            popdict[uid]['contacts'][k] = set()
+            popdict[uid]["contacts"][k] = set()
 
     # read in facility residents and staff
     if use_ltcf:
@@ -172,38 +173,38 @@ def make_contacts(pop,
             facility_staff = facilities_staff_uid_lists[nf]
 
             for u in facility:
-                popdict[u]['ltcf_res'] = 1
-                popdict[u]['ltcfid'] = nf
+                popdict[u]["ltcf_res"] = 1
+                popdict[u]["ltcfid"] = nf
 
             for u in facility_staff:
-                popdict[u]['ltcf_staff'] = 1
-                popdict[u]['ltcfid'] = nf
+                popdict[u]["ltcf_staff"] = 1
+                popdict[u]["ltcfid"] = nf
 
             if use_two_group_reduction:
-                popdict = create_reduced_contacts_with_group_types(popdict, facility, facility_staff, 'LTCF',
+                popdict = create_reduced_contacts_with_group_types(popdict, facility, facility_staff, "LTCF",
                                                                    average_degree=average_LTCF_degree,
                                                                    force_cross_edges=True)
 
             else:
-                log.debug('...LTCFs ' + checkmem())
+                log.debug("...LTCFs " + checkmem())
                 for uid in facility:
-                    popdict[uid]['contacts']['LTCF'] = set(facility)
-                    popdict[uid]['contacts']['LTCF'] = popdict[uid]['contacts']['LTCF'].union(set(facility_staff))
-                    popdict[uid]['contacts']['LTCF'].remove(uid)
+                    popdict[uid]["contacts"]["LTCF"] = set(facility)
+                    popdict[uid]["contacts"]["LTCF"] = popdict[uid]["contacts"]["LTCF"].union(set(facility_staff))
+                    popdict[uid]["contacts"]["LTCF"].remove(uid)
 
                 for uid in facility_staff:
-                    popdict[uid]['contacts']['LTCF'] = set(facility)
-                    popdict[uid]['contacts']['LTCF'] = popdict[uid]['contacts']['LTCF'].union(set(facility_staff))
-                    popdict[uid]['contacts']['LTCF'].remove(uid)
+                    popdict[uid]["contacts"]["LTCF"] = set(facility)
+                    popdict[uid]["contacts"]["LTCF"] = popdict[uid]["contacts"]["LTCF"].union(set(facility_staff))
+                    popdict[uid]["contacts"]["LTCF"].remove(uid)
 
-    log.debug('...households ' + checkmem())
+    log.debug("...households " + checkmem())
     for nh, household in enumerate(homes_by_uids):
         for uid in household:
-            popdict[uid]['contacts']['H'] = set(household)
-            popdict[uid]['contacts']['H'].remove(uid)
-            popdict[uid]['hhid'] = nh
+            popdict[uid]["contacts"]["H"] = set(household)
+            popdict[uid]["contacts"]["H"].remove(uid)
+            popdict[uid]["hhid"] = nh
 
-    log.debug('...students ' + checkmem())
+    log.debug("...students " + checkmem())
 
     student_in_groups, teachers_in_groups = [], []
 
@@ -212,9 +213,7 @@ def make_contacts(pop,
         schools[ns] = {}
 
         teachers = teachers_by_uid_lists[ns]
-        if non_teaching_staff_uid_lists is None:
-            non_teaching_staff = []
-        elif non_teaching_staff_uid_lists == []:
+        if non_teaching_staff_uid_lists is None or non_teaching_staff_uid_lists == []:
             non_teaching_staff = []
         else:
             non_teaching_staff = non_teaching_staff_uid_lists[ns]
@@ -240,39 +239,39 @@ def make_contacts(pop,
         else:
             school = students.copy() + teachers.copy() + non_teaching_staff.copy()
             school_edges = spsch.generate_random_contacts_across_school(school, average_class_size)
-            popdict = spsch.add_contacts_from_edgelist(popdict, school_edges, 'S')
+            popdict = spsch.add_contacts_from_edgelist(popdict, school_edges, "S")
             student_groups = [students]
             teacher_groups = [teachers]
 
-        schools[ns]['sc_type'] = this_school_type
-        schools[ns]['school_mixing_type'] = this_school_mixing_type
-        schools[ns]['student_groups'] = student_groups
-        schools[ns]['teacher_groups'] = teacher_groups
+        schools[ns]["sc_type"] = this_school_type
+        schools[ns]["school_mixing_type"] = this_school_mixing_type
+        schools[ns]["student_groups"] = student_groups
+        schools[ns]["teacher_groups"] = teacher_groups
 
         for uid in students:
-            popdict[uid]['scid'] = ns
-            popdict[uid]['sc_student'] = 1
-            popdict[uid]['sc_type'] = this_school_type
-            popdict[uid]['sc_mixing_type'] = this_school_mixing_type
+            popdict[uid]["scid"] = ns
+            popdict[uid]["sc_student"] = 1
+            popdict[uid]["sc_type"] = this_school_type
+            popdict[uid]["sc_mixing_type"] = this_school_mixing_type
 
         for uid in teachers:
-            popdict[uid]['scid'] = ns
-            popdict[uid]['sc_teacher'] = 1
-            popdict[uid]['sc_type'] = this_school_type
-            popdict[uid]['sc_mixing_type'] = this_school_mixing_type
+            popdict[uid]["scid"] = ns
+            popdict[uid]["sc_teacher"] = 1
+            popdict[uid]["sc_type"] = this_school_type
+            popdict[uid]["sc_mixing_type"] = this_school_mixing_type
 
         for uid in non_teaching_staff:
-            popdict[uid]['scid'] = ns
-            popdict[uid]['sc_staff'] = 1
-            popdict[uid]['sc_type'] = this_school_type
-            popdict[uid]['sc_mixing_type'] = this_school_mixing_type
+            popdict[uid]["scid"] = ns
+            popdict[uid]["sc_staff"] = 1
+            popdict[uid]["sc_type"] = this_school_type
+            popdict[uid]["sc_mixing_type"] = this_school_mixing_type
 
     pop.schools_in_groups = schools
 
-    log.debug('...workplaces ' + checkmem())
-    if do_trim and 'W' in trim_keys:
+    log.debug("...workplaces " + checkmem())
+    if do_trim and "W" in trim_keys:
 
-        average_degree = max_contacts['W']
+        average_degree = max_contacts["W"]
         for nw, workplace in enumerate(workplace_by_uid_lists):
             uids = np.array(workplace)
 
@@ -280,29 +279,28 @@ def make_contacts(pop,
             for u, uid in enumerate(workplace):
                 v = list(G.neighbors(u))
 
-                popdict[uid]['contacts']['W'] = set(uids[v])
-                popdict[uid]['contacts']['W'].discard(uid)  # this shouldn't be needed
-                popdict[uid]['wpid'] = nw
+                popdict[uid]["contacts"]["W"] = set(uids[v])
+                popdict[uid]["contacts"]["W"].discard(uid)  # this shouldn't be needed
+                popdict[uid]["wpid"] = nw
                 if workplaces_by_industry_codes is not None: # pragma: no cover
-                    popdict[uid]['wpindcode'] = int(workplaces_by_industry_codes[nw])
+                    popdict[uid]["wpindcode"] = int(workplaces_by_industry_codes[nw])
 
     else: # pragma: no cover
         for nw, workplace in enumerate(workplace_by_uid_lists):
 
             for uid in workplace:
-                popdict[uid]['contacts']['W'] = set(workplace)
-                popdict[uid]['contacts']['W'].remove(uid)
-                popdict[uid]['wpid'] = nw
+                popdict[uid]["contacts"]["W"] = set(workplace)
+                popdict[uid]["contacts"]["W"].remove(uid)
+                popdict[uid]["wpid"] = nw
                 if workplaces_by_industry_codes is not None:
-                    popdict[uid]['wpindcode'] = int(workplaces_by_industry_codes[nw])
+                    popdict[uid]["wpindcode"] = int(workplaces_by_industry_codes[nw])
 
-    log.debug('...done ' + checkmem())
+    log.debug("...done " + checkmem())
     return popdict
 
 
 def create_reduced_contacts_with_group_types(popdict, group_1, group_2, setting, average_degree=20, p_matrix=None, force_cross_edges=True):
-    """
-    Create contacts between members of group 1 and group 2, fixing the average degree, and the
+    """Create contacts between members of group 1 and group 2, fixing the average degree, and the
     probability of an edge between any two groups controlled by p_matrix if provided.
     Forces inter group edge for each individual in group 1 with force_cross_groups equal to True.
     This means not everyone in group 2 will have a contact with group 1.
@@ -321,14 +319,14 @@ def create_reduced_contacts_with_group_types(popdict, group_1, group_2, setting,
         This method uses the Stochastic Block Model algorithm to generate contacts both between nodes in different groups
     and for nodes within the same group. In the current version, fixing the average degree and p_matrix, the matrix of probabilities
     for edges between any two groups is not supported. Future versions may add support for this.
-    """
 
+    """
     if len(group_1) == 0 or len(group_2) == 0:
-        errormsg = f'This method requires that both groups are populated. If one of the two groups has size 0, then consider using the synthpops.trim_contacts() method, or checking that the groups provided to this method are correct.'
+        errormsg = "This method requires that both groups are populated. If one of the two groups has size 0, then consider using the synthpops.trim_contacts() method, or checking that the groups provided to this method are correct."
         raise ValueError(errormsg)
 
     if average_degree < 2:
-        errormsg = f'This method is likely to create disconnected graphs with average_degree < 2. In order to keep the group connected, use a higher average_degree for nodes across the two groups.'
+        errormsg = "This method is likely to create disconnected graphs with average_degree < 2. In order to keep the group connected, use a higher average_degree for nodes across the two groups."
         raise ValueError(errormsg)
 
     r1 = [int(i) for i in group_1]
@@ -341,7 +339,7 @@ def create_reduced_contacts_with_group_types(popdict, group_1, group_2, setting,
     sizes = [len(r1), len(r2)]
 
     for i in popdict:
-        popdict[i]['contacts'].setdefault(setting, set())
+        popdict[i]["contacts"].setdefault(setting, set())
 
     # group is less than the average degree, so return a fully connected graph instead
     if len(group) <= average_degree:
@@ -416,15 +414,14 @@ def create_reduced_contacts_with_group_types(popdict, group_1, group_2, setting,
         id_i = group[i]
         id_j = group[j]
 
-        popdict[id_i]['contacts'][setting].add(id_j)
-        popdict[id_j]['contacts'][setting].add(id_i)
+        popdict[id_i]["contacts"][setting].add(id_j)
+        popdict[id_j]["contacts"][setting].add(id_i)
 
     return popdict
 
 
-def get_contact_counts_by_layer(popdict, layer='S', with_layer_ids=False):
-    """
-    Method to count the number of contacts for individuals in the population
+def get_contact_counts_by_layer(popdict, layer="S", with_layer_ids=False):
+    """Method to count the number of contacts for individuals in the population
     based on their role in a layer and the role of their contacts. For example,
     in schools this method can distinguish the number of contacts between
     students, teachers, and non teaching staff in the population, as well as
@@ -462,15 +459,15 @@ def get_contact_counts_by_layer(popdict, layer='S', with_layer_ids=False):
     # for all layers, 'all' contact_types will store counts for all contacts but
     # based on each different layer, there can be more contact_types for example in school layer,
     # there is sc_student, sc_staff etc
-    if layer == 'S':
-        people_types = ['sc_student', 'sc_teacher', 'sc_staff']
-        contact_types = people_types + ['all_staff', 'all']
+    if layer == "S":
+        people_types = ["sc_student", "sc_teacher", "sc_staff"]
+        contact_types = people_types + ["all_staff", "all"]
     elif layer == "LTCF":
-        people_types = ['ltcf_res', 'ltcf_staff']
-        contact_types = people_types + ['all']
+        people_types = ["ltcf_res", "ltcf_staff"]
+        contact_types = people_types + ["all"]
     elif layer in ["W", "H"]:
         people_types = [layer_keys[layer]]
-        contact_types = ['all']
+        contact_types = ["all"]
     else:
         raise NotImplementedError(f"layer {layer} not supported.")
 
@@ -486,13 +483,13 @@ def get_contact_counts_by_layer(popdict, layer='S', with_layer_ids=False):
         if person[layer_keys[layer]] is not None:
             # count_switcher is a case-switch selector for contact counts by type
             count_switcher = {
-                'sc_student': len([c for c in person["contacts"]["S"] if popdict[c]['sc_student']]),
-                'sc_teacher': len([c for c in person["contacts"]["S"] if popdict[c]['sc_teacher']]),
-                'sc_staff': len([c for c in person["contacts"]["S"] if popdict[c]['sc_staff']]),
-                'ltcf_res': len([c for c in person["contacts"]["LTCF"] if popdict[c]['ltcf_res']]),
-                'ltcf_staff': len([c for c in person["contacts"]["LTCF"] if popdict[c]['ltcf_staff']]),
-                'all_staff': len([c for c in person["contacts"]["S"] if popdict[c]['sc_teacher']]) + len([c for c in person["contacts"]["S"] if popdict[c]['sc_staff']]),
-                'all': len([c for c in person["contacts"][layer]])
+                "sc_student": len([c for c in person["contacts"]["S"] if popdict[c]["sc_student"]]),
+                "sc_teacher": len([c for c in person["contacts"]["S"] if popdict[c]["sc_teacher"]]),
+                "sc_staff": len([c for c in person["contacts"]["S"] if popdict[c]["sc_staff"]]),
+                "ltcf_res": len([c for c in person["contacts"]["LTCF"] if popdict[c]["ltcf_res"]]),
+                "ltcf_staff": len([c for c in person["contacts"]["LTCF"] if popdict[c]["ltcf_staff"]]),
+                "all_staff": len([c for c in person["contacts"]["S"] if popdict[c]["sc_teacher"]]) + len([c for c in person["contacts"]["S"] if popdict[c]["sc_staff"]]),
+                "all": len([c for c in person["contacts"][layer]]),
             }
 
             contacts_counter_by_id.setdefault(person[layer_keys[layer]], [])
@@ -504,20 +501,18 @@ def get_contact_counts_by_layer(popdict, layer='S', with_layer_ids=False):
                         for k2 in people_types:
                             index_switcher.get(k1)[k2].append(count_switcher.get(k2))
                         index_switcher.get(k1)["all_staff"].append(
-                            count_switcher.get('sc_teacher') + count_switcher.get('sc_staff'))
+                            count_switcher.get("sc_teacher") + count_switcher.get("sc_staff"))
                     # for other types, only all contacts are stored
-                    index_switcher.get(k1)["all"].append(count_switcher.get('all'))
+                    index_switcher.get(k1)["all"].append(count_switcher.get("all"))
             if with_layer_ids:
-                contacts_counter_by_id[person[layer_keys[layer]]].append(count_switcher.get('all'))
+                contacts_counter_by_id[person[layer_keys[layer]]].append(count_switcher.get("all"))
     if with_layer_ids:
         return contact_counter, contacts_counter_by_id
-    else:
-        return contact_counter
+    return contact_counter
 
 
 def filter_people(pop, ages=None, uids=None):
-    """
-    Helper function to filter people based on their uid and age.
+    """Helper function to filter people based on their uid and age.
 
     Args:
         pop (sp.Pop)         : population
@@ -526,6 +521,7 @@ def filter_people(pop, ages=None, uids=None):
 
     Returns:
         array: An array of the ids of people to include for further analysis.
+
     """
     output = np.arange(pop.n)
     if uids is not None:  # catch instance where the only uids supplied is the first one, 0
@@ -536,9 +532,8 @@ def filter_people(pop, ages=None, uids=None):
     return output
 
 
-def count_layer_degree(pop, layer='H', ages=None, uids=None, uids_included=None):
-    """
-    Create a dataframe from the population of people in the layer, including
+def count_layer_degree(pop, layer="H", ages=None, uids=None, uids_included=None):
+    """Create a dataframe from the population of people in the layer, including
     their uid, age, degree, and the ages of contacts in the layer.
 
     Args:
@@ -551,11 +546,12 @@ def count_layer_degree(pop, layer='H', ages=None, uids=None, uids_included=None)
     Returns:
         pandas.DataFrame: A pandas DataFrame of people in the layer including uid, age,
         degree, and the ages of contacts in the layer.
+
     """
     if uids_included is None:
         uids_included = filter_people(pop, ages=ages, uids=uids)
 
-    layerid_mapping = {'H': 'hhid', 'LTCF': 'ltcfid', 'S': 'scid', 'W': 'wpid'}
+    layerid_mapping = {"H": "hhid", "LTCF": "ltcfid", "S": "scid", "W": "wpid"}
 
     degree_dicts = []
 
@@ -563,18 +559,17 @@ def count_layer_degree(pop, layer='H', ages=None, uids=None, uids_included=None)
         a = pop.age_by_uid[i]
 
         if pop.popdict[i][layerid_mapping[layer]] is not None:
-            nc = len(pop.popdict[i]['contacts'][layer])
-            ca = [pop.age_by_uid[j] for j in pop.popdict[i]['contacts'][layer]]
-            degree_dicts.append({'uid': i, 'age': a, 'degree': nc, 'contact_ages': ca})
+            nc = len(pop.popdict[i]["contacts"][layer])
+            ca = [pop.age_by_uid[j] for j in pop.popdict[i]["contacts"][layer]]
+            degree_dicts.append({"uid": i, "age": a, "degree": nc, "contact_ages": ca})
 
     degree_df = pd.DataFrame(degree_dicts)
 
     return degree_df
 
 
-def compute_layer_degree_description(pop, layer='H', ages=None, uids=None, uids_included=None, degree_df=None, percentiles=None):
-    """
-    Compute a description of the statistics for the degree distribution by age
+def compute_layer_degree_description(pop, layer="H", ages=None, uids=None, uids_included=None, degree_df=None, percentiles=None):
+    """Compute a description of the statistics for the degree distribution by age
     for a layer in the population contact network. See
     pandas.Dataframe.describe() for more details on all of the statistics
     included by default.
@@ -591,6 +586,7 @@ def compute_layer_degree_description(pop, layer='H', ages=None, uids=None, uids_
     Returns:
         pandas.DataFrame: A pandas DataFrame of the statistics for the layer
         degree distribution by age.
+
     """
     if degree_df is None:
         degree_df = count_layer_degree(pop, layer, ages, uids, uids_included)
@@ -598,13 +594,12 @@ def compute_layer_degree_description(pop, layer='H', ages=None, uids=None, uids_
     if percentiles is None:
         percentiles = [0.05, 0.25, 0.5, 0.75, 0.95]
 
-    d = degree_df.groupby('age')['degree'].describe(percentiles=percentiles)
+    d = degree_df.groupby("age")["degree"].describe(percentiles=percentiles)
     return d
 
 
 def random_graph_model(uids, average_degree, seed=None):
-    """
-    Generate edges for a group of individuals given their ids from an Erdos-Renyi
+    """Generate edges for a group of individuals given their ids from an Erdos-Renyi
     random graph model given the expected average degree.
 
     Args:
@@ -613,13 +608,14 @@ def random_graph_model(uids, average_degree, seed=None):
 
     Returns:
         nx.Graph : Fast implementation of the Erdos-Renyi random graph model.
+
     """
     N = len(uids)
     if N == 0:
         raise ValueError(f"Expected uids to a non-empty list or array. Instead, the length of uids is {len(uids)}.")
 
     if average_degree >= N:
-        log.debug(f"Desired average degree is greater than or equal to the number of nodes. This method does not support multi-edges; returning a fully connected graph.")
+        log.debug("Desired average degree is greater than or equal to the number of nodes. This method does not support multi-edges; returning a fully connected graph.")
         G = nx.complete_graph(N)
 
     else:
@@ -630,8 +626,7 @@ def random_graph_model(uids, average_degree, seed=None):
 
 
 def get_expected_density(average_degree, n_nodes):
-    """
-    Calculate the expected density of an undirected graph with no self-loops
+    """Calculate the expected density of an undirected graph with no self-loops
     given graph properties. The expected density of an undirected graph with
     no self-loops is defined as the number of edges as a fraction of the
     number of maximal edges possible.
@@ -645,6 +640,7 @@ def get_expected_density(average_degree, n_nodes):
 
     Returns:
         float: The expected graph density.
+
     """
     E = n_nodes * average_degree / 2
     Emax = n_nodes * (n_nodes - 1) / 2

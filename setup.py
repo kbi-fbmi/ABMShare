@@ -1,13 +1,12 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
-
-'''
+"""
 ABMSHARE installation. Requirements are listed in requirements.txt. There are two
 options:
     pip install .       # Standard install
     pip install . -e      # Install in editable mode
 Make sure you use a GCC compiler that supports C++11, e.g. GCC 4.8 or higher.
-'''
+"""
 
 # Read the contents of the requirements.txt file
 with open("requirements.txt") as req_file:

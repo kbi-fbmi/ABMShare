@@ -1,4 +1,4 @@
-from .utils import *
-from .people import *
-from .makepop import *
 from .loaders import *
+from .makepop import *
+from .people import *
+from .utils import *

@@ -1,28 +1,27 @@
-'''
-Additional analysis functions that are not part of the core Covasim workflow,
+"""Additional analysis functions that are not part of the core Covasim workflow,
 but which are useful for particular investigations.
-'''
+"""
 
 import os
+
 import numpy as np
-import pylab as pl
 import pandas as pd
+import pylab as pl
 import sciris as sc
-from . import utils as cvu
-from . import misc as cvm
+
 from . import interventions as cvi
+from . import misc as cvm
 from . import plotting as cvpl
 from . import run as cvr
-from .settings import options as cvo # For setting global options
+from . import utils as cvu
+from .settings import options as cvo  # For setting global options
 
-
-__all__ = ['Analyzer', 'snapshot', 'age_histogram', 'daily_age_stats', 'daily_stats', 'nab_histogram',
-           'Fit', 'Calibration', 'TransTree']
+__all__ = ["Analyzer", "snapshot", "age_histogram", "daily_age_stats", "daily_stats", "nab_histogram",
+           "Fit", "Calibration", "TransTree"]
 
 
 class Analyzer(sc.prettyobj):
-    '''
-    Base class for analyzers. Based on the Intervention class. Analyzers are used
+    """Base class for analyzers. Based on the Intervention class. Analyzers are used
     to provide more detailed information about a simulation than is available by
     default -- for example, pulling states out of sim.people on a particular timestep
     before it gets updated in the next timestep.
@@ -31,7 +30,8 @@ class Analyzer(sc.prettyobj):
 
     Args:
         label (str): a label for the Analyzer (used for ease of identification)
-    '''
+
+    """
 
     def __init__(self, label=None):
         if label is None:
@@ -45,61 +45,57 @@ class Analyzer(sc.prettyobj):
     def __call__(self, *args, **kwargs):
         # Makes Analyzer(sim) equivalent to Analyzer.apply(sim)
         if not self.initialized:
-            errormsg = f'Analyzer (label={self.label}, {type(self)}) has not been initialized'
+            errormsg = f"Analyzer (label={self.label}, {type(self)}) has not been initialized"
             raise RuntimeError(errormsg)
         return self.apply(*args, **kwargs)
 
 
     def initialize(self, sim=None):
-        '''
-        Initialize the analyzer, e.g. convert date strings to integers.
-        '''
+        """Initialize the analyzer, e.g. convert date strings to integers.
+        """
         self.initialized = True
         self.finalized = False
         return
 
 
     def finalize(self, sim=None):
-        '''
-        Finalize analyzer
+        """Finalize analyzer
 
         This method is run once as part of `sim.finalize()` enabling the analyzer to perform any
         final operations after the simulation is complete (e.g. rescaling)
-        '''
+        """
         if self.finalized:
-            raise RuntimeError('Analyzer already finalized')  # Raise an error because finalizing multiple times has a high probability of producing incorrect results e.g. applying rescale factors twice
+            raise RuntimeError("Analyzer already finalized")  # Raise an error because finalizing multiple times has a high probability of producing incorrect results e.g. applying rescale factors twice
         self.finalized = True
         return
 
 
     def apply(self, sim):
-        '''
-        Apply analyzer at each time point. The analyzer has full access to the
+        """Apply analyzer at each time point. The analyzer has full access to the
         sim object, and typically stores data/results in itself. This is the core
         method which each analyzer object needs to implement.
 
         Args:
             sim: the Sim instance
-        '''
+
+        """
         raise NotImplementedError
 
 
     def shrink(self, in_place=False):
-        '''
-        Remove any excess stored data from the intervention; for use with sim.shrink().
+        """Remove any excess stored data from the intervention; for use with sim.shrink().
 
         Args:
             in_place (bool): whether to shrink the intervention (else shrink a copy)
-        '''
+
+        """
         if in_place:
             return self
-        else:
-            return sc.dcp(self)
+        return sc.dcp(self)
 
 
     def to_json(self):
-        '''
-        Return JSON-compatible representation
+        """Return JSON-compatible representation
 
         Custom classes can't be directly represented in JSON. This method is a
         one-way export to produce a JSON-compatible representation of the
@@ -108,11 +104,12 @@ class Analyzer(sc.prettyobj):
 
         Returns:
             JSON-serializable representation
-        '''
+
+        """
         # Set the name
         json = {}
-        json['analyzer_name'] = self.label if hasattr(self, 'label') else None
-        json['analyzer_class'] = self.__class__.__name__
+        json["analyzer_name"] = self.label if hasattr(self, "label") else None
+        json["analyzer_class"] = self.__class__.__name__
 
         # Loop over the attributes and try to process
         attrs = self.__dict__.keys()
@@ -130,25 +127,22 @@ class Analyzer(sc.prettyobj):
 
 
 def validate_recorded_dates(sim, requested_dates, recorded_dates, die=True):
-    '''
-    Helper method to ensure that dates recorded by an analyzer match the ones
+    """Helper method to ensure that dates recorded by an analyzer match the ones
     requested.
-    '''
+    """
     requested_dates = sorted(list(requested_dates))
     recorded_dates = sorted(list(recorded_dates))
     if recorded_dates != requested_dates: # pragma: no cover
         errormsg = f'The dates {requested_dates} were requested but only {recorded_dates} were recorded: please check the dates fall between {sim.date(sim["start_day"])} and {sim.date(sim["start_day"])} and the sim was actually run'
         if die:
             raise RuntimeError(errormsg)
-        else:
-            print(errormsg)
+        print(errormsg)
     return
 
 
 
 class snapshot(Analyzer):
-    '''
-    Analyzer that takes a "snapshot" of the sim.people array at specified points
+    """Analyzer that takes a "snapshot" of the sim.people array at specified points
     in time, and saves them to itself. To retrieve them, you can either access
     the dictionary directly, or use the get() method.
 
@@ -169,7 +163,8 @@ class snapshot(Analyzer):
         people = snapshot.get('2020-04-14')       # Option 3
         people = snapshot.get(34)                 # Option 4
         people = snapshot.get()                   # Option 5
-    '''
+
+    """
 
     def __init__(self, days, *args, die=True, **kwargs):
         super().__init__(**kwargs) # Initialize the Analyzer object
@@ -184,12 +179,12 @@ class snapshot(Analyzer):
 
 
     def initialize(self, sim):
-        self.start_day = sim['start_day'] # Store the simulation start day
+        self.start_day = sim["start_day"] # Store the simulation start day
         self.days, self.dates = cvi.process_days(sim, self.days, return_dates=True) # Ensure days are in the right format
         max_snapshot_day = self.days[-1]
-        max_sim_day = sim.day(sim['end_day'])
+        max_sim_day = sim.day(sim["end_day"])
         if max_snapshot_day > max_sim_day: # pragma: no cover
-            errormsg = f'Cannot create snapshot for {self.dates[-1]} (day {max_snapshot_day}) because the simulation ends on {self.end_day} (day {max_sim_day})'
+            errormsg = f"Cannot create snapshot for {self.dates[-1]} (day {max_snapshot_day}) because the simulation ends on {self.end_day} (day {max_sim_day})"
             raise ValueError(errormsg)
         self.initialized = True
         return
@@ -208,7 +203,7 @@ class snapshot(Analyzer):
 
 
     def get(self, key=None):
-        ''' Retrieve a snapshot from the given key (int, str, or date) '''
+        """Retrieve a snapshot from the given key (int, str, or date)"""
         if key is None:
             key = self.days[0]
         day  = sc.day(key, start_date=self.start_day)
@@ -216,16 +211,15 @@ class snapshot(Analyzer):
         if date in self.snapshots:
             snapshot = self.snapshots[date]
         else: # pragma: no cover
-            dates = ', '.join(list(self.snapshots.keys()))
-            errormsg = f'Could not find snapshot date {date} (day {day}): choices are {dates}'
+            dates = ", ".join(list(self.snapshots.keys()))
+            errormsg = f"Could not find snapshot date {date} (day {day}): choices are {dates}"
             raise sc.KeyNotFoundError(errormsg)
         return snapshot
 
 
 
 class age_histogram(Analyzer):
-    '''
-    Calculate statistics across age bins, including histogram plotting functionality.
+    """Calculate statistics across age bins, including histogram plotting functionality.
 
     Args:
         days    (list): list of ints/strings/date objects, the days on which to calculate the histograms (default: last day)
@@ -244,7 +238,8 @@ class age_histogram(Analyzer):
         agehist = sim.get_analyzer()
         agehist = cv.age_histogram(sim=sim) # Alternate method
         agehist.plot()
-    '''
+
+    """
 
     def __init__(self, days=None, states=None, edges=None, datafile=None, sim=None, die=True, **kwargs):
         super().__init__(**kwargs) # Initialize the Analyzer object
@@ -265,9 +260,9 @@ class age_histogram(Analyzer):
 
 
     def from_sim(self, sim):
-        ''' Create an age histogram from an already run sim '''
+        """Create an age histogram from an already run sim"""
         if self.days is not None: # pragma: no cover
-            errormsg = 'If a simulation is being analyzed post-run, no day can be supplied: only the last day of the simulation is available'
+            errormsg = "If a simulation is being analyzed post-run, no day can be supplied: only the last day of the simulation is available"
             raise ValueError(errormsg)
         self.initialize(sim)
         self.apply(sim)
@@ -278,15 +273,15 @@ class age_histogram(Analyzer):
         super().initialize()
 
         # Handle days
-        self.start_day = sc.date(sim['start_day'], as_date=False) # Get the start day, as a string
-        self.end_day   = sc.date(sim['end_day'],   as_date=False) # Get the start day, as a string
+        self.start_day = sc.date(sim["start_day"], as_date=False) # Get the start day, as a string
+        self.end_day   = sc.date(sim["end_day"],   as_date=False) # Get the start day, as a string
         if self.days is None:
             self.days = self.end_day # If no day is supplied, use the last day
         self.days, self.dates = cvi.process_days(sim, self.days, return_dates=True) # Ensure days are in the right format
         max_hist_day = self.days[-1]
         max_sim_day = sim.day(self.end_day)
         if max_hist_day > max_sim_day: # pragma: no cover
-            errormsg = f'Cannot create histogram for {self.dates[-1]} (day {max_hist_day}) because the simulation ends on {self.end_day} (day {max_sim_day})'
+            errormsg = f"Cannot create histogram for {self.dates[-1]} (day {max_hist_day}) because the simulation ends on {self.end_day} (day {max_sim_day})"
             raise ValueError(errormsg)
 
         # Handle edges and age bins
@@ -296,10 +291,10 @@ class age_histogram(Analyzer):
 
         # Handle states
         if self.states is None:
-            self.states = ['exposed', 'severe', 'dead', 'tested', 'diagnosed']
+            self.states = ["exposed", "severe", "dead", "tested", "diagnosed"]
         self.states = sc.promotetolist(self.states)
         for s,state in enumerate(self.states):
-            self.states[s] = state.replace('date_', '') # Allow keys starting with date_ as input, but strip it off here
+            self.states[s] = state.replace("date_", "") # Allow keys starting with date_ as input, but strip it off here
 
         # Handle the data file
         if self.datafile is not None:
@@ -318,9 +313,9 @@ class age_histogram(Analyzer):
             self.hists[date] = sc.objdict() # Initialize the dictionary
             scale  = sim.rescale_vec[sim.t] # Determine current scale factor
             age    = sim.people.age # Get the age distribution,since used heavily
-            self.hists[date]['bins'] = self.bins # Copy here for convenience
+            self.hists[date]["bins"] = self.bins # Copy here for convenience
             for state in self.states: # Loop over each state
-                inds = sim.people.defined(f'date_{state}') # Pull out people for which this state is defined
+                inds = sim.people.defined(f"date_{state}") # Pull out people for which this state is defined
                 self.hists[date][state] = np.histogram(age[inds], bins=self.edges)[0]*scale # Actually count the people
 
 
@@ -331,7 +326,7 @@ class age_histogram(Analyzer):
 
 
     def get(self, key=None):
-        ''' Retrieve a specific histogram from the given key (int, str, or date) '''
+        """Retrieve a specific histogram from the given key (int, str, or date)"""
         if key is None:
             key = self.days[0]
         day  = sc.day(key, start_date=self.start_day)
@@ -339,37 +334,36 @@ class age_histogram(Analyzer):
         if date in self.hists:
             hists = self.hists[date]
         else: # pragma: no cover
-            dates = ', '.join(list(self.hists.keys()))
-            errormsg = f'Could not find histogram date {date} (day {day}): choices are {dates}'
+            dates = ", ".join(list(self.hists.keys()))
+            errormsg = f"Could not find histogram date {date} (day {day}): choices are {dates}"
             raise sc.KeyNotFoundError(errormsg)
         return hists
 
 
     def compute_windows(self):
-        ''' Convert cumulative histograms to windows '''
+        """Convert cumulative histograms to windows"""
         if len(self.hists)<2:
-            errormsg = 'You must have at least two dates specified to compute a window'
+            errormsg = "You must have at least two dates specified to compute a window"
             raise ValueError(errormsg)
 
         self.window_hists = sc.objdict()
         for d,end_date,hists in self.hists.enumitems():
             if d==0: # Copy the first one
                 start_date = self.start_day
-                self.window_hists[f'{start_date} to {end_date}'] = self.hists[end_date]
+                self.window_hists[f"{start_date} to {end_date}"] = self.hists[end_date]
             else:
                 start_date = self.dates[d-1]
-                datekey = f'{start_date} to {end_date}'
+                datekey = f"{start_date} to {end_date}"
                 self.window_hists[datekey] = sc.objdict() # Initialize the dictionary
-                self.window_hists[datekey]['bins'] = self.hists[end_date]['bins']
+                self.window_hists[datekey]["bins"] = self.hists[end_date]["bins"]
                 for state in self.states: # Loop over each state
                     self.window_hists[datekey][state] = self.hists[end_date][state] - self.hists[start_date][state]
 
         return
 
 
-    def plot(self, windows=False, width=0.8, color='#F8A493', fig_args=None, axis_args=None, data_args=None, **kwargs):
-        '''
-        Simple method for plotting the histograms.
+    def plot(self, windows=False, width=0.8, color="#F8A493", fig_args=None, axis_args=None, data_args=None, **kwargs):
+        """Simple method for plotting the histograms.
 
         Args:
             windows (bool): whether to plot windows instead of cumulative counts
@@ -379,12 +373,12 @@ class age_histogram(Analyzer):
             axis_args (dict): passed to pl.subplots_adjust()
             data_args (dict): 'width', 'color', and 'offset' arguments for the data
             kwargs (dict): passed to ``cv.options.with_style()``; see that function for choices
-        '''
 
+        """
         # Handle inputs
         fig_args = sc.mergedicts(dict(figsize=(12,8)), fig_args)
         axis_args = sc.mergedicts(dict(left=0.08, right=0.92, bottom=0.08, top=0.92), axis_args)
-        d_args = sc.objdict(sc.mergedicts(dict(width=0.3, color='#000000', offset=0), data_args))
+        d_args = sc.objdict(sc.mergedicts(dict(width=0.3, color="#000000", offset=0), data_args))
 
         # Initialize
         n_plots = len(self.states)
@@ -399,7 +393,7 @@ class age_histogram(Analyzer):
         else:
             histsdict = self.hists
         if not len(histsdict): # pragma: no cover
-            errormsg = f'Cannot plot since no histograms were recorded (schuled days: {self.days})'
+            errormsg = f"Cannot plot since no histograms were recorded (schuled days: {self.days})"
             raise ValueError(errormsg)
 
         # Make the figure(s)
@@ -407,27 +401,26 @@ class age_histogram(Analyzer):
             for date,hists in histsdict.items():
                 figs += [pl.figure(**fig_args)]
                 pl.subplots_adjust(**axis_args)
-                bins = hists['bins']
+                bins = hists["bins"]
                 barwidth = width*(bins[1] - bins[0]) # Assume uniform width
                 for s,state in enumerate(self.states):
                     ax = pl.subplot(n_rows, n_cols, s+1)
-                    ax.bar(bins, hists[state], width=barwidth, facecolor=color, label=f'Number {state}')
+                    ax.bar(bins, hists[state], width=barwidth, facecolor=color, label=f"Number {state}")
                     if self.data and state in self.data:
                         data = self.data[state]
-                        ax.bar(bins+d_args.offset, data, width=barwidth*d_args.width, facecolor=d_args.color, label='Data')
-                    ax.set_xlabel('Age')
-                    ax.set_ylabel('Count')
+                        ax.bar(bins+d_args.offset, data, width=barwidth*d_args.width, facecolor=d_args.color, label="Data")
+                    ax.set_xlabel("Age")
+                    ax.set_ylabel("Count")
                     ax.set_xticks(ticks=bins)
                     ax.legend()
-                    preposition = 'from' if windows else 'by'
-                    ax.set_title(f'Number of people {state} {preposition} {date}')
+                    preposition = "from" if windows else "by"
+                    ax.set_title(f"Number of people {state} {preposition} {date}")
 
         return cvpl.handle_show_return(figs=figs)
 
 
 class daily_age_stats(Analyzer):
-    '''
-    Calculate daily counts by age, saving for each day of the simulation. Can
+    """Calculate daily counts by age, saving for each day of the simulation. Can
     plot either time series by age or a histogram over all time.
 
     Args:
@@ -444,7 +437,7 @@ class daily_age_stats(Analyzer):
         daily_age.plot()
         daily_age.plot(total=True)
 
-    '''
+    """
 
     def __init__(self, states=None, edges=None, **kwargs):
         super().__init__(**kwargs)
@@ -462,14 +455,14 @@ class daily_age_stats(Analyzer):
         super().initialize()
 
         if self.states is None:
-            self.states = ['exposed', 'severe', 'dead', 'tested', 'diagnosed']
+            self.states = ["exposed", "severe", "dead", "tested", "diagnosed"]
 
         # Handle edges and age bins
         if self.edges is None:  # Default age bins
             self.edges = np.linspace(0, 100, 11)
         self.bins = self.edges[:-1]  # Don't include the last edge in the bins
 
-        self.start_day = sim['start_day']
+        self.start_day = sim["start_day"]
 
         return
 
@@ -477,20 +470,20 @@ class daily_age_stats(Analyzer):
     def apply(self, sim):
         df_entry = {}
         for state in self.states:
-            inds = sc.findinds(sim.people[f'date_{state}'], sim.t)
+            inds = sc.findinds(sim.people[f"date_{state}"], sim.t)
             b, _ = np.histogram(sim.people.age[inds], self.edges)
             df_entry.update({state: b * sim.rescale_vec[sim.t]})
-        df_entry.update({'day':sim.t, 'age': self.bins})
+        df_entry.update({"day":sim.t, "age": self.bins})
         self.results.update({sim.date(sim.t): df_entry})
 
 
     def to_df(self):
-        '''Create dataframe totals for each day'''
-        mapper = {f'{k}': f'new_{k}' for k in self.states}
+        """Create dataframe totals for each day"""
+        mapper = {f"{k}": f"new_{k}" for k in self.states}
         df = pd.DataFrame()
         for date, k in self.results.items():
             df_ = pd.DataFrame(k)
-            df_['date'] = date
+            df_["date"] = date
             df_.rename(mapper, inplace=True, axis=1)
             df = pd.concat((df, df_))
         cols = list(df.columns.values)
@@ -500,30 +493,29 @@ class daily_age_stats(Analyzer):
 
 
     def to_total_df(self):
-        ''' Create dataframe totals across days '''
+        """Create dataframe totals across days"""
         if self.df is None:
             self.to_df()
         cols = list(self.df.columns)
-        cum_cols = [c for c in cols if c.split('_')[0] == 'new']
+        cum_cols = [c for c in cols if c.split("_")[0] == "new"]
         mapper = {f'new_{c.split("_")[1]}': f'cum_{c.split("_")[1]}' for c in cum_cols}
-        df_dict = {'age': []}
+        df_dict = {"age": []}
         df_dict.update({c: [] for c in mapper.values()})
-        for age, group in self.df.groupby('age'):
+        for age, group in self.df.groupby("age"):
             cum_vals = group.sum()
-            df_dict['age'].append(age)
+            df_dict["age"].append(age)
             for k, v in mapper.items():
                 df_dict[v].append(cum_vals[k])
         df = pd.DataFrame(df_dict)
-        if ('cum_diagnoses' in df.columns) and ('cum_tests' in df.columns):
-            df['yield'] = df['cum_diagnoses'] / df['cum_tests']
+        if ("cum_diagnoses" in df.columns) and ("cum_tests" in df.columns):
+            df["yield"] = df["cum_diagnoses"] / df["cum_tests"]
         self.total_df = df
         return df
 
 
     def plot(self, total=False, do_show=None, fig_args=None, axis_args=None, plot_args=None,
-             dateformat=None, width=0.8, color='#F8A493', **kwargs):
-        '''
-        Plot the results.
+             dateformat=None, width=0.8, color="#F8A493", **kwargs):
+        """Plot the results.
 
         Args:
             total     (bool): whether to plot the total histograms rather than time series
@@ -535,7 +527,8 @@ class daily_age_stats(Analyzer):
             width    (float): width of bars (only used for histograms)
             color  (hex/rgb): the color of the bars (only used for histograms)
             kwargs    (dict): passed to ``cv.options.with_style()``
-        '''
+
+        """
         if self.df is None:
             self.to_df()
         if self.total_df is None:
@@ -543,7 +536,7 @@ class daily_age_stats(Analyzer):
 
         fig_args  = sc.mergedicts(dict(figsize=(18,11)), fig_args)
         axis_args = sc.mergedicts(dict(left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.25, hspace=0.4), axis_args)
-        plot_args = sc.mergedicts(dict(lw=2, alpha=0.5, marker='o'), plot_args)
+        plot_args = sc.mergedicts(dict(lw=2, alpha=0.5, marker="o"), plot_args)
 
         with cvo.with_style(**kwargs):
             nplots = len(self.states)
@@ -562,31 +555,30 @@ class daily_age_stats(Analyzer):
                     colors = sc.vectocolor(len(ages))
                     has_data = False
                     for a,age in enumerate(ages):
-                        label = f'Age {age}'
+                        label = f"Age {age}"
                         df = self.df[self.df.age==age]
-                        ax.plot(df.date, df[f'new_{state}'], c=colors[a], label=label)
+                        ax.plot(df.date, df[f"new_{state}"], c=colors[a], label=label)
                         has_data = has_data or len(df)
                     if has_data:
                         ax.legend()
-                        ax.set_xlabel('Date')
-                        ax.set_ylabel('Count')
+                        ax.set_xlabel("Date")
+                        ax.set_ylabel("Count")
                         sc.dateformatter(dateformat=dateformat, ax=ax)
 
                 # Plot total histograms
                 else:
                     df = self.total_df
                     barwidth = width*(df.age[1] - df.age[0]) # Assume uniform width
-                    ax.bar(df.age, df[f'cum_{state}'], width=barwidth, facecolor=color)
-                    ax.set_xlabel('Age')
-                    ax.set_ylabel('Count')
+                    ax.bar(df.age, df[f"cum_{state}"], width=barwidth, facecolor=color)
+                    ax.set_xlabel("Age")
+                    ax.set_ylabel("Count")
                     ax.set_xticks(ticks=df.age)
 
         return cvpl.handle_show_return(fig=fig, do_show=do_show)
 
 
 class daily_stats(Analyzer):
-    '''
-    Print out daily statistics about the simulation. Note that this analyzer takes
+    """Print out daily statistics about the simulation. Note that this analyzer takes
     a considerable amount of time, so should be used primarily for debugging, not
     in production code. To keep the intervention but toggle it off, pass an empty
     list of days.
@@ -604,7 +596,8 @@ class daily_stats(Analyzer):
         sim = cv.Sim(analyzers=cv.daily_stats())
         sim.run()
         sim['analyzers'][0].plot()
-    '''
+
+    """
 
     def __init__(self, days=None, verbose=True, reporter=None, save_inds=False, **kwargs):
         super().__init__(**kwargs) # Initialize the Analyzer object
@@ -624,18 +617,17 @@ class daily_stats(Analyzer):
         else:
             self.days = sim.day(self.days)
 
-        self.keys =  ['exposed', 'infectious', 'symptomatic', 'severe', 'critical', 'known_contact', 'quarantined', 'diagnosed', 'recovered', 'dead']
-        self.basekeys = ['stocks', 'trans', 'source', 'test', 'quar'] # Categories of things to plot
-        self.extrakeys = ['layer_counts', 'extra']
+        self.keys =  ["exposed", "infectious", "symptomatic", "severe", "critical", "known_contact", "quarantined", "diagnosed", "recovered", "dead"]
+        self.basekeys = ["stocks", "trans", "source", "test", "quar"] # Categories of things to plot
+        self.extrakeys = ["layer_counts", "extra"]
         return
 
 
     def intersect(self, *args):
-        '''
-        Compute the intersection between arrays of indices, handling either keys
+        """Compute the intersection between arrays of indices, handling either keys
         to precomputed indices or lists of indices. With two array inputs, simply
         performs np.intersect1d(arr1, arr2).
-        '''
+        """
         # Optionally pull precomputed indices
         args = list(args) # Convert from tuple to list
         for i,inds in enumerate(args):
@@ -674,15 +666,15 @@ class daily_stats(Analyzer):
             # Transmission stats
             newinfs = cvu.true(ppl.date_exposed == sim.t)
             stats.trans.new_infections = len(newinfs)
-            for key in ['known_contact', 'quarantined']:
+            for key in ["known_contact", "quarantined"]:
                 stats.trans[key] = len(self.intersect(newinfs, key))
                 if not stats.trans[key]:
                     stats.empty.trans.append(key)
 
             # Source stats
             inflog = sim.people.infection_log
-            infloginds = [i for i,e in enumerate(inflog) if (e['date']==sim.t and e['source'] is not None)] # Person was infected today and was not a seed infection
-            sourceinds = list(set([inflog[i]['source'] for i in infloginds]))
+            infloginds = [i for i,e in enumerate(inflog) if (e["date"]==sim.t and e["source"] is not None)] # Person was infected today and was not a seed infection
+            sourceinds = list(set([inflog[i]["source"] for i in infloginds]))
             stats.source.new_sources = len(sourceinds)
             for key in self.keys:
                 stats.source[key] = len(self.intersect(sourceinds, key))
@@ -698,49 +690,49 @@ class daily_stats(Analyzer):
                     stats.empty.test.append(key)
 
             # Quarantine stats
-            q_inds = np.union1d(self.inds['quarantined'], cvu.true(ppl.date_end_quarantine == sim.t)) # Append people who finished quarantine today
+            q_inds = np.union1d(self.inds["quarantined"], cvu.true(ppl.date_end_quarantine == sim.t)) # Append people who finished quarantine today
             eq_inds = cvu.true(ppl.date_quarantined == sim.t-1) # People entering quarantine the day before (their first full day of quarantine)
             fq_inds = cvu.true(ppl.date_end_quarantine == sim.t+1) # People finishing quarantine; +1 since on the date of quarantine end, they are released back and can get infected at normal rates
             stats.quar.in_quarantine = len(q_inds) # Similar to stats.quar.quarantined, but slightly more
             stats.quar.entered_quar  = len(eq_inds)
             stats.quar.finished_quar = len(fq_inds)
             for key in self.keys:
-                stats.quar[key] = len(self.intersect('quarantined', key))
+                stats.quar[key] = len(self.intersect("quarantined", key))
                 if not stats.quar[key]:
                     stats.empty.quar.append(key)
 
             # Calculate extras for the source
             stats.extra = sc.objdict() # Additional quantities not stored in the main counts
-            symp_inds = self.inds['symptomatic']
-            asymp_inds = ppl.false('symptomatic')
-            stats.extra.symp    = len(self.intersect(sourceinds, 'symptomatic')) # Redefine in case empty above
-            stats.extra.presymp = len(self.intersect(sourceinds, asymp_inds, ppl.defined('date_symptomatic')))
-            stats.extra.asymp   = len(self.intersect(sourceinds, asymp_inds,  ppl.undefined('date_symptomatic')))
+            symp_inds = self.inds["symptomatic"]
+            asymp_inds = ppl.false("symptomatic")
+            stats.extra.symp    = len(self.intersect(sourceinds, "symptomatic")) # Redefine in case empty above
+            stats.extra.presymp = len(self.intersect(sourceinds, asymp_inds, ppl.defined("date_symptomatic")))
+            stats.extra.asymp   = len(self.intersect(sourceinds, asymp_inds,  ppl.undefined("date_symptomatic")))
             per_factor = 100/max(1, stats.source.new_sources) # Convert to a percentage and avoid division by zero
             stats.extra.per_symp    = stats.extra.symp*per_factor # Percentage symptomatic
             stats.extra.per_presymp = stats.extra.presymp*per_factor
             stats.extra.per_asymp   = stats.extra.asymp*per_factor
             stats.layer_counts = {k:0 for k in sim.layer_keys()}
             for i in infloginds:
-                stats.layer_counts[inflog[i]['layer']] += 1
+                stats.layer_counts[inflog[i]["layer"]] += 1
 
             # Calculate extras for quarantine testing
             t_inds = newtests # Everyone who tested this timestep
-            d_inds = self.intersect(newtests, 'infectious') # Everyone infectious will test positive
-            u_inds = self.intersect('infectious', ppl.false('diagnosed'))
+            d_inds = self.intersect(newtests, "infectious") # Everyone infectious will test positive
+            u_inds = self.intersect("infectious", ppl.false("diagnosed"))
             nq_inds = np.setdiff1d(all_inds, q_inds) # We can't use ppl.false('quarantined') since that will miss people who left quarantine because they were diagnosed
-            for tk,ti in zip(['test', 'diag', 'undiag'], [t_inds, d_inds, u_inds]): # People tested vs diagnosed
-                for sk,si in zip(['symp', 'asymp'], [symp_inds, asymp_inds]): # Symptomatic vs asymptomatic
-                    for qk,qi in zip(['q', 'nq', 'eq', 'fq'], [q_inds, nq_inds, eq_inds, fq_inds]): # In quarantine, not in quarantine, entering quarantine, finishing quarantine
-                        stats.extra[f'{tk}_{sk}_{qk}']  = len(self.intersect(ti, si,  qi)) # E.g. stats.extra.diag_asymp_nq = len(self.intersect(d_inds, asymp_inds, nq_inds))
+            for tk,ti in zip(["test", "diag", "undiag"], [t_inds, d_inds, u_inds]): # People tested vs diagnosed
+                for sk,si in zip(["symp", "asymp"], [symp_inds, asymp_inds]): # Symptomatic vs asymptomatic
+                    for qk,qi in zip(["q", "nq", "eq", "fq"], [q_inds, nq_inds, eq_inds, fq_inds]): # In quarantine, not in quarantine, entering quarantine, finishing quarantine
+                        stats.extra[f"{tk}_{sk}_{qk}"]  = len(self.intersect(ti, si,  qi)) # E.g. stats.extra.diag_asymp_nq = len(self.intersect(d_inds, asymp_inds, nq_inds))
 
             # Final calculations
             stats.extra.prev = stats.stocks.infectious/sim["pop_size"] # Overall prevalence
             stats.extra.dead = stats.stocks.dead/sim["pop_size"] # Fraction dead
-            stats.extra.quar_prev     = len(self.intersect(q_inds, 'infectious'))/max(1,len(q_inds)) # Prevalence of people in quarantine
-            stats.extra.e_quar_prev   = len(self.intersect(eq_inds, 'infectious'))/max(1,len(eq_inds)) # Prevalence of people entering quarantine
-            stats.extra.f_quar_prev   = len(self.intersect(fq_inds, 'infectious'))/max(1,len(fq_inds)) # Prevalence of people finishing quarantine
-            stats.extra.non_quar_prev = len(self.intersect(nq_inds, 'infectious'))/max(1,len(nq_inds)) # Prevalence of people outside quarantine
+            stats.extra.quar_prev     = len(self.intersect(q_inds, "infectious"))/max(1,len(q_inds)) # Prevalence of people in quarantine
+            stats.extra.e_quar_prev   = len(self.intersect(eq_inds, "infectious"))/max(1,len(eq_inds)) # Prevalence of people entering quarantine
+            stats.extra.f_quar_prev   = len(self.intersect(fq_inds, "infectious"))/max(1,len(fq_inds)) # Prevalence of people finishing quarantine
+            stats.extra.non_quar_prev = len(self.intersect(nq_inds, "infectious"))/max(1,len(nq_inds)) # Prevalence of people outside quarantine
 
             # Indices aren't usually saved for memory reasons, but may be helpful for extra debugging
             if self.save_inds:
@@ -771,7 +763,7 @@ class daily_stats(Analyzer):
 
 
     def report(self, day=None):
-        ''' Print out one or all reports -- take a date string or an int '''
+        """Print out one or all reports -- take a date string or an int"""
         if day is None:
             print(self.reports)
         else:
@@ -779,68 +771,68 @@ class daily_stats(Analyzer):
         return
 
 
-    def make_report(self, sim, stats, show_empty='count'):
-        ''' Turn the statistics into a report '''
+    def make_report(self, sim, stats, show_empty="count"):
+        """Turn the statistics into a report"""
 
         def make_entry(basekey, show_empty=show_empty):
-            ''' For each key, print the key and the count if the count is >0, and optionally any empty states '''
-            string  = '\n'.join([f'  {k:13s} = {v}' for k,v in stats[basekey].items() if v>0])
+            """For each key, print the key and the count if the count is >0, and optionally any empty states"""
+            string  = "\n".join([f"  {k:13s} = {v}" for k,v in stats[basekey].items() if v>0])
             if show_empty is True:
-                string += f'\n  Empty states: {stats.empty[basekey]}'
-            elif show_empty == 'count':
-                string += f'\n  Number of empty states: {len(stats.empty[basekey])}'
-            string = '\n' + string + '\n'
+                string += f"\n  Empty states: {stats.empty[basekey]}"
+            elif show_empty == "count":
+                string += f"\n  Number of empty states: {len(stats.empty[basekey])}"
+            string = "\n" + string + "\n"
             return string
 
-        datestr = f'day {sim.t} ({sim.date(sim.t)})'
-        report  = f'*** Statistics report for {datestr} ***\n\n'
-        report += 'Overall stocks:'
-        report += make_entry('stocks', show_empty=False)
-        report += '  Derived statistics:\n'
-        report += f'    Percentage infectious: {stats.extra.prev*100:6.3f}%\n'
-        report += f'    Percentage dead:       {stats.extra.dead*100:6.3f}%\n'
-        report += '\nTransmission target statistics:'
-        report += make_entry('trans')
-        report += '  Infections by layer:\n'
-        report += '\n'.join([f'    {k} = {v}' for k,v in stats.layer_counts.items()])
-        report += '\n\nTransmission source statistics:'
-        report += make_entry('source')
-        report += '  Derived statistics:\n'
-        report += f'    Pre-symptomatic: {stats.extra.presymp} ({stats.extra.per_presymp:0.1f})%\n'
-        report += f'    Asymptomatic:    {stats.extra.asymp} ({stats.extra.per_asymp:0.1f})%\n'
-        report += f'    Symptomatic:     {stats.extra.symp} ({stats.extra.per_symp:0.1f})%\n'
-        report += '\nTesting statistics:'
-        report += make_entry('test')
-        report += '  Derived statistics:\n'
-        report += '    Tests:\n'
-        report += f'      Symp/asymp not in quar: {stats.extra.test_symp_nq}/{stats.extra.test_asymp_nq}\n'
-        report += f'      Symp/asymp in quar:     {stats.extra.test_symp_q}/{stats.extra.test_asymp_q}\n'
-        report += f'      Symp/asymp enter quar:  {stats.extra.test_symp_eq}/{stats.extra.test_asymp_eq}\n'
-        report += f'      Symp/asymp finish quar: {stats.extra.test_symp_fq}/{stats.extra.test_asymp_fq}\n'
-        report += '    Diagnoses:\n'
-        report += f'      Symp/asymp not in quar: {stats.extra.diag_symp_nq}/{stats.extra.diag_asymp_nq}\n'
-        report += f'      Symp/asymp in quar:     {stats.extra.diag_symp_q}/{stats.extra.diag_asymp_q}\n'
-        report += f'      Symp/asymp enter quar:  {stats.extra.diag_symp_eq}/{stats.extra.diag_asymp_eq}\n'
-        report += f'      Symp/asymp finish quar: {stats.extra.diag_symp_fq}/{stats.extra.diag_asymp_fq}\n'
-        report += '    Undiagnosed:\n'
-        report += f'      Symp/asymp not in quar: {stats.extra.undiag_symp_nq}/{stats.extra.undiag_asymp_nq}\n'
-        report += f'      Symp/asymp in quar:     {stats.extra.undiag_symp_q}/{stats.extra.undiag_asymp_q}\n'
-        report += f'      Symp/asymp enter quar:  {stats.extra.undiag_symp_eq}/{stats.extra.undiag_asymp_eq}\n'
-        report += f'      Symp/asymp finish quar: {stats.extra.undiag_symp_fq}/{stats.extra.undiag_asymp_fq}\n'
-        report += '\nQuarantine statistics:'
-        report += make_entry('quar')
-        report += '  Derived statistics:\n'
-        report += f'    Percentage infectious not in quarantine:    {stats.extra.non_quar_prev*100:6.3f}%\n'
-        report += f'    Percentage infectious in quarantine:        {stats.extra.quar_prev*100:6.3f}%\n'
-        report += f'    Percentage infectious entering quarantine:  {stats.extra.e_quar_prev*100:6.3f}%\n'
-        report += f'    Percentage infectious finishing quarantine: {stats.extra.f_quar_prev*100:6.3f}%\n'
-        report += f'\n*** End of report for day {datestr} ***\n'
+        datestr = f"day {sim.t} ({sim.date(sim.t)})"
+        report  = f"*** Statistics report for {datestr} ***\n\n"
+        report += "Overall stocks:"
+        report += make_entry("stocks", show_empty=False)
+        report += "  Derived statistics:\n"
+        report += f"    Percentage infectious: {stats.extra.prev*100:6.3f}%\n"
+        report += f"    Percentage dead:       {stats.extra.dead*100:6.3f}%\n"
+        report += "\nTransmission target statistics:"
+        report += make_entry("trans")
+        report += "  Infections by layer:\n"
+        report += "\n".join([f"    {k} = {v}" for k,v in stats.layer_counts.items()])
+        report += "\n\nTransmission source statistics:"
+        report += make_entry("source")
+        report += "  Derived statistics:\n"
+        report += f"    Pre-symptomatic: {stats.extra.presymp} ({stats.extra.per_presymp:0.1f})%\n"
+        report += f"    Asymptomatic:    {stats.extra.asymp} ({stats.extra.per_asymp:0.1f})%\n"
+        report += f"    Symptomatic:     {stats.extra.symp} ({stats.extra.per_symp:0.1f})%\n"
+        report += "\nTesting statistics:"
+        report += make_entry("test")
+        report += "  Derived statistics:\n"
+        report += "    Tests:\n"
+        report += f"      Symp/asymp not in quar: {stats.extra.test_symp_nq}/{stats.extra.test_asymp_nq}\n"
+        report += f"      Symp/asymp in quar:     {stats.extra.test_symp_q}/{stats.extra.test_asymp_q}\n"
+        report += f"      Symp/asymp enter quar:  {stats.extra.test_symp_eq}/{stats.extra.test_asymp_eq}\n"
+        report += f"      Symp/asymp finish quar: {stats.extra.test_symp_fq}/{stats.extra.test_asymp_fq}\n"
+        report += "    Diagnoses:\n"
+        report += f"      Symp/asymp not in quar: {stats.extra.diag_symp_nq}/{stats.extra.diag_asymp_nq}\n"
+        report += f"      Symp/asymp in quar:     {stats.extra.diag_symp_q}/{stats.extra.diag_asymp_q}\n"
+        report += f"      Symp/asymp enter quar:  {stats.extra.diag_symp_eq}/{stats.extra.diag_asymp_eq}\n"
+        report += f"      Symp/asymp finish quar: {stats.extra.diag_symp_fq}/{stats.extra.diag_asymp_fq}\n"
+        report += "    Undiagnosed:\n"
+        report += f"      Symp/asymp not in quar: {stats.extra.undiag_symp_nq}/{stats.extra.undiag_asymp_nq}\n"
+        report += f"      Symp/asymp in quar:     {stats.extra.undiag_symp_q}/{stats.extra.undiag_asymp_q}\n"
+        report += f"      Symp/asymp enter quar:  {stats.extra.undiag_symp_eq}/{stats.extra.undiag_asymp_eq}\n"
+        report += f"      Symp/asymp finish quar: {stats.extra.undiag_symp_fq}/{stats.extra.undiag_asymp_fq}\n"
+        report += "\nQuarantine statistics:"
+        report += make_entry("quar")
+        report += "  Derived statistics:\n"
+        report += f"    Percentage infectious not in quarantine:    {stats.extra.non_quar_prev*100:6.3f}%\n"
+        report += f"    Percentage infectious in quarantine:        {stats.extra.quar_prev*100:6.3f}%\n"
+        report += f"    Percentage infectious entering quarantine:  {stats.extra.e_quar_prev*100:6.3f}%\n"
+        report += f"    Percentage infectious finishing quarantine: {stats.extra.f_quar_prev*100:6.3f}%\n"
+        report += f"\n*** End of report for day {datestr} ***\n"
 
         return report
 
 
     def transpose(self, keys=None):
-        ''' Transpose the data from a list-of-dicts-of-dicts to a dict-of-dicts-of-lists '''
+        """Transpose the data from a list-of-dicts-of-dicts to a dict-of-dicts-of-lists"""
         if keys is None:
             keys = self.basekeys + self.extrakeys
 
@@ -861,8 +853,7 @@ class daily_stats(Analyzer):
 
 
     def plot(self, fig_args=None, axis_args=None, plot_args=None, do_show=None, **kwargs):
-        '''
-        Plot the daily statistics recorded. Some overlap with e.g. ``sim.plot(to_plot='overview')``.
+        """Plot the daily statistics recorded. Some overlap with e.g. ``sim.plot(to_plot='overview')``.
 
         Args:
             fig_args  (dict): passed to pl.figure()
@@ -870,11 +861,11 @@ class daily_stats(Analyzer):
             plot_args (dict): passed to pl.plot()
             do_show   (bool): whether to show the plot
             kwargs    (dict): passed to ``cv.options.with_style()``
-        '''
 
+        """
         fig_args  = sc.mergedicts(dict(figsize=(18,11)), fig_args)
         axis_args = sc.mergedicts(dict(left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.25, hspace=0.4), axis_args)
-        plot_args = sc.mergedicts(dict(lw=2, alpha=0.5, marker='o'), plot_args)
+        plot_args = sc.mergedicts(dict(lw=2, alpha=0.5, marker="o"), plot_args)
 
         # Transform the data into time series
         data = self.transpose()
@@ -894,14 +885,13 @@ class daily_stats(Analyzer):
                     ax = axs[row,col]
                     y = data[k1][k2]
                     ax.plot(y, **plot_args)
-                    ax.set_title(f'{k1}: {k2}')
+                    ax.set_title(f"{k1}: {k2}")
 
         return cvpl.handle_show_return(fig=fig, do_show=do_show)
 
 
 class nab_histogram(Analyzer):
-    '''
-    Store histogram of log_{10}(NAb) distribution
+    """Store histogram of log_{10}(NAb) distribution
 
     Args:
         days (list): days on which calculate the NAb histogram (if None, assume last day)
@@ -914,7 +904,9 @@ class nab_histogram(Analyzer):
         sim.get_analyzer().plot()
 
     New in version 3.1.0.
-    '''
+
+    """
+
     def __init__(self, days=None, edges=None, **kwargs):
         super().__init__(**kwargs)  # Initialize the Analyzer object
         self.days = days  # To be converted to integer representations
@@ -925,15 +917,15 @@ class nab_histogram(Analyzer):
     def initialize(self, sim):
 
         # Check that the simulation parameters are correct
-        if not sim['use_waning']:
-            errormsg = 'The cv.nab_histogram() analyzer requires use_waning=True. Please enable waning.'
+        if not sim["use_waning"]:
+            errormsg = "The cv.nab_histogram() analyzer requires use_waning=True. Please enable waning."
             raise RuntimeError(errormsg)
 
         super().initialize()
 
         # Handle days
-        self.start_day = sc.date(sim['start_day'], as_date=False)  # Get the start day, as a string
-        self.end_day = sc.date(sim['end_day'], as_date=False)  # Get the start day, as a string
+        self.start_day = sc.date(sim["start_day"], as_date=False)  # Get the start day, as a string
+        self.end_day = sc.date(sim["end_day"], as_date=False)  # Get the start day, as a string
         if self.days is None:
             self.days = self.end_day  # If no day is supplied, use the last day
         self.days, self.dates = cvi.process_days(sim, self.days,
@@ -954,15 +946,14 @@ class nab_histogram(Analyzer):
             date = self.dates[ind]  # Find the date for this index
             self.hists[date] = sc.objdict()  # Initialize the dictionary
             scale = sim.rescale_vec[sim.t]  # Determine current scale factor
-            self.hists[date]['bins'] = self.bins  # Copy here for convenience
-            self.hists[date]['n'] = np.histogram(log_nabs, bins=self.edges)[0] * scale  # Actually count the people
-            self.hists[date]['s'] = np.std(log_nabs)    # keep the std
-            self.hists[date]['m'] = np.mean(log_nabs)   # keep the mean
+            self.hists[date]["bins"] = self.bins  # Copy here for convenience
+            self.hists[date]["n"] = np.histogram(log_nabs, bins=self.edges)[0] * scale  # Actually count the people
+            self.hists[date]["s"] = np.std(log_nabs)    # keep the std
+            self.hists[date]["m"] = np.mean(log_nabs)   # keep the mean
 
 
     def plot(self, fig_args=None, axis_args=None, plot_args=None, do_show=None, **kwargs):
-        '''
-        Plot the results
+        """Plot the results
 
         Args:
             fig_args  (dict): passed to pl.figure()
@@ -970,8 +961,8 @@ class nab_histogram(Analyzer):
             plot_args (dict): passed to pl.plot()
             do_show   (bool): whether to show the plot
             kwargs    (dict): passed to ``cv.options.with_style()``
-        '''
 
+        """
         fig_args  = sc.mergedicts(dict(figsize=(9,5)), fig_args)
         axis_args = sc.mergedicts(dict(left=0.10, right=0.95, bottom=0.10, top=0.95, wspace=0.25, hspace=0.4), axis_args)
         plot_args = sc.mergedicts(dict(lw=2), plot_args)
@@ -980,17 +971,16 @@ class nab_histogram(Analyzer):
             fig, axs = pl.subplots(nrows=1, ncols=1, **fig_args)
             pl.subplots_adjust(**axis_args)
             for date, hist in self.hists.items():
-                axs.stairs(hist['n'], edges=self.edges, label=date, **plot_args)
-            axs.set_xlabel('Log10(NAb)')
-            axs.set_ylabel('Count')
+                axs.stairs(hist["n"], edges=self.edges, label=date, **plot_args)
+            axs.set_xlabel("Log10(NAb)")
+            axs.set_ylabel("Count")
             axs.legend()
 
         return cvpl.handle_show_return(fig=fig, do_show=do_show)
 
 
 class Fit(Analyzer):
-    '''
-    A class for calculating the fit between the model and the data. Note the
+    """A class for calculating the fit between the model and the data. Note the
     following terminology is used here:
 
         - fit: nonspecific term for how well the model matches the data
@@ -1017,7 +1007,8 @@ class Fit(Analyzer):
         sim.run()
         fit = sim.compute_fit()
         fit.plot()
-    '''
+
+    """
 
     def __init__(self, sim, weights=None, keys=None, custom=None, compute=True, verbose=False, die=True, label=None, **kwargs):
         super().__init__(label=label) # Initialize the Analyzer object
@@ -1026,28 +1017,27 @@ class Fit(Analyzer):
         self.weights    = weights
         self.custom     = sc.mergedicts(custom)
         self.verbose    = verbose
-        self.weights    = sc.mergedicts({'cum_deaths':10, 'cum_diagnoses':5}, weights)
+        self.weights    = sc.mergedicts({"cum_deaths":10, "cum_diagnoses":5}, weights)
         self.keys       = keys
         self.gof_kwargs = kwargs
         self.die        = die
 
         # Copy data
         if sim.data is None: # pragma: no cover
-            errormsg = 'Model fit cannot be calculated until data are loaded'
+            errormsg = "Model fit cannot be calculated until data are loaded"
             if self.die:
                 raise RuntimeError(errormsg)
-            else:
-                cvm.warn(errormsg)
-                sim.data = pd.DataFrame() # Use an empty dataframe
+            cvm.warn(errormsg)
+            sim.data = pd.DataFrame() # Use an empty dataframe
         self.data = sim.data
 
         # Copy sim results
         if not sim.results_ready: # pragma: no cover
-            errormsg = 'Model fit cannot be calculated until results are run'
+            errormsg = "Model fit cannot be calculated until results are run"
             if self.die: raise RuntimeError(errormsg)
-            else:        cvm.warn(errormsg)
+            cvm.warn(errormsg)
         self.sim_results = sc.objdict()
-        for key in sim.result_keys() + ['t', 'date']:
+        for key in sim.result_keys() + ["t", "date"]:
             self.sim_results[key] = sim.results[key]
         self.sim_npts = sim.npts # Number of time points in the sim
 
@@ -1073,7 +1063,7 @@ class Fit(Analyzer):
 
 
     def compute(self):
-        ''' Perform all required computations '''
+        """Perform all required computations"""
         self.reconcile_inputs() # Find matching values
         self.compute_diffs() # Perform calculations
         self.compute_gofs()
@@ -1083,23 +1073,22 @@ class Fit(Analyzer):
 
 
     def reconcile_inputs(self):
-        ''' Find matching keys and indices between the model and the data '''
-
+        """Find matching keys and indices between the model and the data"""
         data_cols = self.data.columns
         if self.keys is None:
-            sim_keys = [k for k in self.sim_results.keys() if k.startswith('cum_')] # Default sim keys, only keep cumulative keys if no keys are supplied
+            sim_keys = [k for k in self.sim_results.keys() if k.startswith("cum_")] # Default sim keys, only keep cumulative keys if no keys are supplied
             intersection = list(set(sim_keys).intersection(data_cols)) # Find keys in both the sim and data
             self.keys = [key for key in sim_keys if key in intersection] # Maintain key order
             if not len(self.keys): # pragma: no cover
-                errormsg = f'No matches found between simulation result keys:\n{sc.strjoin(sim_keys)}\n\nand data columns:\n{sc.strjoin(data_cols)}'
+                errormsg = f"No matches found between simulation result keys:\n{sc.strjoin(sim_keys)}\n\nand data columns:\n{sc.strjoin(data_cols)}"
                 if self.die: raise sc.KeyNotFoundError(errormsg)
-                else:        cvm.warn(errormsg)
+                cvm.warn(errormsg)
         mismatches = [key for key in self.keys if key not in data_cols]
         if len(mismatches): # pragma: no cover
-            mismatchstr = ', '.join(mismatches)
-            errormsg = f'The following requested key(s) were not found in the data: {mismatchstr}'
+            mismatchstr = ", ".join(mismatches)
+            errormsg = f"The following requested key(s) were not found in the data: {mismatchstr}"
             if self.die: raise sc.KeyNotFoundError(errormsg)
-            else:        cvm.warn(errormsg)
+            cvm.warn(errormsg)
 
         for key in self.keys: # For keys present in both the results and in the data
             self.inds.sim[key]  = []
@@ -1138,15 +1127,15 @@ class Fit(Analyzer):
             # Initialize and do error checking
             custom = self.custom[key]
             c_keys = list(custom.keys())
-            if 'sim' not in c_keys or 'data' not in c_keys:
+            if "sim" not in c_keys or "data" not in c_keys:
                 errormsg = f'Custom input must have "sim" and "data" keys, not {c_keys}'
                 raise sc.KeyNotFoundError(errormsg)
-            c_data = custom['data']
-            c_sim  = custom['sim']
+            c_data = custom["data"]
+            c_sim  = custom["sim"]
             try:
                 assert len(c_data) == len(c_sim)
             except: # pragma: no cover
-                errormsg = f'Custom data and sim must be arrays, and be of the same length: data = {c_data}, sim = {c_sim} could not be processed'
+                errormsg = f"Custom data and sim must be arrays, and be of the same length: data = {c_data}, sim = {c_sim} could not be processed"
                 raise ValueError(errormsg)
             if key in self.pair: # pragma: no cover
                 errormsg = f'You cannot use a custom key "{key}" that matches one of the existing keys: {self.pair.keys()}'
@@ -1158,20 +1147,20 @@ class Fit(Analyzer):
             self.pair[key].data = c_data
 
             # Process weight, if available
-            wt = custom.get('weight', 1.0) # Attempt to retrieve key 'weight', or use the default if not provided
-            wt = custom.get('weights', wt) # ...but also try "weights"
+            wt = custom.get("weight", 1.0) # Attempt to retrieve key 'weight', or use the default if not provided
+            wt = custom.get("weights", wt) # ...but also try "weights"
             self.weights[key] = wt # Set the weight
 
         if matches == 0:
-            errormsg = 'No paired data points were found between the supplied data and the simulation; please check the dates for each'
+            errormsg = "No paired data points were found between the supplied data and the simulation; please check the dates for each"
             if self.die: raise ValueError(errormsg)
-            else:        cvm.warn(errormsg)
+            cvm.warn(errormsg)
 
         return
 
 
     def compute_diffs(self, absolute=False):
-        ''' Find the differences between the sim and the data '''
+        """Find the differences between the sim and the data"""
         for key in self.pair.keys():
             self.diffs[key] = self.pair[key].sim - self.pair[key].data
             if absolute:
@@ -1180,7 +1169,7 @@ class Fit(Analyzer):
 
 
     def compute_gofs(self, **kwargs):
-        ''' Compute the goodness-of-fit '''
+        """Compute the goodness-of-fit"""
         kwargs = sc.mergedicts(self.gof_kwargs, kwargs)
         for key in self.pair.keys():
             actual    = sc.dcp(self.pair[key].data)
@@ -1190,7 +1179,7 @@ class Fit(Analyzer):
 
 
     def compute_losses(self):
-        ''' Compute the weighted goodness-of-fit '''
+        """Compute the weighted goodness-of-fit"""
         for key in self.gofs.keys():
             if key in self.weights:
                 weight = self.weights[key]
@@ -1203,7 +1192,7 @@ class Fit(Analyzer):
                     elif len_wt == len_sim: # Most typical case: it's the length of the simulation, must trim
                         weight = weight[self.inds.sim[key]] # Trim to matching indices
                     else: # pragma: no cover
-                        errormsg = f'Could not map weight array of length {len_wt} onto simulation of length {len_sim} or data-model matches of length {len_match}'
+                        errormsg = f"Could not map weight array of length {len_wt} onto simulation of length {len_sim} or data-model matches of length {len_match}"
                         raise ValueError(errormsg)
             else:
                 weight = 1.0
@@ -1212,7 +1201,7 @@ class Fit(Analyzer):
 
 
     def compute_mismatch(self, use_median=False):
-        ''' Compute the final mismatch '''
+        """Compute the final mismatch"""
         for key in self.losses.keys():
             if use_median:
                 self.mismatches[key] = np.median(self.losses[key])
@@ -1224,8 +1213,7 @@ class Fit(Analyzer):
 
     def plot(self, keys=None, width=0.8, fig_args=None, axis_args=None, plot_args=None,
              date_args=None, do_show=None, fig=None, **kwargs):
-        '''
-        Plot the fit of the model to the data. For each result, plot the data
+        """Plot the fit of the model to the data. For each result, plot the data
         and the model; the difference; and the loss (weighted difference). Also
         plots the loss as a function of time.
 
@@ -1242,11 +1230,11 @@ class Fit(Analyzer):
 
         Returns:
             Figure object
-        '''
 
+        """
         fig_args  = sc.mergedicts(dict(figsize=(18,11)), fig_args)
         axis_args = sc.mergedicts(dict(left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.3, hspace=0.3), axis_args)
-        plot_args = sc.mergedicts(dict(lw=2, alpha=0.5, marker='o'), plot_args)
+        plot_args = sc.mergedicts(dict(lw=2, alpha=0.5, marker="o"), plot_args)
         date_args = sc.mergedicts(sc.objdict(as_dates=True, dateformat=None, rotation=None, start=None, end=None), date_args)
 
         if keys is None:
@@ -1270,10 +1258,10 @@ class Fit(Analyzer):
             for k,key in enumerate(keys):
                 if key in self.keys: # It's a time series, plot with days and dates
                     days      = self.inds.sim[key] # The "days" axis (or not, for custom keys)
-                    daylabel  = 'Date'
+                    daylabel  = "Date"
                 else: #It's custom, we don't know what it is
                     days      = np.arange(len(self.losses[key])) # Just use indices
-                    daylabel  = 'Index'
+                    daylabel  = "Index"
 
                 # Cumulative totals can't mix daily and non-daily inputs, so skip custom keys
                 if key in self.keys:
@@ -1281,15 +1269,15 @@ class Fit(Analyzer):
 
                         if i == 0:
                             data = self.losses[key]
-                            ylabel = 'Daily mismatch'
-                            title = 'Daily total mismatch'
+                            ylabel = "Daily mismatch"
+                            title = "Daily total mismatch"
                         else:
                             data = np.cumsum(self.losses[key])
-                            ylabel = 'Cumulative mismatch'
-                            title = f'Cumulative mismatch: {self.mismatch:0.3f}'
+                            ylabel = "Cumulative mismatch"
+                            title = f"Cumulative mismatch: {self.mismatch:0.3f}"
 
-                        dates = self.sim_results['date'][days] # Show these with dates, rather than days, as a reference point
-                        ax.bar(dates, data, width=width, bottom=bottom[i][self.inds.sim[key]], color=colors[k], label=f'{key}')
+                        dates = self.sim_results["date"][days] # Show these with dates, rather than days, as a reference point
+                        ax.bar(dates, data, width=width, bottom=bottom[i][self.inds.sim[key]], color=colors[k], label=f"{key}")
 
                         if i == 0:
                             bottom.daily[self.inds.sim[key]] += self.losses[key]
@@ -1297,53 +1285,52 @@ class Fit(Analyzer):
                             bottom.cumul = np.cumsum(bottom.daily)
 
                         if k == len(self.keys)-1:
-                            ax.set_xlabel('Date')
+                            ax.set_xlabel("Date")
                             ax.set_ylabel(ylabel)
                             ax.set_title(title)
-                            cvpl.reset_ticks(ax=ax, date_args=date_args, start_day=self.sim_results['date'][0])
+                            cvpl.reset_ticks(ax=ax, date_args=date_args, start_day=self.sim_results["date"][0])
                             ax.legend()
 
                 ts_ax = pl.subplot(n_rows, n_keys, k+1*n_keys+1)
-                ts_ax.plot(days, self.pair[key].data, c='k', label='Data', **plot_args)
-                ts_ax.plot(days, self.pair[key].sim, c=colors[k], label='Simulation', **plot_args)
+                ts_ax.plot(days, self.pair[key].data, c="k", label="Data", **plot_args)
+                ts_ax.plot(days, self.pair[key].sim, c=colors[k], label="Simulation", **plot_args)
                 ts_ax.set_title(key)
                 if k == 0:
-                    ts_ax.set_ylabel('Time series (counts)')
+                    ts_ax.set_ylabel("Time series (counts)")
                     ts_ax.legend()
 
                 diff_ax = pl.subplot(n_rows, n_keys, k+2*n_keys+1)
-                diff_ax.bar(days, self.diffs[key], width=width, color=colors[k], label='Difference')
-                diff_ax.axhline(0, c='k')
+                diff_ax.bar(days, self.diffs[key], width=width, color=colors[k], label="Difference")
+                diff_ax.axhline(0, c="k")
                 if k == 0:
-                    diff_ax.set_ylabel('Differences (counts)')
+                    diff_ax.set_ylabel("Differences (counts)")
                     diff_ax.legend()
 
                 loss_ax = pl.subplot(n_rows, n_keys, k+3*n_keys+1, sharey=loss_ax)
-                loss_ax.bar(days, self.losses[key], width=width, color=colors[k], label='Losses')
+                loss_ax.bar(days, self.losses[key], width=width, color=colors[k], label="Losses")
                 loss_ax.set_xlabel(daylabel)
-                loss_ax.set_title(f'Total loss: {self.losses[key].sum():0.3f}')
+                loss_ax.set_title(f"Total loss: {self.losses[key].sum():0.3f}")
                 if k == 0:
-                    loss_ax.set_ylabel('Losses')
+                    loss_ax.set_ylabel("Losses")
                     loss_ax.legend()
 
-                if daylabel == 'Date':
+                if daylabel == "Date":
                     for ax in [ts_ax, diff_ax, loss_ax]:
-                        cvpl.reset_ticks(ax=ax, date_args=date_args, start_day=self.sim_results['date'][0])
+                        cvpl.reset_ticks(ax=ax, date_args=date_args, start_day=self.sim_results["date"][0])
 
         return cvpl.handle_show_return(fig=fig, do_show=do_show)
 
 def import_optuna():
-    ''' A helper function to import Optuna, which is an optional dependency '''
+    """A helper function to import Optuna, which is an optional dependency"""
     try:
-        import optuna as op # Import here since it's slow
+        import optuna as op  # Import here since it's slow
     except ModuleNotFoundError as E: # pragma: no cover
-        errormsg = f'Optuna import failed ({str(E)}), please install first (pip install optuna)'
+        errormsg = f"Optuna import failed ({str(E)}), please install first (pip install optuna)"
         raise ModuleNotFoundError(errormsg)
     return op
 
 class Calibration(Analyzer):
-    '''
-    A class to handle calibration of Covasim simulations. Uses the Optuna hyperparameter
+    """A class to handle calibration of Covasim simulations. Uses the Optuna hyperparameter
     optimization library (optuna.org), which must be installed separately (via
     pip install optuna).
 
@@ -1382,22 +1369,23 @@ class Calibration(Analyzer):
         calib.plot()
 
     New in version 3.0.3.
-    '''
+
+    """
 
     def __init__(self, sim, calib_pars=None, fit_args=None, custom_fn=None, par_samplers=None,
                  n_trials=None, n_workers=None, total_trials=None, name=None, db_name=None,
                  keep_db=None, storage=None, label=None, die=False, verbose=True):
         super().__init__(label=label) # Initialize the Analyzer object
 
-        import multiprocessing as mp # Import here since it's also slow
+        import multiprocessing as mp  # Import here since it's also slow
 
         # Handle run arguments
         if n_trials  is None: n_trials  = 20
         if n_workers is None: n_workers = mp.cpu_count()
-        if name      is None: name      = 'covasim_calibration'
-        if db_name   is None: db_name   = f'{name}.db'
+        if name      is None: name      = "covasim_calibration"
+        if db_name   is None: db_name   = f"{name}.db"
         if keep_db   is None: keep_db   = False
-        if storage   is None: storage   = f'sqlite:///{db_name}'
+        if storage   is None: storage   = f"sqlite:///{db_name}"
         if total_trials is not None: n_trials = total_trials/n_workers
         self.run_args   = sc.objdict(n_trials=int(n_trials), n_workers=int(n_workers), name=name, db_name=db_name, keep_db=keep_db, storage=storage)
 
@@ -1413,7 +1401,7 @@ class Calibration(Analyzer):
 
         # Handle if the sim has already been run
         if self.sim.complete:
-            warnmsg = 'Sim has already been run; re-initializing, but in future, use a sim that has not been run'
+            warnmsg = "Sim has already been run; re-initializing, but in future, use a sim that has not been run"
             cvm.warn(warnmsg)
             self.sim = self.sim.copy()
             self.sim.initialize()
@@ -1422,7 +1410,7 @@ class Calibration(Analyzer):
 
 
     def run_sim(self, calib_pars, label=None, return_sim=False):
-        ''' Create and run a simulation '''
+        """Create and run a simulation"""
         sim = self.sim.copy()
         if label: sim.label = label
         valid_pars = {k:v for k,v in calib_pars.items() if k in sim.pars}
@@ -1432,34 +1420,32 @@ class Calibration(Analyzer):
         else:
             if len(valid_pars) != len(calib_pars):
                 extra = set(calib_pars.keys()) - set(valid_pars.keys())
-                errormsg = f'The following parameters are not part of the sim, nor is a custom function specified to use them: {sc.strjoin(extra)}'
+                errormsg = f"The following parameters are not part of the sim, nor is a custom function specified to use them: {sc.strjoin(extra)}"
                 raise ValueError(errormsg)
         try:
             sim.run()
             sim.compute_fit(**self.fit_args)
             if return_sim:
                 return sim
-            else:
-                return sim.fit.mismatch
+            return sim.fit.mismatch
         except Exception as E:
             if self.die:
                 raise E
-            else:
-                warnmsg = f'Encountered error running sim!\nParameters:\n{valid_pars}\nTraceback:\n{sc.traceback()}'
-                cvm.warn(warnmsg)
-                output = None if return_sim else np.inf
-                return output
+            warnmsg = f"Encountered error running sim!\nParameters:\n{valid_pars}\nTraceback:\n{sc.traceback()}"
+            cvm.warn(warnmsg)
+            output = None if return_sim else np.inf
+            return output
 
 
     def run_trial(self, trial):
-        ''' Define the objective for Optuna '''
+        """Define the objective for Optuna"""
         pars = {}
         for key, (best,low,high) in self.calib_pars.items():
             if key in self.par_samplers: # If a custom sampler is used, get it now
                 try:
                     sampler_fn = getattr(trial, self.par_samplers[key])
                 except Exception as E:
-                    errormsg = 'The requested sampler function is not found: ensure it is a valid attribute of an Optuna Trial object'
+                    errormsg = "The requested sampler function is not found: ensure it is a valid attribute of an Optuna Trial object"
                     raise AttributeError(errormsg) from E
             else:
                 sampler_fn = trial.suggest_uniform
@@ -1469,7 +1455,7 @@ class Calibration(Analyzer):
 
 
     def worker(self):
-        ''' Run a single worker '''
+        """Run a single worker"""
         op = import_optuna()
         if self.verbose:
             op.logging.set_verbosity(op.logging.DEBUG)
@@ -1481,7 +1467,7 @@ class Calibration(Analyzer):
 
 
     def run_workers(self):
-        ''' Run multiple workers in parallel '''
+        """Run multiple workers in parallel"""
         if self.run_args.n_workers > 1: # Normal use case: run in parallel
             output = sc.parallelize(self.worker, iterarg=self.run_args.n_workers)
         else: # Special case: just run one
@@ -1490,21 +1476,20 @@ class Calibration(Analyzer):
 
 
     def remove_db(self):
-        '''
-        Remove the database file if keep_db is false and the path exists.
+        """Remove the database file if keep_db is false and the path exists.
 
         New in version 3.1.0.
-        '''
+        """
         path = self.run_args.db_name
         if os.path.exists(path):
             os.remove(path)
             if self.verbose:
-                print(f'Removed existing calibration: {path}')
+                print(f"Removed existing calibration: {path}")
         return
 
 
     def make_study(self):
-        ''' Make a study, deleting one if it already exists '''
+        """Make a study, deleting one if it already exists"""
         op = import_optuna()
         if not self.run_args.keep_db:
             self.remove_db()
@@ -1513,21 +1498,21 @@ class Calibration(Analyzer):
 
 
     def calibrate(self, calib_pars=None, verbose=True, **kwargs):
-        '''
-        Actually perform calibration.
+        """Actually perform calibration.
 
         Args:
             calib_pars (dict): if supplied, overwrite stored calib_pars
             verbose (bool): whether to print output from each trial
             kwargs (dict): if supplied, overwrite stored run_args (n_trials, n_workers, etc.)
-        '''
+
+        """
         op = import_optuna()
 
         # Load and validate calibration parameters
         if calib_pars is not None:
             self.calib_pars = calib_pars
         if self.calib_pars is None:
-            errormsg = 'You must supply calibration parameters either when creating the calibration object or when calling calibrate().'
+            errormsg = "You must supply calibration parameters either when creating the calibration object or when calling calibrate()."
             raise ValueError(errormsg)
         self.run_args.update(kwargs) # Update optuna settings
 
@@ -1542,8 +1527,8 @@ class Calibration(Analyzer):
         # Compare the results
         self.initial_pars = sc.objdict({k:v[0] for k,v in self.calib_pars.items()})
         self.par_bounds   = sc.objdict({k:np.array([v[1], v[2]]) for k,v in self.calib_pars.items()})
-        self.before = self.run_sim(calib_pars=self.initial_pars, label='Before calibration', return_sim=True)
-        self.after  = self.run_sim(calib_pars=self.best_pars,    label='After calibration',  return_sim=True)
+        self.before = self.run_sim(calib_pars=self.initial_pars, label="Before calibration", return_sim=True)
+        self.after  = self.run_sim(calib_pars=self.best_pars,    label="After calibration",  return_sim=True)
         self.parse_study()
 
         # Tidy up
@@ -1557,48 +1542,47 @@ class Calibration(Analyzer):
 
 
     def summarize(self):
-        ''' Print out results from the calibration '''
+        """Print out results from the calibration"""
         if self.calibrated:
-            print(f'Calibration for {self.run_args.n_workers*self.run_args.n_trials} total trials completed in {self.elapsed:0.1f} s.')
+            print(f"Calibration for {self.run_args.n_workers*self.run_args.n_trials} total trials completed in {self.elapsed:0.1f} s.")
             before = self.before.fit.mismatch
             after = self.after.fit.mismatch
-            print('\nInitial parameter values:')
+            print("\nInitial parameter values:")
             print(self.initial_pars)
-            print('\nBest parameter values:')
+            print("\nBest parameter values:")
             print(self.best_pars)
-            print(f'\nMismatch before calibration: {before:n}')
-            print(f'Mismatch after calibration:  {after:n}')
-            print(f'Percent improvement:         {((before-after)/before)*100:0.1f}%')
+            print(f"\nMismatch before calibration: {before:n}")
+            print(f"Mismatch after calibration:  {after:n}")
+            print(f"Percent improvement:         {((before-after)/before)*100:0.1f}%")
             return before, after
-        else:
-            print('Calibration not yet run; please run calib.calibrate()')
-            return
+        print("Calibration not yet run; please run calib.calibrate()")
+        return None
 
 
     def parse_study(self):
-        '''Parse the study into a data frame -- called automatically '''
+        """Parse the study into a data frame -- called automatically"""
         best = self.best_pars
 
-        print('Making results structure...')
+        print("Making results structure...")
         results = []
         n_trials = len(self.study.trials)
         failed_trials = []
         for trial in self.study.trials:
-            data = {'index':trial.number, 'mismatch': trial.value}
+            data = {"index":trial.number, "mismatch": trial.value}
             for key,val in trial.params.items():
                 data[key] = val
-            if data['mismatch'] is None:
-                failed_trials.append(data['index'])
+            if data["mismatch"] is None:
+                failed_trials.append(data["index"])
             else:
                 results.append(data)
-        print(f'Processed {n_trials} trials; {len(failed_trials)} failed')
+        print(f"Processed {n_trials} trials; {len(failed_trials)} failed")
 
-        keys = ['index', 'mismatch'] + list(best.keys())
+        keys = ["index", "mismatch"] + list(best.keys())
         data = sc.objdict().make(keys=keys, vals=[])
         for i,r in enumerate(results):
             for key in keys:
                 if key not in r:
-                    warnmsg = f'Key {key} is missing from trial {i}, replacing with default'
+                    warnmsg = f"Key {key} is missing from trial {i}, replacing with default"
                     cvm.warn(warnmsg)
                     r[key] = best[key]
                 data[key].append(r[key])
@@ -1609,18 +1593,17 @@ class Calibration(Analyzer):
 
 
     def to_json(self, filename=None):
-        '''
-        Convert the data to JSON.
+        """Convert the data to JSON.
 
         New in version 3.1.1.
-        '''
-        order = np.argsort(self.df['mismatch'])
+        """
+        order = np.argsort(self.df["mismatch"])
         json = []
         for o in order:
             row = self.df.iloc[o,:].to_dict()
-            rowdict = dict(index=row.pop('index'), mismatch=row.pop('mismatch'), pars={})
+            rowdict = dict(index=row.pop("index"), mismatch=row.pop("mismatch"), pars={})
             for key,val in row.items():
-                rowdict['pars'][key] = val
+                rowdict["pars"][key] = val
             json.append(rowdict)
         if filename:
             sc.savejson(filename, json, indent=2)
@@ -1629,23 +1612,21 @@ class Calibration(Analyzer):
 
 
     def plot_sims(self, **kwargs):
-        '''
-        Plot sims, before and after calibration.
+        """Plot sims, before and after calibration.
 
         New in version 3.1.1: renamed from plot() to plot_sims().
-        '''
+        """
         msim = cvr.MultiSim([self.before, self.after])
         fig = msim.plot(**kwargs)
         return cvpl.handle_show_return(fig=fig)
 
 
     def plot_trend(self, best_thresh=2):
-        '''
-        Plot the trend in best mismatch over time.
+        """Plot the trend in best mismatch over time.
 
         New in version 3.1.1.
-        '''
-        mismatch = sc.dcp(self.df['mismatch'].values)
+        """
+        mismatch = sc.dcp(self.df["mismatch"].values)
         best_mismatch = np.zeros(len(mismatch))
         for i in range(len(mismatch)):
             best_mismatch[i] = mismatch[:i+1].min()
@@ -1653,60 +1634,58 @@ class Calibration(Analyzer):
         fig = pl.figure(figsize=(16,12), dpi=120)
 
         ax1 = pl.subplot(2,1,1)
-        pl.plot(mismatch, alpha=0.2, label='Original')
-        pl.plot(smoothed_mismatch, lw=3, label='Smoothed')
-        pl.plot(best_mismatch, lw=3, label='Best')
+        pl.plot(mismatch, alpha=0.2, label="Original")
+        pl.plot(smoothed_mismatch, lw=3, label="Smoothed")
+        pl.plot(best_mismatch, lw=3, label="Best")
 
         ax2 = pl.subplot(2,1,2)
         max_mismatch = mismatch.min()*best_thresh
         inds = sc.findinds(mismatch<=max_mismatch)
-        pl.plot(best_mismatch, lw=3, label='Best')
-        pl.scatter(inds, mismatch[inds], c=mismatch[inds], label='Usable indices')
+        pl.plot(best_mismatch, lw=3, label="Best")
+        pl.scatter(inds, mismatch[inds], c=mismatch[inds], label="Usable indices")
         for ax in [ax1, ax2]:
             pl.sca(ax)
             pl.grid(True)
             pl.legend()
             sc.setylim()
             sc.setxlim()
-            pl.xlabel('Trial number')
-            pl.ylabel('Mismatch')
+            pl.xlabel("Trial number")
+            pl.ylabel("Mismatch")
         return cvpl.handle_show_return(fig=fig)
 
 
     def plot_all(self): # pragma: no cover
-        '''
-        Plot every point in the calibration. Warning, very slow for more than a few hundred trials.
+        """Plot every point in the calibration. Warning, very slow for more than a few hundred trials.
 
         New in version 3.1.1.
-        '''
-        g = pairplotpars(self.data, color_column='mismatch', bounds=self.par_bounds)
+        """
+        g = pairplotpars(self.data, color_column="mismatch", bounds=self.par_bounds)
         return g
 
 
     def plot_best(self, best_thresh=2): # pragma: no cover
-        ''' Plot only the points with lowest mismatch. New in version 3.1.1. '''
-        max_mismatch = self.df['mismatch'].min()*best_thresh
-        inds = sc.findinds(self.df['mismatch'].values <= max_mismatch)
-        g = pairplotpars(self.data, inds=inds, color_column='mismatch', bounds=self.par_bounds)
+        """Plot only the points with lowest mismatch. New in version 3.1.1."""
+        max_mismatch = self.df["mismatch"].min()*best_thresh
+        inds = sc.findinds(self.df["mismatch"].values <= max_mismatch)
+        g = pairplotpars(self.data, inds=inds, color_column="mismatch", bounds=self.par_bounds)
         return g
 
 
     def plot_stride(self, npts=200): # pragma: no cover
-        '''
-        Plot a fixed number of points in order across the results.
+        """Plot a fixed number of points in order across the results.
 
         New in version 3.1.1.
-        '''
+        """
         npts = min(len(self.df), npts)
         inds = np.linspace(0, len(self.df)-1, npts).round()
-        g = pairplotpars(self.data, inds=inds, color_column='mismatch', bounds=self.par_bounds)
+        g = pairplotpars(self.data, inds=inds, color_column="mismatch", bounds=self.par_bounds)
         return g
 
 
-def pairplotpars(data, inds=None, color_column=None, bounds=None, cmap='parula', bins=None, edgecolor='w', facecolor='#F8A493', figsize=(20,16)): # pragma: no cover
-    ''' Plot scatterplots, histograms, and kernel densities for calibration results '''
+def pairplotpars(data, inds=None, color_column=None, bounds=None, cmap="parula", bins=None, edgecolor="w", facecolor="#F8A493", figsize=(20,16)): # pragma: no cover
+    """Plot scatterplots, histograms, and kernel densities for calibration results"""
     try:
-        import seaborn as sns # Optional import
+        import seaborn as sns  # Optional import
     except ModuleNotFoundError as E:
         errormsg = 'Calibration plotting requires Seaborn; please install with "pip install seaborn"'
         raise ModuleNotFoundError(errormsg) from E
@@ -1723,11 +1702,11 @@ def pairplotpars(data, inds=None, color_column=None, bounds=None, cmap='parula',
         colors = sc.vectocolor(df[color_column].values, cmap=cmap)
     else:
         colors = [facecolor for i in range(len(df))]
-    df['color_column'] = [sc.rgb2hex(rgba[:-1]) for rgba in colors]
+    df["color_column"] = [sc.rgb2hex(rgba[:-1]) for rgba in colors]
 
     # Make the plot
     grid = sns.PairGrid(df)
-    grid = grid.map_lower(pl.scatter, **{'facecolors':df['color_column']})
+    grid = grid.map_lower(pl.scatter, **{"facecolors":df["color_column"]})
     grid = grid.map_diag(pl.hist, bins=bins, edgecolor=edgecolor, facecolor=facecolor)
     grid = grid.map_upper(sns.kdeplot)
     grid.fig.set_size_inches(figsize)
@@ -1748,8 +1727,7 @@ def pairplotpars(data, inds=None, color_column=None, bounds=None, cmap='parula',
 
 
 class TransTree(Analyzer):
-    '''
-    A class for holding a transmission tree. There are several different representations
+    """A class for holding a transmission tree. There are several different representations
     of the transmission tree: "infection_log" is copied from the people object and is the
     simplest representation. "detailed h" includes additional attributes about the source
     and target. If NetworkX is installed (required for most methods), "graph" includes an
@@ -1769,28 +1747,29 @@ class TransTree(Analyzer):
 
     New in version 2.1.0: ``tt.detailed`` is a dataframe rather than a list of dictionaries;
     for the latter, use ``tt.detailed.to_dict('records')``.
-    '''
+
+    """
 
     def __init__(self, sim, to_networkx=False, **kwargs):
         super().__init__(**kwargs) # Initialize the Analyzer object
 
         # Pull out each of the attributes relevant to transmission
-        attrs = {'age', 'date_exposed', 'date_symptomatic', 'date_tested', 'date_diagnosed', 'date_quarantined', 'date_severe', 'date_critical', 'date_known_contact', 'date_recovered'}
+        attrs = {"age", "date_exposed", "date_symptomatic", "date_tested", "date_diagnosed", "date_quarantined", "date_severe", "date_critical", "date_known_contact", "date_recovered"}
 
         # Pull out the people and some of the sim results
         people = sim.people
-        self.sim_start = sim['start_day'] # Used for filtering later
+        self.sim_start = sim["start_day"] # Used for filtering later
         self.sim_results = {}
-        self.sim_results['t'] = sim.results['t']
-        self.sim_results['cum_infections'] = sim.results['cum_infections'].values
+        self.sim_results["t"] = sim.results["t"]
+        self.sim_results["cum_infections"] = sim.results["cum_infections"].values
         self.n_days = people.t  # people.t should be set to the last simulation timestep in the output (since the Transtree is constructed after the people have been stepped forward in time)
         self.pop_size = len(people)
 
         # Check that rescaling is not on
-        if sim['rescale'] and sim['pop_scale']>1:
-            warningmsg = 'Warning: transmission tree results are unreliable when' \
-                         'dynamic rescaling is on, since agents are reused! Please '\
-                         'rerun with rescale=False and pop_scale=1 for reliable results.'
+        if sim["rescale"] and sim["pop_scale"]>1:
+            warningmsg = "Warning: transmission tree results are unreliable when" \
+                         "dynamic rescaling is on, since agents are reused! Please "\
+                         "rerun with rescale=False and pop_scale=1 for reliable results."
             cvm.warn(warningmsg)
 
         # Include the basic line list -- copying directly is slow, so we'll make a copy later
@@ -1803,9 +1782,9 @@ class TransTree(Analyzer):
         self.target_dates = [[]   for i in range(self.pop_size)]
 
         for entry in self.infection_log:
-            source = entry['source']
-            target = entry['target']
-            date   = entry['date']
+            source = entry["source"]
+            target = entry["target"]
+            date   = entry["date"]
             if source:
                 self.sources[target] = source # Each target has at most one source
                 self.targets[source].append(target) # Each source can have multiple targets
@@ -1835,17 +1814,16 @@ class TransTree(Analyzer):
 
             # Next, add edges from linelist
             for edge in people.infection_log:
-                if edge['source'] is not None: # Skip seed infections
-                    self.graph.add_edge(edge['source'],edge['target'],date=edge['date'],layer=edge['layer'])
+                if edge["source"] is not None: # Skip seed infections
+                    self.graph.add_edge(edge["source"],edge["target"],date=edge["date"],layer=edge["layer"])
 
         return
 
 
     def __len__(self):
-        '''
-        The length of the transmission tree is the length of the line list,
+        """The length of the transmission tree is the length of the line list,
         which should equal the number of infections.
-        '''
+        """
         try:
             return len(self.infection_log)
         except: # pragma: no cover
@@ -1853,19 +1831,18 @@ class TransTree(Analyzer):
 
 
     def day(self, day=None, which=None):
-        ''' Convenience function for converting an input to an integer day '''
+        """Convenience function for converting an input to an integer day"""
         if day is not None:
             day = sc.day(day, start_date=self.sim_start)
-        elif which == 'start':
+        elif which == "start":
             day = 0
-        elif which == 'end':
+        elif which == "end":
             day = self.n_days
         return day
 
 
     def count_targets(self, start_day=None, end_day=None):
-        '''
-        Count the number of targets each infected person has. If start and/or end
+        """Count the number of targets each infected person has. If start and/or end
         days are given, it will only count the targets of people who got infected
         between those dates (it does not, however, filter on the date the target
         got infected).
@@ -1873,11 +1850,11 @@ class TransTree(Analyzer):
         Args:
             start_day (int/str): the day on which to start counting people who got infected
             end_day (int/str): the day on which to stop counting people who got infected
-        '''
 
+        """
         # Handle start and end days
-        start_day = self.day(start_day, which='start')
-        end_day   = self.day(end_day,   which='end')
+        start_day = self.day(start_day, which="start")
+        end_day   = self.day(end_day,   which="end")
 
         n_targets = np.nan+np.zeros(self.pop_size)
         for i in range(self.pop_size):
@@ -1891,8 +1868,7 @@ class TransTree(Analyzer):
 
 
     def count_transmissions(self):
-        """
-        Iterable over edges corresponding to transmission events
+        """Iterable over edges corresponding to transmission events
 
         This excludes edges corresponding to seeded infections without a source
         """
@@ -1900,9 +1876,9 @@ class TransTree(Analyzer):
         target_inds = []
         transmissions = []
         for d in self.infection_log:
-            if d['source'] is not None:
-                src = d['source']
-                trg = d['target']
+            if d["source"] is not None:
+                src = d["source"]
+                trg = d["target"]
                 source_inds.append(src)
                 target_inds.append(trg)
                 transmissions.append([src, trg])
@@ -1913,10 +1889,10 @@ class TransTree(Analyzer):
 
 
     def make_detailed(self, people, reset=False):
-        ''' Construct a detailed transmission tree, with additional information for each person '''
+        """Construct a detailed transmission tree, with additional information for each person"""
 
         def df_to_arrdict(df):
-            ''' Convert a dataframe to a dictionary of arrays '''
+            """Convert a dataframe to a dictionary of arrays"""
             arrdict = {}
             for col in df.columns:
                 arrdict[col] = df[col].values
@@ -1927,12 +1903,12 @@ class TransTree(Analyzer):
 
         # Initialization
         n_people = len(people)
-        src = 'src_'
-        trg = 'trg_'
-        attrs = ['age', 'date_exposed', 'date_symptomatic', 'date_tested', 'date_diagnosed', 'date_severe', 'date_critical', 'date_known_contact']
-        quar_attrs = ['date_quarantined', 'date_end_quarantine']
-        date_attrs = [attr for attr in attrs if attr.startswith('date_')]
-        is_attrs = [attr.replace('date_', 'is_') for attr in date_attrs]
+        src = "src_"
+        trg = "trg_"
+        attrs = ["age", "date_exposed", "date_symptomatic", "date_tested", "date_diagnosed", "date_severe", "date_critical", "date_known_contact"]
+        quar_attrs = ["date_quarantined", "date_end_quarantine"]
+        date_attrs = [attr for attr in attrs if attr.startswith("date_")]
+        is_attrs = [attr.replace("date_", "is_") for attr in date_attrs]
         dd_arr = lambda: np.nan*np.zeros(n_people) # Create an empty array of the right size
         dd = sc.odict(defaultdict=dd_arr) # Data dictionary, to be converted to a dataframe later
 
@@ -1942,10 +1918,10 @@ class TransTree(Analyzer):
         date_arr = dd_arr()
 
         # Map onto arrays
-        ti = np.array(inflog['target'], dtype=np.int64) # "Target indices", short since used so much
-        src_arr[ti]  = inflog['source']
+        ti = np.array(inflog["target"], dtype=np.int64) # "Target indices", short since used so much
+        src_arr[ti]  = inflog["source"]
         trg_arr[ti]  = ti
-        date_arr[ti] = inflog['date']
+        date_arr[ti] = inflog["date"]
 
         # Further index wrangling
         vts_inds  = sc.findinds(np.isfinite(trg_arr) * np.isfinite(src_arr)) # Valid target-source indices
@@ -1955,11 +1931,11 @@ class TransTree(Analyzer):
         tinfdates = date_arr[ti] # All target infection dates
 
         # Populate main columns
-        dd['source'][vi] = vs_inds
-        dd['target'][ti] = ti
-        dd['date'][ti]   = tinfdates
-        dd['layer']      = np.array(dd['layer'], dtype=object)
-        dd['layer'][ti]  = inflog['layer']
+        dd["source"][vi] = vs_inds
+        dd["target"][ti] = ti
+        dd["date"][ti]   = tinfdates
+        dd["layer"]      = np.array(dd["layer"], dtype=object)
+        dd["layer"][ti]  = inflog["layer"]
 
         # Populate from people
         for attr in attrs+quar_attrs:
@@ -1968,40 +1944,40 @@ class TransTree(Analyzer):
 
         # Pull out valid indices for source and target
         lnot = np.logical_not # Shorten since used heavily
-        dd[src+'is_quarantined'][vi] = (dd[src+'date_quarantined'][vi] <= vinfdates) & lnot(dd[src+'date_quarantined'][vi] <= vinfdates)
+        dd[src+"is_quarantined"][vi] = (dd[src+"date_quarantined"][vi] <= vinfdates) & lnot(dd[src+"date_quarantined"][vi] <= vinfdates)
         for is_attr,date_attr in zip(is_attrs, date_attrs):
             dd[src+is_attr][vi] = np.array(dd[src+date_attr][vi] <= vinfdates, dtype=bool)
 
         # Populate remaining properties
-        dd[src+'is_asymp'][vi] = np.isnan(dd[src+'date_symptomatic'][vi])
-        dd[src+'is_presymp'][vi] = lnot(dd[src+'is_asymp'][vi]) & lnot(dd[src+'is_symptomatic'][vi])
-        dd[trg+'is_quarantined'][ti] = (dd[trg+'date_quarantined'][ti] <= tinfdates) & lnot(dd[trg+'date_end_quarantine'][ti] <= tinfdates)
+        dd[src+"is_asymp"][vi] = np.isnan(dd[src+"date_symptomatic"][vi])
+        dd[src+"is_presymp"][vi] = lnot(dd[src+"is_asymp"][vi]) & lnot(dd[src+"is_symptomatic"][vi])
+        dd[trg+"is_quarantined"][ti] = (dd[trg+"date_quarantined"][ti] <= tinfdates) & lnot(dd[trg+"date_end_quarantine"][ti] <= tinfdates)
 
         # Also re-parse the log and convert to a simpler dataframe
         targets = np.array(self.target_inds)
-        infdates = dd['date'][targets]
+        infdates = dd["date"][targets]
         dtr = {}
-        dtr['date']      = infdates
-        dtr['layer']     = dd['layer'][targets]
-        dtr['s_asymp']   = np.isnan(dd['src_date_symptomatic'][targets])
-        dtr['s_presymp'] = ~(dtr['s_asymp'][:]) & (infdates < dd['src_date_symptomatic'][targets])
-        dtr['s_sev']     = dd['src_date_severe'][targets]       < infdates
-        dtr['s_crit']    = dd['src_date_critical'][targets]     < infdates
-        dtr['s_diag']    = dd['src_date_diagnosed'][targets]    < infdates
-        dtr['s_quar']    = (dd['src_date_quarantined'][targets] < infdates) & lnot(dd['src_date_end_quarantine'][targets] <= infdates)
-        dtr['t_quar']    = (dd['trg_date_quarantined'][targets] < infdates) & lnot(dd['trg_date_end_quarantine'][targets] <= infdates)
+        dtr["date"]      = infdates
+        dtr["layer"]     = dd["layer"][targets]
+        dtr["s_asymp"]   = np.isnan(dd["src_date_symptomatic"][targets])
+        dtr["s_presymp"] = ~(dtr["s_asymp"][:]) & (infdates < dd["src_date_symptomatic"][targets])
+        dtr["s_sev"]     = dd["src_date_severe"][targets]       < infdates
+        dtr["s_crit"]    = dd["src_date_critical"][targets]     < infdates
+        dtr["s_diag"]    = dd["src_date_diagnosed"][targets]    < infdates
+        dtr["s_quar"]    = (dd["src_date_quarantined"][targets] < infdates) & lnot(dd["src_date_end_quarantine"][targets] <= infdates)
+        dtr["t_quar"]    = (dd["trg_date_quarantined"][targets] < infdates) & lnot(dd["trg_date_end_quarantine"][targets] <= infdates)
 
         df = pd.DataFrame(dtr)
-        df = df.rename(columns={'date': 'Day'}) # For use in plotting
-        df = df.loc[df['layer'] != 'seed_infection']
+        df = df.rename(columns={"date": "Day"}) # For use in plotting
+        df = df.loc[df["layer"] != "seed_infection"]
 
-        df['Stage'] = 'Symptomatic'
-        df.loc[df['s_asymp'], 'Stage'] = 'Asymptomatic'
-        df.loc[df['s_presymp'], 'Stage'] = 'Presymptomatic'
+        df["Stage"] = "Symptomatic"
+        df.loc[df["s_asymp"], "Stage"] = "Asymptomatic"
+        df.loc[df["s_presymp"], "Stage"] = "Presymptomatic"
 
-        df['Severity'] = 'Mild'
-        df.loc[df['s_sev'], 'Severity'] = 'Severe'
-        df.loc[df['s_crit'], 'Severity'] = 'Critical'
+        df["Severity"] = "Mild"
+        df.loc[df["s_sev"], "Severity"] = "Severe"
+        df.loc[df["s_crit"], "Severity"] = "Critical"
 
         # Store
         self.detailed = pd.DataFrame(dd)
@@ -2011,8 +1987,7 @@ class TransTree(Analyzer):
 
 
     def r0(self, recovered_only=False):
-        """
-        Return average number of transmissions per person
+        """Return average number of transmissions per person
 
         This doesn't include seed transmissions. By default, it also doesn't adjust
         for length of infection (e.g. people infected towards the end of the simulation
@@ -2025,28 +2000,27 @@ class TransTree(Analyzer):
         n_infected = []
         try:
             for i, node in self.graph.nodes.items():
-                if i is None or np.isnan(node['date_exposed']) or (recovered_only and node['date_recovered']>self.n_days):
+                if i is None or np.isnan(node["date_exposed"]) or (recovered_only and node["date_recovered"]>self.n_days):
                     continue
                 n_infected.append(self.graph.out_degree(i))
         except Exception as E: # pragma: no cover
-            errormsg = f'Unable to compute r0 ({str(E)}): you may need to reinitialize the transmission tree with to_networkx=True'
+            errormsg = f"Unable to compute r0 ({str(E)}): you may need to reinitialize the transmission tree with to_networkx=True"
             raise RuntimeError(errormsg)
         return np.mean(n_infected)
 
 
     def plot(self, fig_args=None, plot_args=None, do_show=None, fig=None):
-        '''
-        Plot the transmission tree.
+        """Plot the transmission tree.
 
         Args:
             fig_args  (dict):  passed to pl.figure()
             plot_args (dict):  passed to pl.plot()
             do_show   (bool):  whether to show the plot
             fig       (fig):   if supplied, use this figure
-        '''
 
+        """
         fig_args = sc.mergedicts(dict(figsize=(8, 5)), fig_args)
-        plot_args = sc.mergedicts(dict(lw=2, alpha=0.5, marker='o'), plot_args)
+        plot_args = sc.mergedicts(dict(lw=2, alpha=0.5, marker="o"), plot_args)
 
         if fig is None:
             fig = pl.figure(**fig_args)
@@ -2055,21 +2029,21 @@ class TransTree(Analyzer):
         n_cols = 3
 
         def plot_quantity(key, title, i):
-            dat = self.df.groupby(['Day', key]).size().unstack(key)
-            ax = pl.subplot(n_rows, n_cols, i);
+            dat = self.df.groupby(["Day", key]).size().unstack(key)
+            ax = pl.subplot(n_rows, n_cols, i)
             dat.plot(ax=ax, legend=None, **plot_args)
             pl.legend(title=None)
             ax.set_title(title)
             sc.datenumformatter(start_date=self.sim_start, ax=ax)
-            ax.set_ylabel('Count')
+            ax.set_ylabel("Count")
 
         to_plot = dict(
-            layer    = 'Layer',
-            Stage    = 'Source stage',
-            s_diag   = 'Source diagnosed',
-            s_quar   = 'Source quarantined',
-            t_quar   = 'Target quarantined',
-            Severity = 'Symptomatic source severity',
+            layer    = "Layer",
+            Stage    = "Source stage",
+            s_diag   = "Source diagnosed",
+            s_quar   = "Source quarantined",
+            t_quar   = "Target quarantined",
+            Severity = "Symptomatic source severity",
         )
         for i, (key, title) in enumerate(to_plot.items()):
             plot_quantity(key, title, i + 1)
@@ -2078,8 +2052,7 @@ class TransTree(Analyzer):
 
 
     def animate(self, *args, **kwargs):
-        '''
-        Animate the transmission tree.
+        """Animate the transmission tree.
 
         Args:
             animate    (bool):  whether to animate the plot (otherwise, show when finished)
@@ -2096,20 +2069,20 @@ class TransTree(Analyzer):
 
         Returns:
             fig: the figure object
-        '''
 
+        """
         # Settings
-        animate   = kwargs.get('animate', True)
-        verbose   = kwargs.get('verbose', False)
-        msize     = kwargs.get('markersize', 5)
-        sus_color = kwargs.get('sus_color', [0.5, 0.5, 0.5])
-        fig_args  = kwargs.get('fig_args', dict(figsize=(12, 8)))
-        axis_args = kwargs.get('axis_args', dict(left=0.10, bottom=0.05, right=0.85, top=0.97, wspace=0.25, hspace=0.25))
-        plot_args = kwargs.get('plot_args', dict(lw=1, alpha=0.5))
-        delay     = kwargs.get('delay', 0.2)
-        colors    = kwargs.get('colors', None)
-        cmap      = kwargs.get('cmap', 'parula')
-        fig       = kwargs.get('fig', None)
+        animate   = kwargs.get("animate", True)
+        verbose   = kwargs.get("verbose", False)
+        msize     = kwargs.get("markersize", 5)
+        sus_color = kwargs.get("sus_color", [0.5, 0.5, 0.5])
+        fig_args  = kwargs.get("fig_args", dict(figsize=(12, 8)))
+        axis_args = kwargs.get("axis_args", dict(left=0.10, bottom=0.05, right=0.85, top=0.97, wspace=0.25, hspace=0.25))
+        plot_args = kwargs.get("plot_args", dict(lw=1, alpha=0.5))
+        delay     = kwargs.get("delay", 0.2)
+        colors    = kwargs.get("colors")
+        cmap      = kwargs.get("cmap", "parula")
+        fig       = kwargs.get("fig")
         if colors is None:
             colors = sc.vectocolor(self.pop_size, cmap=cmap)
 
@@ -2121,41 +2094,41 @@ class TransTree(Analyzer):
         quars = [list() for i in range(n)]
 
         # Construct each frame of the animation
-        detailed = self.detailed.to_dict('records') # Convert to the old style
+        detailed = self.detailed.to_dict("records") # Convert to the old style
         for ddict in detailed:  # Loop over every person
-            if np.isnan(ddict['source']):
+            if np.isnan(ddict["source"]):
                 continue # Skip the 'None' node corresponding to seeded infections
 
             frame = {}
             tdq = {}  # Short for "tested, diagnosed, or quarantined"
-            target_ind = ddict['target']
+            target_ind = ddict["target"]
 
-            if np.isfinite(ddict['date']): # If this person was infected
+            if np.isfinite(ddict["date"]): # If this person was infected
 
-                source_ind = ddict['source'] # Index of the person who infected the target
+                source_ind = ddict["source"] # Index of the person who infected the target
 
-                target_date = ddict['date']
+                target_date = ddict["date"]
                 if np.isfinite(source_ind):  # Seed infections and importations won't have a source
                     source_ind = int(source_ind)
-                    source_date = detailed[source_ind]['date']
+                    source_date = detailed[source_ind]["date"]
                 else:
                     source_ind = 0
                     source_date = 0
 
                 # Construct this frame
-                frame['x'] = [source_date, target_date]
-                frame['y'] = [source_ind, target_ind]
-                frame['c'] = colors[source_ind]
-                frame['i'] = True  # If this person is infected
+                frame["x"] = [source_date, target_date]
+                frame["y"] = [source_ind, target_ind]
+                frame["c"] = colors[source_ind]
+                frame["i"] = True  # If this person is infected
                 frames[int(target_date)].append(frame)
 
                 # Handle testing, diagnosis, and quarantine
-                tdq['t'] = target_ind
-                tdq['d'] = target_date
-                tdq['c'] = colors[int(target_ind)]
-                date_t = ddict['trg_date_tested']
-                date_d = ddict['trg_date_diagnosed']
-                date_q = ddict['trg_date_known_contact']
+                tdq["t"] = target_ind
+                tdq["d"] = target_date
+                tdq["c"] = colors[int(target_ind)]
+                date_t = ddict["trg_date_tested"]
+                date_d = ddict["trg_date_diagnosed"]
+                date_q = ddict["trg_date_known_contact"]
                 if np.isfinite(date_t) and date_t < n:
                     tests[int(date_t)].append(tdq)
                 if np.isfinite(date_d) and date_d < n:
@@ -2164,10 +2137,10 @@ class TransTree(Analyzer):
                     quars[int(date_q)].append(tdq)
 
             else:
-                frame['x'] = [0]
-                frame['y'] = [target_ind]
-                frame['c'] = sus_color
-                frame['i'] = False
+                frame["x"] = [0]
+                frame["y"] = [target_ind]
+                frame["c"] = sus_color
+                frame["i"] = False
                 frames[0].append(frame)
 
         # Configure plotting
@@ -2178,45 +2151,45 @@ class TransTree(Analyzer):
 
         # Create the legend
         ax2 = pl.axes([0.85, 0.05, 0.14, 0.9])
-        ax2.axis('off')
+        ax2.axis("off")
         lcol = colors[0]
         na = np.nan  # Shorten
-        pl.plot(na, na, '-', c=lcol, **plot_args, label='Transmission')
-        pl.plot(na, na, 'o', c=lcol, markersize=msize, **plot_args, label='Source')
-        pl.plot(na, na, '*', c=lcol, markersize=msize, **plot_args, label='Target')
-        pl.plot(na, na, 'o', c=lcol, markersize=msize * 2, fillstyle='none', **plot_args, label='Tested')
-        pl.plot(na, na, 's', c=lcol, markersize=msize * 1.2, **plot_args, label='Diagnosed')
-        pl.plot(na, na, 'x', c=lcol, markersize=msize * 2.0, label='Known contact')
+        pl.plot(na, na, "-", c=lcol, **plot_args, label="Transmission")
+        pl.plot(na, na, "o", c=lcol, markersize=msize, **plot_args, label="Source")
+        pl.plot(na, na, "*", c=lcol, markersize=msize, **plot_args, label="Target")
+        pl.plot(na, na, "o", c=lcol, markersize=msize * 2, fillstyle="none", **plot_args, label="Tested")
+        pl.plot(na, na, "s", c=lcol, markersize=msize * 1.2, **plot_args, label="Diagnosed")
+        pl.plot(na, na, "x", c=lcol, markersize=msize * 2.0, label="Known contact")
         pl.legend()
 
         # Plot the animation
         pl.sca(ax)
         for day in range(n):
-            pl.title(f'Day: {day}')
+            pl.title(f"Day: {day}")
             pl.xlim([0, n])
             pl.ylim([0, self.pop_size])
-            pl.xlabel('Day')
-            pl.ylabel('Person')
+            pl.xlabel("Day")
+            pl.ylabel("Person")
             flist = frames[day]
             tlist = tests[day]
             dlist = diags[day]
             qlist = quars[day]
-            t_d = tdq['d']
-            t_t = tdq['t']
-            t_c = tdq['c']
+            t_d = tdq["d"]
+            t_t = tdq["t"]
+            t_c = tdq["c"]
             for f in flist:
                 if verbose: print(f)
-                x = f['x']
-                y = f['y']
-                c = f['c']
-                pl.plot(x[0], y[0], 'o', c=c, markersize=msize, **plot_args)  # Plot sources
-                pl.plot(x, y, '-', c=c, **plot_args)  # Plot transmission lines
-                if f['i']:  # If this person is infected
-                    pl.plot(x[1], y[1], '*', c=c, markersize=msize, **plot_args)  # Plot targets
-            for tdq in tlist: pl.plot(t_d, t_t, 'o', c=t_c, markersize=msize * 2, fillstyle='none')  # Tested; No alpha for this
-            for tdq in dlist: pl.plot(t_d, t_t, 's', c=t_c, markersize=msize * 1.2, **plot_args)  # Diagnosed
-            for tdq in qlist: pl.plot(t_d, t_t, 'x', c=t_c, markersize=msize * 2.0)  # Quarantine; no alpha for this
-            pl.plot([0, day], [0.5, 0.5], c='k', lw=3)  # Plot the endless march of time
+                x = f["x"]
+                y = f["y"]
+                c = f["c"]
+                pl.plot(x[0], y[0], "o", c=c, markersize=msize, **plot_args)  # Plot sources
+                pl.plot(x, y, "-", c=c, **plot_args)  # Plot transmission lines
+                if f["i"]:  # If this person is infected
+                    pl.plot(x[1], y[1], "*", c=c, markersize=msize, **plot_args)  # Plot targets
+            for tdq in tlist: pl.plot(t_d, t_t, "o", c=t_c, markersize=msize * 2, fillstyle="none")  # Tested; No alpha for this
+            for tdq in dlist: pl.plot(t_d, t_t, "s", c=t_c, markersize=msize * 1.2, **plot_args)  # Diagnosed
+            for tdq in qlist: pl.plot(t_d, t_t, "x", c=t_c, markersize=msize * 2.0)  # Quarantine; no alpha for this
+            pl.plot([0, day], [0.5, 0.5], c="k", lw=3)  # Plot the endless march of time
             if animate:  # Whether to animate
                 pl.pause(delay)
 
@@ -2224,8 +2197,7 @@ class TransTree(Analyzer):
 
 
     def plot_histograms(self, start_day=None, end_day=None, bins=None, width=0.8, fig_args=None, fig=None):
-        '''
-        Plots a histogram of the number of transmissions.
+        """Plots a histogram of the number of transmissions.
 
         Args:
             start_day (int/str): the day on which to start counting people who got infected
@@ -2234,8 +2206,8 @@ class TransTree(Analyzer):
             width (float): width of bars
             fig_args (dict): passed to pl.figure()
             fig (fig): if supplied, use this figure
-        '''
 
+        """
         # Process targets
         n_targets = self.count_targets(start_day, end_day)
 
@@ -2261,23 +2233,23 @@ class TransTree(Analyzer):
         fig_args = sc.mergedicts(dict(figsize=(12,8)), fig_args)
         if fig is None:
             fig = pl.figure(**fig_args)
-        pl.set_cmap('Spectral')
+        pl.set_cmap("Spectral")
         pl.subplots_adjust(left=0.08, right=0.92, bottom=0.08, top=0.92)
         colors = sc.vectocolor(n_bins)
 
         pl.subplot(1,2,1)
         w05 = width*0.5
         w025 = w05*0.5
-        pl.bar(bins-w025, counts, width=w05, facecolor='k', label='Number of events')
+        pl.bar(bins-w025, counts, width=w05, facecolor="k", label="Number of events")
         for i in range(n_bins):
-            label = 'Number of transmissions (events × transmissions per event)' if i==0 else None
+            label = "Number of transmissions (events × transmissions per event)" if i==0 else None
             pl.bar(bins[i]+w025, total_counts[i], width=w05, facecolor=colors[i], label=label)
-        pl.xlabel('Number of transmissions per person')
-        pl.ylabel('Count')
+        pl.xlabel("Number of transmissions per person")
+        pl.ylabel("Count")
         if n_bins<max_labels:
             pl.xticks(ticks=bins)
         pl.legend()
-        pl.title('Numbers of events and transmissions')
+        pl.title("Numbers of events and transmissions")
 
         pl.subplot(2,2,2)
         total = 0
@@ -2286,36 +2258,36 @@ class TransTree(Analyzer):
             total += total_counts[i]
         if n_bins<max_labels:
             pl.xticks(ticks=bins)
-        pl.xlabel('Number of transmissions per person')
-        pl.ylabel('Number of infections caused')
-        pl.title('Number of transmissions, by transmissions per person')
+        pl.xlabel("Number of transmissions per person")
+        pl.ylabel("Number of infections caused")
+        pl.title("Number of transmissions, by transmissions per person")
 
         pl.subplot(2,2,4)
-        pl.plot(index, sorted_sum, lw=1.5, c='k', alpha=0.5)
+        pl.plot(index, sorted_sum, lw=1.5, c="k", alpha=0.5)
         n_change_inds = len(change_inds)
         label_inds = np.linspace(0, n_change_inds, max_labels).round() # Don't allow more than this many labels
         for i in range(n_change_inds):
             if i in label_inds: # Don't plot more than this many labels
-                label = f'Transmitted to {bins[i+1]:n} people'
+                label = f"Transmitted to {bins[i+1]:n} people"
             else:
                 label = None
             pl.scatter([index[change_inds[i]]], [sorted_sum[change_inds[i]]], s=150, zorder=10, c=[colors[i]], label=label)
-        pl.xlabel('Proportion of population, ordered by the number of people they infected (%)')
-        pl.ylabel('Proportion of infections caused (%)')
+        pl.xlabel("Proportion of population, ordered by the number of people they infected (%)")
+        pl.ylabel("Proportion of infections caused (%)")
         pl.legend()
         pl.ylim([0, 100])
         pl.grid(True)
-        pl.title('Proportion of transmissions, by proportion of population')
+        pl.title("Proportion of transmissions, by proportion of population")
 
         pl.axes([0.30, 0.65, 0.15, 0.2])
         berry      = [0.8, 0.1, 0.2]
         dirty_snow = [0.9, 0.9, 0.9]
-        start_day  = self.day(start_day, which='start')
-        end_day    = self.day(end_day, which='end')
+        start_day  = self.day(start_day, which="start")
+        end_day    = self.day(end_day, which="end")
         pl.axvspan(start_day, end_day, facecolor=dirty_snow)
-        pl.plot(self.sim_results['t'], self.sim_results['cum_infections'], lw=1, c=berry)
-        pl.xlabel('Day')
-        pl.ylabel('Cumulative infections')
+        pl.plot(self.sim_results["t"], self.sim_results["cum_infections"], lw=1, c=berry)
+        pl.xlabel("Day")
+        pl.ylabel("Cumulative infections")
 
         return cvpl.handle_show_return(fig=fig)
 

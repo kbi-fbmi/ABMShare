@@ -1,15 +1,17 @@
 """Sample distributions, either from real world data or from uniform distributions."""
 
-import numpy as np
-import numba as nb
-import pandas as pd
-import sciris as sc
-import random
-import itertools
 import bisect
-import scipy
-from scipy import stats as st
+import itertools
+import random
 import warnings
+
+import numba as nb
+import numpy as np
+import pandas as pd
+import scipy
+import sciris as sc
+from scipy import stats as st
+
 from . import base as spb
 from . import plotting as sppl
 
@@ -37,14 +39,14 @@ def set_seed(seed=None):
 
 
 def fast_choice(weights):
-    """
-    Choose an option -- quickly -- from the provided weights. Weights do not need
+    """Choose an option -- quickly -- from the provided weights. Weights do not need
     to be normalized.
 
     Reimplementation of random.choices(), removing everything inessential.
 
     Example:
         fast_choice([0.1,0.2,0.3,0.2,0.1]) # might return 2
+
     """
     cum_weights = list(itertools.accumulate(weights))
     return bisect.bisect(cum_weights, random.random()*(cum_weights[-1]), 0, len(cum_weights)-1)
@@ -52,8 +54,7 @@ def fast_choice(weights):
 
 # @nb.njit(cache=True)
 def sample_single_dict(distr_keys, distr_vals):
-    """
-    Sample from a distribution.
+    """Sample from a distribution.
 
     Args:
         distr (dict or np.ndarray): distribution
@@ -66,27 +67,27 @@ def sample_single_dict(distr_keys, distr_vals):
 
 
 def sample_single_arr(distr):
-    """
-    Sample from a distribution.
+    """Sample from a distribution.
 
     Args:
         distr (dict or np.ndarray): distribution
 
     Returns:
         A single sampled value from a distribution.
+
     """
     return fast_choice(distr)
 
 
 def resample_age(age_dist_vals, age):
-    """
-    Resample age from single year age distribution.
+    """Resample age from single year age distribution.
 
     Args:
         single_year_age_distr (arr) : age distribution, ordered by age
         age (int)                   : age as an integer
     Returns:
         Resampled age as an integer.
+
     """
     if age == 0:
         age_min = 0
@@ -110,8 +111,7 @@ def resample_age(age_dist_vals, age):
 
 
 def sample_from_range(distr, min_val, max_val):
-    """
-    Sample from a distribution from min_val to max_val, inclusive.
+    """Sample from a distribution from min_val to max_val, inclusive.
 
     Args:
         distr (dict)  : distribution with integer keys
@@ -119,6 +119,7 @@ def sample_from_range(distr, min_val, max_val):
         max_val (int) : maximum of the range to sample from
     Returns:
         A sampled number from the range min_val to max_val in the distribution distr.
+
     """
     new_distr = spb.norm_age_group(distr, min_val, max_val)
     distr_keys = np.array(list(new_distr.keys()), dtype=np.int64)
@@ -126,9 +127,8 @@ def sample_from_range(distr, min_val, max_val):
     return sample_single_dict(distr_keys, distr_vals)
 
 
-def check_dist(actual, expected, std=None, dist='norm', check='dist', label=None, alpha=0.05, size=10000, verbose=True, die=False, stats=False):
-    """
-    Check whether counts match the expected distribution. The distribution can be
+def check_dist(actual, expected, std=None, dist="norm", check="dist", label=None, alpha=0.05, size=10000, verbose=True, die=False, stats=False):
+    """Check whether counts match the expected distribution. The distribution can be
     any listed in scipy.stats. The parameters for the distribution should be supplied
     via the "expected" argument. The standard deviation for a normal distribution is
     a special case; it can be supplied separately or calculated from the (actual) data.
@@ -157,20 +157,21 @@ def check_dist(actual, expected, std=None, dist='norm', check='dist', label=None
         sp.check_dist(actual=[3,4,4,2,3], expected=3, dist='poisson')
         sp.check_dist(actual=[0.14, -3.37,  0.59, -0.07], expected=0, std=1.0, dist='norm')
         sp.check_dist(actual=5.5, expected=(1, 5), dist='lognorm')
+
     """
     # Handle inputs
-    label = f' "{label}"' if label else ''
+    label = f' "{label}"' if label else ""
     is_dist = sc.isiterable(actual)
 
     # Set distribution
-    if dist.lower() in ['norm', 'normal', 'gaussian']:
+    if dist.lower() in ["norm", "normal", "gaussian"]:
         if std is None:
             if is_dist:
                 std = np.std(actual)  # Get standard deviation from the data
             else: # pragma: no cover
                 std = 1.0
         args = (expected, std)
-        scipydist = getattr(scipy.stats, 'norm')
+        scipydist = getattr(scipy.stats, "norm")
         truedist = scipy.stats.norm(expected, std)
     else:
         try:
@@ -185,7 +186,7 @@ def check_dist(actual, expected, std=None, dist='norm', check='dist', label=None
             raise NotImplementedError(errormsg) from E
 
     # Calculate stats
-    if is_dist and check == 'dist':
+    if is_dist and check == "dist":
         quantile = truedist.cdf(np.median(actual))
 
         # only if distribution is continuous
@@ -198,14 +199,14 @@ def check_dist(actual, expected, std=None, dist='norm', check='dist', label=None
             teststat, pvalue = scipy.stats.ks_2samp(actual, expected_r)
 
         else: # pragma: no cover
-            errormsg = 'Distribution is neither continuous or discrete and so not supported at this time.'
+            errormsg = "Distribution is neither continuous or discrete and so not supported at this time."
             raise NotImplementedError(errormsg)
         null = pvalue > alpha
 
     else:
-        if check == 'mean':
+        if check == "mean":
             value = np.mean(actual)
-        elif check == 'median':
+        elif check == "median":
             value = np.median(actual)
         else:
             value = actual
@@ -228,52 +229,50 @@ def check_dist(actual, expected, std=None, dist='norm', check='dist', label=None
 
     # If null hypothesis is rejected, print a warning or error
     if not null:
-        msg = f''''
+        msg = f"""'
 Variable{label} with n={n_samples} samples is out of range using the distribution:
     {dist}({args}) →
     p={pvalue} < α={alpha}
 Expected quintiles are: {expect_quin}
 Observed quintiles are: {obvs_quin}
-Observed median is in quantile: {quantile}'''
+Observed median is in quantile: {quantile}"""
         if die:
             raise ValueError(msg)
-        elif verbose:
+        if verbose:
             warnings.warn(msg)
 
     # If null hypothesis is not rejected, under verbose, print a confirmation
     if null and verbose:
-        print(f'Check passed. Null hypothesis with expected distribution: {dist}{args} not rejected.')
-        if is_dist and check == 'dist':
-            print(f'Test statistic: {teststat}, pvalue: {pvalue}')
+        print(f"Check passed. Null hypothesis with expected distribution: {dist}{args} not rejected.")
+        if is_dist and check == "dist":
+            print(f"Test statistic: {teststat}, pvalue: {pvalue}")
 
     if not stats:
         return null
-    else:
-        s = sc.objdict()
-        s.null = null
-        s.pvalue = pvalue
-        s.n_samples = n_samples
-        s.expected_quintiles = expect_quin
-        s.observed_quintiles = obvs_quin
-        s.observed_quantile = quantile
-        return s
+    s = sc.objdict()
+    s.null = null
+    s.pvalue = pvalue
+    s.n_samples = n_samples
+    s.expected_quintiles = expect_quin
+    s.observed_quintiles = obvs_quin
+    s.observed_quantile = quantile
+    return s
 
 
 def check_normal(*args, **kwargs):
-    ''' Alias to check_dist(dist='normal') '''
-    dist = kwargs.pop('dist', 'norm')
+    """Alias to check_dist(dist='normal')"""
+    dist = kwargs.pop("dist", "norm")
     return check_dist(*args, **kwargs, dist=dist)
 
 
 def check_poisson(*args, **kwargs):
-    ''' Alias to check_dist(dist='poisson') '''
-    dist = kwargs.pop('dist', 'poisson')
+    """Alias to check_dist(dist='poisson')"""
+    dist = kwargs.pop("dist", "poisson")
     return check_dist(*args, **kwargs, dist=dist)
 
 
 def check_truncated_poisson(testdata, mu, lowerbound=None, upperbound=None, skipcheck=False, **kwargs):
-    """
-    test if data fits in truncated poisson distribution between upperbound and lowerbound using kstest
+    """Test if data fits in truncated poisson distribution between upperbound and lowerbound using kstest
     Args:
         testdata (array) : data to be tested
         mu (float) : expected mean for the poisson distribution
@@ -282,6 +281,7 @@ def check_truncated_poisson(testdata, mu, lowerbound=None, upperbound=None, skip
 
     Returns:
         (bool) return True if statistic check passed, else return False
+
     """
     sample_size = len(testdata)
     # need to exclude any value below or equal to lowerbound and any value above or equal to upperbound, so we first find the quantile location for
@@ -298,7 +298,7 @@ def check_truncated_poisson(testdata, mu, lowerbound=None, upperbound=None, skip
             statistic_test(expected_data, testdata, test=st.kstest, verbose=True, die=True)
             result = True
         except ValueError as e:
-            if 'reject the hypothesis' in str(e):
+            if "reject the hypothesis" in str(e):
                 result = False
             else:
                 raise Exception(e)
@@ -319,8 +319,7 @@ def check_truncated_poisson(testdata, mu, lowerbound=None, upperbound=None, skip
 
 
 def statistic_test(expected, actual, test=st.chisquare, verbose=True, die=False, **kwargs):
-    """
-    Perform statistical checks for expected and actual data based on the null
+    """Perform statistical checks for expected and actual data based on the null
     hypothesis that expected and actual distributions are identical. Throw
     assertion if the expected and actual data differ significantly based on the
     test selected.
@@ -336,11 +335,12 @@ def statistic_test(expected, actual, test=st.chisquare, verbose=True, die=False,
 
     Returns:
         None.
+
     """
     # data = {'expected': expected, 'actual': actual}
-    df_expected = pd.DataFrame(expected, columns=['expected'])
-    df_actual = pd.DataFrame(actual, columns=['actual'])
-    details = pd.merge(df_expected.describe(), df_actual.describe(), left_index=True, right_index=True, suffixes=('expected', 'actual'))
+    df_expected = pd.DataFrame(expected, columns=["expected"])
+    df_actual = pd.DataFrame(actual, columns=["actual"])
+    details = pd.merge(df_expected.describe(), df_actual.describe(), left_index=True, right_index=True, suffixes=("expected", "actual"))
 
     print(f"use {str(test.__name__)} to check actual distribution")
     s, p = test(expected, actual, **kwargs)
@@ -351,6 +351,6 @@ def statistic_test(expected, actual, test=st.chisquare, verbose=True, die=False,
               f" then we cannot reject the hypothesis. But we got p = {p} and s = {s}."
         if die: # pragma: no cover
             raise ValueError(msg)
-        elif verbose: # pragma: no cover
+        if verbose: # pragma: no cover
             warnings.warn(f"data: \n{details}")
             warnings.warn(msg)

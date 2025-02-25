@@ -1,44 +1,43 @@
-'''
-Alternate representation of a population as a People object. Originally based on
+"""Alternate representation of a population as a People object. Originally based on
 the corresponding Covasim classes and functions.
-'''
+"""
 
+import networkx as nx
 import numpy as np
+import pandas as pd
 import pylab as pl
 import sciris as sc
-import pandas as pd
-import networkx as nx
-from . import utils as spu
-from .. import version as spv
 
-__all__ = ['FlexPretty', 'BasePeople', 'Person', 'FlexDict', 'Contacts', 'Layer', 'People']
+from .. import version as spv
+from . import utils as spu
+
+__all__ = ["FlexPretty", "BasePeople", "Person", "FlexDict", "Contacts", "Layer", "People"]
 
 
 #%% Define people classes
 
 class FlexPretty(sc.prettyobj):
-    '''
-    A class that supports multiple different display options: namely obj.brief()
+    """A class that supports multiple different display options: namely obj.brief()
     for a one-line description and obj.disp() for a full description.
 
     New in version 1.10.0.
-    '''
+    """
 
     def __repr__(self):
-        ''' Use brief repr by default '''
+        """Use brief repr by default"""
         try:
             string = self._brief()
         except Exception as E:
             string = sc.objectid(self)
-            string += f'Warning, something went wrong printing object:\n{str(E)}'
+            string += f"Warning, something went wrong printing object:\n{str(E)}"
         return string
 
     def _disp(self):
-        ''' Verbose output -- use Sciris' pretty repr by default '''
+        """Verbose output -- use Sciris' pretty repr by default"""
         return sc.prepr(self)
 
     def disp(self, output=False):
-        ''' Print or output verbose representation of the object '''
+        """Print or output verbose representation of the object"""
         string = self._disp()
         if not output:
             print(string)
@@ -46,11 +45,11 @@ class FlexPretty(sc.prettyobj):
             return string
 
     def _brief(self):
-        ''' Brief output -- use a one-line output, a la Python's default '''
+        """Brief output -- use a one-line output, a la Python's default"""
         return sc.objectid(self)
 
     def brief(self, output=False):
-        ''' Print or output a brief representation of the object '''
+        """Print or output a brief representation of the object"""
         string = self._brief()
         if not output:
             print(string)
@@ -59,13 +58,12 @@ class FlexPretty(sc.prettyobj):
 
 
 class BasePeople(FlexPretty):
-    '''
-    A class to handle all the boilerplate for people -- note that as with the
+    """A class to handle all the boilerplate for people -- note that as with the
     BaseSim vs Sim classes, everything interesting happens in the People class,
     whereas this class exists to handle the less interesting implementation details.
 
     New in version 1.10.0.
-    '''
+    """
 
     def __init__(self):
         super().__init__()
@@ -75,22 +73,20 @@ class BasePeople(FlexPretty):
 
 
     def __getitem__(self, key):
-        ''' Allow people['attr'] instead of getattr(people, 'attr')
-            If the key is an integer, alias `people.person()` to return a `Person` instance
-        '''
-
+        """Allow people['attr'] instead of getattr(people, 'attr')
+        If the key is an integer, alias `people.person()` to return a `Person` instance
+        """
         try:
             return self.__dict__[key]
         except: # pragma: no cover
             if isinstance(key, int):
                 return self.person(key)
-            else:
-                errormsg = f'Key "{key}" is not a valid attribute of people'
-                raise AttributeError(errormsg)
+            errormsg = f'Key "{key}" is not a valid attribute of people'
+            raise AttributeError(errormsg)
 
 
     def __setitem__(self, key, value):
-        ''' Ditto '''
+        """Ditto"""
         if self._lock and key not in self.__dict__: # pragma: no cover
             errormsg = f'Key "{key}" is not a current attribute of people, and the people object is locked; see people.unlock()'
             raise AttributeError(errormsg)
@@ -100,7 +96,7 @@ class BasePeople(FlexPretty):
 
 
     def keys(self):
-        ''' Get the keys that have been set '''
+        """Get the keys that have been set"""
         curr_keys = self.__dict__.keys()
         new_keys = [k for k in self._keys if k in curr_keys] # Remove any keys that have been removed
         self._keys = new_keys # Trim any that were removed
@@ -108,30 +104,30 @@ class BasePeople(FlexPretty):
 
 
     def lock(self):
-        ''' Lock the people object to prevent keys from being added '''
+        """Lock the people object to prevent keys from being added"""
         self._lock = True
         return
 
 
     def unlock(self):
-        ''' Unlock the people object to allow keys to be added '''
+        """Unlock the people object to allow keys to be added"""
         self._lock = False
         return
 
 
     def __len__(self):
-        ''' This is just a scalar, but validate() and _resize_arrays() make sure it's right '''
-        return int(self.pars['pop_size'])
+        """This is just a scalar, but validate() and _resize_arrays() make sure it's right"""
+        return int(self.pars["pop_size"])
 
 
     def __iter__(self):
-        ''' Iterate over people '''
+        """Iterate over people"""
         for i in range(len(self)):
             yield self[i]
 
 
     def __add__(self, people2):
-        ''' Combine two people arrays '''
+        """Combine two people arrays"""
         newpeople = sc.dcp(self)
         keys = list(self.keys())
         for key in keys:
@@ -142,60 +138,59 @@ class BasePeople(FlexPretty):
             elif npval.ndim == 2:
                 newpeople.set(key, np.concatenate([npval, p2val], axis=1), die=False)
             else:
-                errormsg = f'Not sure how to combine arrays of {npval.ndim} dimensions for {key}'
+                errormsg = f"Not sure how to combine arrays of {npval.ndim} dimensions for {key}"
                 raise NotImplementedError(errormsg)
 
         # Validate
-        newpeople.pars['pop_size'] += people2.pars['pop_size']
+        newpeople.pars["pop_size"] += people2.pars["pop_size"]
         newpeople.validate()
 
         # Reassign UIDs so they're unique
-        newpeople.set('uid', np.arange(len(newpeople)))
+        newpeople.set("uid", np.arange(len(newpeople)))
 
         return newpeople
 
 
     def __radd__(self, people2):
-        ''' Allows sum() to work correctly '''
+        """Allows sum() to work correctly"""
         if not people2: return self
-        else:           return self.__add__(people2)
+        return self.__add__(people2)
 
 
     def _brief(self):
-        '''
-        Return a one-line description of the people -- used internally and by repr();
+        """Return a one-line description of the people -- used internally and by repr();
         see people.brief() for the user version.
-        '''
+        """
         try:
-            layerstr = ', '.join([str(k) for k in self.layer_keys()])
-            string   = f'People(n={len(self):0n}; layers: {layerstr})'
+            layerstr = ", ".join([str(k) for k in self.layer_keys()])
+            string   = f"People(n={len(self):0n}; layers: {layerstr})"
         except Exception as E: # pragma: no cover
             string = sc.objectid(self)
-            string += f'Warning, multisim appears to be malformed:\n{str(E)}'
+            string += f"Warning, multisim appears to be malformed:\n{str(E)}"
         return string
 
 
     def summarize(self, output=False):
-        ''' Print a summary of the people -- same as brief '''
+        """Print a summary of the people -- same as brief"""
         return self.brief(output=output)
 
 
     def set(self, key, value, die=True):
-        ''' Ensure sizes and dtypes match '''
+        """Ensure sizes and dtypes match"""
         current = self[key]
         value = np.array(value, dtype=current.dtype) # Ensure it's the right type
         if die and len(value) != len(current): # pragma: no cover
-            errormsg = f'Length of new array does not match current ({len(value)} vs. {len(current)})'
+            errormsg = f"Length of new array does not match current ({len(value)} vs. {len(current)})"
             raise IndexError(errormsg)
         self[key] = value
         return
 
 
     def get(self, key):
-        ''' Convenience method -- key can be string or list of strings '''
+        """Convenience method -- key can be string or list of strings"""
         if isinstance(key, str):
             return self[key]
-        elif isinstance(key, list):
+        if isinstance(key, list):
             arr = np.zeros((len(self), len(key)))
             for k,ky in enumerate(key):
                 arr[:,k] = self[ky]
@@ -203,69 +198,68 @@ class BasePeople(FlexPretty):
 
 
     def true(self, key):
-        ''' Return indices matching the condition '''
+        """Return indices matching the condition"""
         return self[key].nonzero()[0]
 
 
     def false(self, key):
-        ''' Return indices not matching the condition '''
+        """Return indices not matching the condition"""
         return (~self[key]).nonzero()[0]
 
 
     def defined(self, key):
-        ''' Return indices of people who are not-nan '''
+        """Return indices of people who are not-nan"""
         return (~np.isnan(self[key])).nonzero()[0]
 
 
     def undefined(self, key):
-        ''' Return indices of people who are nan '''
+        """Return indices of people who are nan"""
         return np.isnan(self[key]).nonzero()[0]
 
 
     def count(self, key):
-        ''' Count the number of people for a given key '''
+        """Count the number of people for a given key"""
         return (self[key]>0).sum()
 
 
     def count_not(self, key):
-        ''' Count the number of people who do not have a property for a given key '''
+        """Count the number of people who do not have a property for a given key"""
         return (self[key]==0).sum()
 
 
     def set_pars(self, pars=None):
-        '''
-        Re-link the parameters stored in the people object to the sim containing it,
+        """Re-link the parameters stored in the people object to the sim containing it,
         and perform some basic validation.
-        '''
+        """
         if pars is None:
             pars = {}
         elif sc.isnumber(pars): # Interpret as a population size
-            pars = {'pop_size':pars} # Ensure it's a dictionary
-        orig_pars = self.__dict__.get('pars') # Get the current parameters using dict's get method
+            pars = {"pop_size":pars} # Ensure it's a dictionary
+        orig_pars = self.__dict__.get("pars") # Get the current parameters using dict's get method
         pars = sc.mergedicts(orig_pars, pars)
-        if 'pop_size' not in pars:
+        if "pop_size" not in pars:
             errormsg = f'The parameter "pop_size" must be included in a population; keys supplied were:\n{sc.newlinejoin(pars.keys())}'
             raise sc.KeyNotFoundError(errormsg)
-        pars['pop_size'] = int(pars['pop_size'])
-        pars.setdefault('location', None)
+        pars["pop_size"] = int(pars["pop_size"])
+        pars.setdefault("location", None)
         self.pars = pars # Actually store the pars
         return
 
 
     def layer_keys(self):
-        ''' Get the available contact keys -- try contacts first, then beta_layer '''
+        """Get the available contact keys -- try contacts first, then beta_layer"""
         try:
             keys = list(self.contacts.keys())
         except: # If not fully initialized
             try:
-                keys = list(self.pars['contacts'].keys())
+                keys = list(self.pars["contacts"].keys())
             except:  # pragma: no cover # If not even partially initialized
                 keys = []
         return keys
 
 
     def indices(self):
-        ''' The indices of each people array '''
+        """The indices of each people array"""
         return np.arange(len(self))
 
 
@@ -275,7 +269,7 @@ class BasePeople(FlexPretty):
         contact_layer_keys = set(self.contacts.keys())
         layer_keys    = set(self.layer_keys())
         if contact_layer_keys != layer_keys:
-            errormsg = f'Parameters layers {layer_keys} are not consistent with contact layers {contact_layer_keys}'
+            errormsg = f"Parameters layers {layer_keys} are not consistent with contact layers {contact_layer_keys}"
             raise ValueError(errormsg)
 
         # Check that the length of each array is consistent
@@ -286,10 +280,9 @@ class BasePeople(FlexPretty):
                 if die:
                     errormsg = f'Length of key "{key}" did not match population size ({actual_len} vs. {expected_len})'
                     raise IndexError(errormsg)
-                else:
-                    if verbose:
-                        print(f'Resizing "{key}" from {actual_len} to {expected_len}')
-                    self._resize_arrays(keys=key)
+                if verbose:
+                    print(f'Resizing "{key}" from {actual_len} to {expected_len}')
+                self._resize_arrays(keys=key)
 
         # Check that the layers are valid
         for layer in self.contacts.values():
@@ -299,13 +292,12 @@ class BasePeople(FlexPretty):
 
 
     def _resize_arrays(self, new_size=None, keys=None):
-        ''' Resize arrays if any mismatches are found '''
-
+        """Resize arrays if any mismatches are found"""
         # Handle None or tuple input
         if new_size is None:
             new_size = len(self)
         pop_size = new_size if not isinstance(new_size, tuple) else new_size[1]
-        self.pars['pop_size'] = pop_size
+        self.pars["pop_size"] = pop_size
 
         # Reset sizes
         if keys is None:
@@ -318,16 +310,16 @@ class BasePeople(FlexPretty):
 
 
     def to_df(self):
-        ''' Convert to a Pandas dataframe '''
+        """Convert to a Pandas dataframe"""
         df = pd.DataFrame.from_dict({key:self[key] for key in self.keys()})
         return df
 
 
     def to_arr(self):
-        ''' Return as numpy array '''
+        """Return as numpy array"""
         arr = np.empty((len(self), len(self.keys())), dtype=spu.default_float)
         for k,key in enumerate(self.keys()):
-            if key == 'uid':
+            if key == "uid":
                 arr[:,k] = np.arange(len(self))
             else:
                 arr[:,k] = self[key]
@@ -335,7 +327,7 @@ class BasePeople(FlexPretty):
 
 
     def person(self, ind):
-        ''' Method to create person from the people '''
+        """Method to create person from the people"""
         p = Person()
         for key in self.keys():
             data = self[key]
@@ -344,7 +336,7 @@ class BasePeople(FlexPretty):
             elif data.ndim == 2:
                 val = data[:,ind]
             else:
-                errormsg = f'Cannot extract data from {key}: unexpected dimensionality ({data.ndim})'
+                errormsg = f"Cannot extract data from {key}: unexpected dimensionality ({data.ndim})"
                 raise ValueError(errormsg)
             setattr(p, key, val)
 
@@ -357,13 +349,12 @@ class BasePeople(FlexPretty):
 
 
     def to_people(self):
-        ''' Return all people as a list '''
+        """Return all people as a list"""
         return list(self)
 
 
     def from_people(self, people, resize=True):
-        ''' Convert a list of people back into a People object '''
-
+        """Convert a list of people back into a People object"""
         # Handle population size
         pop_size = len(people)
         if resize:
@@ -378,14 +369,13 @@ class BasePeople(FlexPretty):
 
 
     def to_graph(self, full_output=False): # pragma: no cover
-        '''
-        Convert all people to a networkx MultiDiGraph, including all properties of
+        """Convert all people to a networkx MultiDiGraph, including all properties of
         the people (nodes) and contacts (edges).
 
         Args:
             full_output (bool): if true, return nodes and edges along with the graph object
-        '''
 
+        """
         # Copy data from people into graph
         G = self.contacts.to_graph()
         for key in self.keys():
@@ -396,21 +386,19 @@ class BasePeople(FlexPretty):
         for u,v,k in G.edges(keys=True):
             edge = G[u][v][k]
             try:
-                edge['beta'] *= self.pars['beta_layer'][edge['layer']]
+                edge["beta"] *= self.pars["beta_layer"][edge["layer"]]
             except:
                 pass
 
         if not full_output:
             return G
-        else:
-            nodes = G.nodes(data=True)
-            edges = G.edges(keys=True)
-            return G, nodes, edges
+        nodes = G.nodes(data=True)
+        edges = G.edges(keys=True)
+        return G, nodes, edges
 
 
     def init_contacts(self, reset=False):
-        ''' Initialize the contacts dataframe with the correct columns and data types '''
-
+        """Initialize the contacts dataframe with the correct columns and data types"""
         # Create the contacts dictionary
         contacts = Contacts(layer_keys=self.layer_keys())
 
@@ -423,10 +411,8 @@ class BasePeople(FlexPretty):
 
 
     def add_contacts(self, contacts, lkey=None, beta=None):
-        '''
-        Add new contacts to the array. See also contacts.add_layer().
-        '''
-
+        """Add new contacts to the array. See also contacts.add_layer().
+        """
         # If no layer key is supplied and it can't be worked out from defaults, use the first layer
         if lkey is None:
             lkey = self.layer_keys()[0]
@@ -437,7 +423,7 @@ class BasePeople(FlexPretty):
         elif isinstance(contacts, Layer):
             new_contacts = {}
             new_contacts[lkey] = contacts
-        elif sc.checktype(contacts, 'array'):
+        elif sc.checktype(contacts, "array"):
             new_contacts = {}
             new_contacts[lkey] = pd.DataFrame(data=contacts)
         elif isinstance(contacts, dict):
@@ -446,17 +432,17 @@ class BasePeople(FlexPretty):
         elif isinstance(contacts, list): # Assume it's a list of contacts by person, not an edgelist
             new_contacts = self.make_edgelist(contacts) # Assume contains key info
         else: # pragma: no cover
-            errormsg = f'Cannot understand contacts of type {type(contacts)}; expecting dataframe, array, or dict'
+            errormsg = f"Cannot understand contacts of type {type(contacts)}; expecting dataframe, array, or dict"
             raise TypeError(errormsg)
 
         # Ensure the columns are right and add values if supplied
         for lkey, new_layer in new_contacts.items():
-            n = len(new_layer['p1'])
-            if 'beta' not in new_layer.keys() or len(new_layer['beta']) != n:
+            n = len(new_layer["p1"])
+            if "beta" not in new_layer.keys() or len(new_layer["beta"]) != n:
                 if beta is None:
                     beta = 1.0
                 beta = spu.default_float(beta)
-                new_layer['beta'] = np.ones(n, dtype=spu.default_float)*beta
+                new_layer["beta"] = np.ones(n, dtype=spu.default_float)*beta
 
             # Create the layer if it doesn't yet exist
             if lkey not in self.contacts:
@@ -471,11 +457,9 @@ class BasePeople(FlexPretty):
 
 
     def make_edgelist(self, contacts):
-        '''
-        Parse a list of people with a list of contacts per person and turn it
+        """Parse a list of people with a list of contacts per person and turn it
         into an edge list.
-        '''
-
+        """
         # Handle layer keys
         lkeys = self.layer_keys()
         if len(contacts):
@@ -485,15 +469,15 @@ class BasePeople(FlexPretty):
         # Initialize the new contacts
         new_contacts = Contacts(layer_keys=lkeys)
         for lkey in lkeys:
-            new_contacts[lkey]['p1']    = [] # Person 1 of the contact pair
-            new_contacts[lkey]['p2']    = [] # Person 2 of the contact pair
+            new_contacts[lkey]["p1"]    = [] # Person 1 of the contact pair
+            new_contacts[lkey]["p2"]    = [] # Person 2 of the contact pair
 
         # Populate the new contacts
         for p,cdict in enumerate(contacts):
             for lkey,p_contacts in cdict.items():
                 n = len(p_contacts) # Number of contacts
-                new_contacts[lkey]['p1'].extend([p]*n) # e.g. [4, 4, 4, 4]
-                new_contacts[lkey]['p2'].extend(p_contacts) # e.g. [243, 4538, 7,19]
+                new_contacts[lkey]["p1"].extend([p]*n) # e.g. [4, 4, 4, 4]
+                new_contacts[lkey]["p2"].extend(p_contacts) # e.g. [243, 4538, 7,19]
 
         # Turn into a dataframe
         for lkey in lkeys:
@@ -507,25 +491,25 @@ class BasePeople(FlexPretty):
 
     @staticmethod
     def remove_duplicates(df):
-        ''' Sort the dataframe and remove duplicates -- note, not extensively tested '''
-        p1 = df[['p1', 'p2']].values.min(1) # Reassign p1 to be the lower-valued of the two contacts
-        p2 = df[['p1', 'p2']].values.max(1) # Reassign p2 to be the higher-valued of the two contacts
-        df['p1'] = p1
-        df['p2'] = p2
-        df.sort_values(['p1', 'p2'], inplace=True) # Sort by p1, then by p2
-        df.drop_duplicates(['p1', 'p2'], inplace=True) # Remove duplicates
-        df = df[df['p1'] != df['p2']] # Remove self connections
+        """Sort the dataframe and remove duplicates -- note, not extensively tested"""
+        p1 = df[["p1", "p2"]].values.min(1) # Reassign p1 to be the lower-valued of the two contacts
+        p2 = df[["p1", "p2"]].values.max(1) # Reassign p2 to be the higher-valued of the two contacts
+        df["p1"] = p1
+        df["p2"] = p2
+        df.sort_values(["p1", "p2"], inplace=True) # Sort by p1, then by p2
+        df.drop_duplicates(["p1", "p2"], inplace=True) # Remove duplicates
+        df = df[df["p1"] != df["p2"]] # Remove self connections
         df.reset_index(inplace=True, drop=True)
         return df
 
 
 class Person(sc.prettyobj):
-    '''
-    Class for a single person. Note: this is largely deprecated since People
+    """Class for a single person. Note: this is largely deprecated since People
     is now based on arrays rather than being a list of people.
 
     New in version 1.10.0.
-    '''
+    """
+
     def __init__(self, pars=None, uid=None, age=-1, sex=-1, contacts=None):
         self.uid         = uid # This person's unique identifier
         self.age         = spu.default_float(age) # Age of the person (in years)
@@ -535,13 +519,12 @@ class Person(sc.prettyobj):
 
 
 class FlexDict(dict):
-    '''
-    A dict that allows more flexible element access: in addition to obj['a'],
+    """A dict that allows more flexible element access: in addition to obj['a'],
     also allow obj[0]. Lightweight implementation of the Sciris odict class.
-    '''
+    """
 
     def __getitem__(self, key):
-        ''' Lightweight odict -- allow indexing by number, with low performance '''
+        """Lightweight odict -- allow indexing by number, with low performance"""
         try:
             return super().__getitem__(key)
         except KeyError as KE:
@@ -562,11 +545,11 @@ class FlexDict(dict):
 
 
 class Contacts(FlexDict):
-    '''
-    A simple (for now) class for storing different contact layers.
+    """A simple (for now) class for storing different contact layers.
 
     New in version 1.10.0.
-    '''
+    """
+
     def __init__(self, layer_keys=None):
         if layer_keys is not None:
             for lkey in layer_keys:
@@ -574,17 +557,17 @@ class Contacts(FlexDict):
         return
 
     def __repr__(self):
-        ''' Use slightly customized repr'''
-        keys_str = ', '.join([str(k) for k in self.keys()])
-        output = f'Contacts({keys_str})\n'
+        """Use slightly customized repr"""
+        keys_str = ", ".join([str(k) for k in self.keys()])
+        output = f"Contacts({keys_str})\n"
         for key in self.keys():
             output += f'\n"{key}": '
-            output += self[key].__repr__() + '\n'
+            output += self[key].__repr__() + "\n"
         return output
 
 
     def __len__(self):
-        ''' The length of the contacts is the length of all the layers '''
+        """The length of the contacts is the length of all the layers"""
         output = 0
         for key in self.keys():
             try:
@@ -595,15 +578,14 @@ class Contacts(FlexDict):
 
 
     def add_layer(self, **kwargs):
-        '''
-        Small method to add one or more layers to the contacts. Layers should
+        """Small method to add one or more layers to the contacts. Layers should
         be provided as keyword arguments.
 
         **Example**::
 
             hospitals_layer = cv.Layer(label='hosp')
             sim.people.contacts.add_layer(hospitals=hospitals_layer)
-        '''
+        """
         for lkey,layer in kwargs.items():
             layer.validate()
             self[lkey] = layer
@@ -611,8 +593,7 @@ class Contacts(FlexDict):
 
 
     def pop_layer(self, *args):
-        '''
-        Remove the layer(s) from the contacts.
+        """Remove the layer(s) from the contacts.
 
         **Example**::
 
@@ -620,15 +601,14 @@ class Contacts(FlexDict):
 
         Note: while included here for convenience, this operation is equivalent
         to simply popping the key from the contacts dictionary.
-        '''
+        """
         for lkey in args:
             self.pop(lkey)
         return
 
 
     def to_graph(self): # pragma: no cover
-        '''
-        Convert all layers to a networkx MultiDiGraph
+        """Convert all layers to a networkx MultiDiGraph
 
         **Example**::
 
@@ -636,7 +616,7 @@ class Contacts(FlexDict):
             sim = cv.Sim(pop_size=50, pop_type='hybrid').run()
             G = sim.people.contacts.to_graph()
             nx.draw(G)
-        '''
+        """
         import networkx as nx
         H = nx.MultiDiGraph()
         for lkey,layer in self.items():
@@ -647,8 +627,7 @@ class Contacts(FlexDict):
 
 
 class Layer(FlexDict):
-    '''
-    A small class holding a single layer of contact edges (connections) between people.
+    """A small class holding a single layer of contact edges (connections) between people.
 
     The input is typically three arrays: person 1 of the connection, person 2 of
     the connection, and the weight of the connection. Connections are undirected;
@@ -684,15 +663,16 @@ class Layer(FlexDict):
         layer2 = cv.Layer(**layer, index=index, self_conn=self_conn, label=layer.label)
 
     New in version 1.10.0.
-    '''
+
+    """
 
     def __init__(self, label=None, **kwargs):
         self.meta = {
-            'p1':    spu.default_int,   # Person 1
-            'p2':    spu.default_int,   # Person 2
-            'beta':  spu.default_float, # Default transmissibility for this contact type
+            "p1":    spu.default_int,   # Person 1
+            "p2":    spu.default_int,   # Person 2
+            "beta":  spu.default_float, # Default transmissibility for this contact type
         }
-        self.basekey = 'p1' # Assign a base key for calculating lengths and performing other operations
+        self.basekey = "p1" # Assign a base key for calculating lengths and performing other operations
         self.label = label
 
         # Initialize the keys of the layers
@@ -714,18 +694,17 @@ class Layer(FlexDict):
 
 
     def __repr__(self):
-        ''' Convert to a dataframe for printing '''
+        """Convert to a dataframe for printing"""
         namestr = self.__class__.__name__
-        labelstr = f'"{self.label}"' if self.label else '<no label>'
-        keys_str = ', '.join(self.keys())
-        output = f'{namestr}({labelstr}, {keys_str})\n' # e.g. Layer("h", p1, p2, beta)
+        labelstr = f'"{self.label}"' if self.label else "<no label>"
+        keys_str = ", ".join(self.keys())
+        output = f"{namestr}({labelstr}, {keys_str})\n" # e.g. Layer("h", p1, p2, beta)
         output += self.to_df().__repr__()
         return output
 
 
     def __contains__(self, item):
-        """
-        Check if a person is present in a layer
+        """Check if a person is present in a layer
 
         Args:
             item: Person index
@@ -733,23 +712,22 @@ class Layer(FlexDict):
         Returns: True if person index appears in any interactions
 
         """
-        return (item in self['p1']) or (item in self['p2'])
+        return (item in self["p1"]) or (item in self["p2"])
 
     @property
     def members(self):
+        """Return sorted array of all members
         """
-        Return sorted array of all members
-        """
-        return np.unique([self['p1'], self['p2']])
+        return np.unique([self["p1"], self["p2"]])
 
 
     def meta_keys(self):
-        ''' Return the keys for the layer's meta information -- i.e., p1, p2, beta '''
+        """Return the keys for the layer's meta information -- i.e., p1, p2, beta"""
         return self.meta.keys()
 
 
     def validate(self):
-        ''' Check the integrity of the layer: right types, right lengths '''
+        """Check the integrity of the layer: right types, right lengths"""
         n = len(self[self.basekey])
         for key,dtype in self.meta.items():
             if dtype:
@@ -766,13 +744,13 @@ class Layer(FlexDict):
 
 
     def pop_inds(self, inds):
-        '''
-        "Pop" the specified indices from the edgelist and return them as a dict.
+        """"Pop" the specified indices from the edgelist and return them as a dict.
         Returns in the right format to be used with layer.append().
 
         Args:
             inds (int, array, slice): the indices to be removed
-        '''
+
+        """
         output = {}
         for key in self.meta_keys():
             output[key] = self[key][inds] # Copy to the output object
@@ -781,12 +759,12 @@ class Layer(FlexDict):
 
 
     def append(self, contacts):
-        '''
-        Append contacts to the current layer.
+        """Append contacts to the current layer.
 
         Args:
             contacts (dict): a dictionary of arrays with keys p1,p2,beta, as returned from layer.pop_inds()
-        '''
+
+        """
         for key in self.keys():
             new_arr = contacts[key]
             n_curr = len(self[key]) # Current number of contacts
@@ -798,13 +776,13 @@ class Layer(FlexDict):
 
 
     def to_df(self):
-        ''' Convert to dataframe '''
+        """Convert to dataframe"""
         df = pd.DataFrame.from_dict(self)
         return df
 
 
     def from_df(self, df, keys=None):
-        ''' Convert from a dataframe '''
+        """Convert from a dataframe"""
         if keys is None:
             keys = self.meta_keys()
         for key in keys:
@@ -813,8 +791,7 @@ class Layer(FlexDict):
 
 
     def to_graph(self): # pragma: no cover
-        '''
-        Convert to a networkx DiGraph
+        """Convert to a networkx DiGraph
 
         **Example**::
 
@@ -822,18 +799,17 @@ class Layer(FlexDict):
             sim = cv.Sim(pop_size=20, pop_type='hybrid').run()
             G = sim.people.contacts['h'].to_graph()
             nx.draw(G)
-        '''
+        """
         import networkx as nx
-        data = [np.array(self[k], dtype=dtype).tolist() for k,dtype in [('p1', int), ('p2', int), ('beta', float)]]
+        data = [np.array(self[k], dtype=dtype).tolist() for k,dtype in [("p1", int), ("p2", int), ("beta", float)]]
         G = nx.DiGraph()
-        G.add_weighted_edges_from(zip(*data), weight='beta')
-        nx.set_edge_attributes(G, self.label, name='layer')
+        G.add_weighted_edges_from(zip(*data), weight="beta")
+        nx.set_edge_attributes(G, self.label, name="layer")
         return G
 
 
     def find_contacts(self, inds, as_array=True):
-        """
-        Find all contacts of the specified people
+        """Find all contacts of the specified people
 
         For some purposes (e.g. contact tracing) it's necessary to find all of the contacts
         associated with a subset of the people in this layer. Since contacts are bidirectional
@@ -855,8 +831,8 @@ class Layer(FlexDict):
         - P1 = [1,2,3,4]
         - P2 = [2,3,1,4]
         Then find_contacts([1,3]) would return {1,2,3}
-        """
 
+        """
         # Check types
         if not isinstance(inds, np.ndarray):
             inds = sc.promotetoarray(inds)
@@ -864,7 +840,7 @@ class Layer(FlexDict):
             inds = np.array(inds, dtype=np.int64)
 
         # Find the contacts
-        contact_inds = spu.find_contacts(self['p1'], self['p2'], inds)
+        contact_inds = spu.find_contacts(self["p1"], self["p2"], inds)
         if as_array:
             contact_inds = np.fromiter(contact_inds, dtype=spu.default_int)
             contact_inds.sort()  # Sorting ensures that the results are reproducible for a given seed as well as being identical to previous versions of Covasim
@@ -873,8 +849,7 @@ class Layer(FlexDict):
 
 
     def update(self, people, frac=1.0):
-        '''
-        Regenerate contacts on each timestep.
+        """Regenerate contacts on each timestep.
 
         This method gets called if the layer appears in ``sim.pars['dynam_lkeys']``.
         The Layer implements the update procedure so that derived classes can customize
@@ -887,7 +862,8 @@ class Layer(FlexDict):
 
         Args:
             frac (float): the fraction of contacts to update on each timestep
-        '''
+
+        """
         # Choose how many contacts to make
         pop_size   = len(people) # Total number of people
         n_contacts = len(self) # Total number of contacts
@@ -895,21 +871,20 @@ class Layer(FlexDict):
         inds = spu.choose(n_contacts, n_new)
 
         # Create the contacts, not skipping self-connections
-        self['p1'][inds]   = np.array(spu.choose_r(max_n=pop_size, n=n_new), dtype=spu.default_int) # Choose with replacement
-        self['p2'][inds]   = np.array(spu.choose_r(max_n=pop_size, n=n_new), dtype=spu.default_int)
-        self['beta'][inds] = np.ones(n_new, dtype=spu.default_float)
+        self["p1"][inds]   = np.array(spu.choose_r(max_n=pop_size, n=n_new), dtype=spu.default_int) # Choose with replacement
+        self["p2"][inds]   = np.array(spu.choose_r(max_n=pop_size, n=n_new), dtype=spu.default_int)
+        self["beta"][inds] = np.ones(n_new, dtype=spu.default_float)
         return
 
 
 
-'''
+"""
 Defines the Person class and functions associated with making people.
-'''
+"""
 
 
 class People(BasePeople):
-    '''
-    A class to perform all the operations on the people. This class is usually
+    """A class to perform all the operations on the people. This class is usually
     not invoked directly, but instead is created automatically by the sim. The
     only required input argument is the population size, but typically the full
     parameters dictionary will get passed instead since it will be needed before
@@ -932,7 +907,8 @@ class People(BasePeople):
         ppl2 = cv.People(sim.pars)
 
     New in version 1.10.0.
-    '''
+
+    """
 
     def __init__(self, pars, strict=False, **kwargs):
         super().__init__()
@@ -946,8 +922,8 @@ class People(BasePeople):
         self.init_contacts() # Initialize the contacts
 
         # Handle contacts, if supplied (note: they usually are)
-        if 'contacts' in kwargs:
-            self.add_contacts(kwargs.pop('contacts'))
+        if "contacts" in kwargs:
+            self.add_contacts(kwargs.pop("contacts"))
 
         # Handle all other values, e.g. age
         for key,value in kwargs.items():
@@ -962,8 +938,7 @@ class People(BasePeople):
 
     def plot(self, bins=None, width=1.0, alpha=0.6, fig_args=None, axis_args=None,
                 plot_args=None, do_show=None, fig=None):
-        '''
-        Plot statistics of the population -- age distribution, numbers of contacts,
+        """Plot statistics of the population -- age distribution, numbers of contacts,
         and overall weight of contacts (number of contacts multiplied by beta per
         layer).
 
@@ -977,7 +952,8 @@ class People(BasePeople):
             plot_args (dict)  : passed to pl.plot()
             do_show   (bool)  : whether to show the plot
             fig       (fig)   : handle of existing figure to plot into
-        '''
+
+        """
         # Handle inputs
         if bins is None:
             bins = np.arange(0,101)
@@ -1011,23 +987,23 @@ class People(BasePeople):
         pl.xlim([min_age-offset,max_age+offset])
         pl.xticks(np.arange(0, max_age+1, gridspace))
         pl.grid(True)
-        pl.xlabel('Age')
-        pl.ylabel('Number of people')
-        pl.title(f'Age distribution ({len(self):n} people total)')
+        pl.xlabel("Age")
+        pl.ylabel("Number of people")
+        pl.title(f"Age distribution ({len(self):n} people total)")
 
         # Plot cumulative distribution
         pl.subplot(n_rows,2,2)
         age_sorted = sorted(self.age)
         y = np.linspace(0, 100, len(age_sorted)) # Percentage, not hard-coded!
-        pl.plot(age_sorted, y, '-', **plot_args)
+        pl.plot(age_sorted, y, "-", **plot_args)
         pl.xlim([0,max_age])
         pl.ylim([0,100]) # Percentage
         pl.xticks(np.arange(0, max_age+1, gridspace))
         pl.yticks(np.arange(0, 101, gridspace)) # Percentage
         pl.grid(True)
-        pl.xlabel('Age')
-        pl.ylabel('Cumulative proportion (%)')
-        pl.title(f'Cumulative age distribution (mean age: {self.age.mean():0.2f} years)')
+        pl.xlabel("Age")
+        pl.ylabel("Cumulative proportion (%)")
+        pl.title(f"Cumulative age distribution (mean age: {self.age.mean():0.2f} years)")
 
         # Calculate contacts
         lkeys = self.layer_keys()
@@ -1035,32 +1011,32 @@ class People(BasePeople):
         contact_counts = sc.objdict()
         for lk in lkeys:
             layer = self.contacts[lk]
-            p1ages = self.age[layer['p1']]
-            p2ages = self.age[layer['p2']]
+            p1ages = self.age[layer["p1"]]
+            p2ages = self.age[layer["p2"]]
             contact_counts[lk] = np.histogram(p1ages, edges)[0] + np.histogram(p2ages, edges)[0]
 
         # Plot contacts
         layer_colors = sc.gridcolors(n_layers)
         share_ax = None
-        for w,w_type in enumerate(['total', 'percapita', 'weighted']): # Plot contacts in different ways
+        for w,w_type in enumerate(["total", "percapita", "weighted"]): # Plot contacts in different ways
             for i,lk in enumerate(lkeys):
-                if w_type == 'total':
+                if w_type == "total":
                     weight = 1
                     total_contacts = 2*len(self.contacts[lk]) # x2 since each contact is undirected
-                    ylabel = 'Number of contacts'
+                    ylabel = "Number of contacts"
                     title = f'Total contacts for layer "{lk}": {total_contacts:n}'
-                elif w_type == 'percapita':
+                elif w_type == "percapita":
                     weight = np.divide(1.0, age_counts, where=age_counts>0)
                     mean_contacts = 2*len(self.contacts[lk])/len(self) # Factor of 2 since edges are bi-directional
-                    ylabel = 'Per capita number of contacts'
+                    ylabel = "Per capita number of contacts"
                     title = f'Mean contacts for layer "{lk}": {mean_contacts:0.2f}'
-                elif w_type == 'weighted':
+                elif w_type == "weighted":
                     try:
-                        weight = self.pars['beta_layer'][lk]*self.pars['beta']
+                        weight = self.pars["beta_layer"][lk]*self.pars["beta"]
                     except:
                         weight = 1
                     total_weight = np.round(weight*2*len(self.contacts[lk]))
-                    ylabel = 'Weighted number of contacts'
+                    ylabel = "Weighted number of contacts"
                     title = f'Total weight for layer "{lk}": {total_weight:n}'
 
                 ax = pl.subplot(n_rows, n_layers, n_layers*(w+1)+i+1, sharey=share_ax)
@@ -1068,37 +1044,35 @@ class People(BasePeople):
                 pl.xlim([min_age-offset,max_age+offset])
                 pl.xticks(np.arange(0, max_age+1, gridspace))
                 pl.grid(True)
-                pl.xlabel('Age')
+                pl.xlabel("Age")
                 pl.ylabel(ylabel)
                 pl.title(title)
-                if w_type == 'weighted':
+                if w_type == "weighted":
                     share_ax = ax # Update shared axis
 
         return fig
 
 
     def plot_graph(self):
-        '''
-        Convert to networkx and draw. WARNING: extremely slow for more than ~100 people!
+        """Convert to networkx and draw. WARNING: extremely slow for more than ~100 people!
 
         **Example**::
 
             pop = sp.Pop(n=50)
             pop.to_people().plot_graph()
-        '''
+        """
         G, nodes, edges = self.to_graph(full_output=True)
-        node_colors = [n['age'] for i,n in nodes]
-        layer_map = dict(h='#37b', s='#e11', w='#4a4', c='#a49')
-        edge_colors = [layer_map[G[i][j][k]['layer']] for i,j,k in edges]
-        edge_weights = [G[i][j][k]['beta']*5 for i,j,k in edges]
+        node_colors = [n["age"] for i,n in nodes]
+        layer_map = dict(h="#37b", s="#e11", w="#4a4", c="#a49")
+        edge_colors = [layer_map[G[i][j][k]["layer"]] for i,j,k in edges]
+        edge_weights = [G[i][j][k]["beta"]*5 for i,j,k in edges]
         fig = pl.figure()
         nx.draw(G, node_color=node_colors, edge_color=edge_colors, width=edge_weights, alpha=0.5)
         return fig
 
 
     def story(self, uid, *args):
-        '''
-        Print out a short history of events in the life of the specified individual.
+        """Print out a short history of events in the life of the specified individual.
 
         Args:
             uid (int/list): the person or people whose story is being regaled
@@ -1110,20 +1084,21 @@ class People(BasePeople):
             sim.run()
             sim.people.story(12)
             sim.people.story(795)
-        '''
+
+        """
 
         def label_lkey(lkey):
-            ''' Friendly name for common layer keys '''
-            if lkey.lower() == 'a':
-                llabel = 'default contact'
-            if lkey.lower() == 'h':
-                llabel = 'household'
-            elif lkey.lower() == 's':
-                llabel = 'school'
-            elif lkey.lower() == 'w':
-                llabel = 'workplace'
-            elif lkey.lower() == 'c':
-                llabel = 'community'
+            """Friendly name for common layer keys"""
+            if lkey.lower() == "a":
+                llabel = "default contact"
+            if lkey.lower() == "h":
+                llabel = "household"
+            elif lkey.lower() == "s":
+                llabel = "school"
+            elif lkey.lower() == "w":
+                llabel = "workplace"
+            elif lkey.lower() == "c":
+                llabel = "community"
             else:
                 llabel = f'"{lkey}"'
             return llabel
@@ -1134,9 +1109,9 @@ class People(BasePeople):
         for uid in uids:
 
             p = self[uid]
-            sex = 'female' if p.sex == 0 else 'male'
+            sex = "female" if p.sex == 0 else "male"
 
-            intro = f'\nThis is the story of {uid}, a {p.age:.0f} year old {sex}'
+            intro = f"\nThis is the story of {uid}, a {p.age:.0f} year old {sex}"
             print(intro)
 
             total_contacts = 0
@@ -1146,12 +1121,12 @@ class People(BasePeople):
                 n_contacts = len(p.contacts[lkey])
                 total_contacts += n_contacts
                 if n_contacts:
-                    print(f'{uid} is connected to {n_contacts} people in the {llabel} layer')
+                    print(f"{uid} is connected to {n_contacts} people in the {llabel} layer")
                 else:
                     no_contacts.append(llabel)
             if len(no_contacts):
-                nc_string = ', '.join(no_contacts)
-                print(f'{uid} has no contacts in the {nc_string} layer(s)')
-            print(f'{uid} has {total_contacts} contacts in total')
+                nc_string = ", ".join(no_contacts)
+                print(f"{uid} has no contacts in the {nc_string} layer(s)")
+            print(f"{uid} has {total_contacts} contacts in total")
 
         return

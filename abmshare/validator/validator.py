@@ -1,7 +1,7 @@
-import abmshare.validator.validator_defaults as vd
 import abmshare.utils as exut
-import abmshare.validator.json_validator as jv
 import abmshare.validator.csv_validator as cv
+import abmshare.validator.json_validator as jv
+import abmshare.validator.validator_defaults as vd
 
 
 def process(main_config:str|dict,simulation_config:str|dict=None,synthpops_config:str|dict=None,report_config:str|dict=None):
@@ -13,16 +13,16 @@ def process(main_config:str|dict,simulation_config:str|dict=None,synthpops_confi
         files=exut.get_all_csv_files(simulation_config,vd.simulation_data_files,return_dict=True)
         #Validate CSVS
         # Validate simulation_region_pars
-        if 'region_parameters' in files:
-            cv.validate_csv(files['region_parameters'],base_keys_dict_with_values=vd.simulation_region_csv_cols_with_types,
+        if "region_parameters" in files:
+            cv.validate_csv(files["region_parameters"],base_keys_dict_with_values=vd.simulation_region_csv_cols_with_types,
                             empty_allowed=vd.simulation_empty_allowed,check_files=vd.simulation_input_files)
         # Validate simulation global_pars
-        if 'global_parameters' in files:
-            cv.validate_csv(files['global_parameters'],base_keys_dict_with_values=vd.simulation_region_csv_cols_with_types,
+        if "global_parameters" in files:
+            cv.validate_csv(files["global_parameters"],base_keys_dict_with_values=vd.simulation_region_csv_cols_with_types,
                             empty_allowed=vd.simulation_empty_allowed,check_files=vd.simulation_input_files)
         # Validate simulation_interventions
-        if 'interventions' in files: 
-            cv.validate_interventions_csv(files['interventions'],vd.simulation_interventions_csv_cols_with_types)
+        if "interventions" in files:
+            cv.validate_interventions_csv(files["interventions"],vd.simulation_interventions_csv_cols_with_types)
         # Validate simulation variants #TODO:
 
         # Validate simulation Vaccines #TODO:
@@ -31,21 +31,21 @@ def process(main_config:str|dict,simulation_config:str|dict=None,synthpops_confi
         jv.validate_json(synthpops_config,vd.synthpops_json_validation)
         files=exut.get_all_csv_files(synthpops_config,vd.synthpops_data_files,return_dict=True,filenames=vd.synthpops_data_files_names)
         # Validate parameters synthpops data file
-        if 'pop_creator_file' in files:
-            cv.validate_csv(files["pop_creator_file"],vd.synthpops_region_cols,empty_allowed=vd.synthpops_empty_allowed)            
+        if "pop_creator_file" in files:
+            cv.validate_csv(files["pop_creator_file"],vd.synthpops_region_cols,empty_allowed=vd.synthpops_empty_allowed)
         if "input_data_global" in files:
-            cv.validate_csv(files['input_data_global'],vd.synthpops_input_files_cols,check_files=vd.synthpops_input_data_files) 
+            cv.validate_csv(files["input_data_global"],vd.synthpops_input_files_cols,check_files=vd.synthpops_input_data_files)
         # Validate pop creator pars
         if "parameters" in files:
-            cv.validate_csv(files['parameters'],vd.synthpops_pars_cols,check_files=vd.synthpops_region_config_files,
-                empty_allowed=vd.synthpops_empty_allowed)            
+            cv.validate_csv(files["parameters"],vd.synthpops_pars_cols,check_files=vd.synthpops_region_config_files,
+                empty_allowed=vd.synthpops_empty_allowed)
         print("Synthetic population config has been validated")
-    # if report_config: # Need to fix it 
+    # if report_config: # Need to fix it
     #     jv.validate_json(report_config,vd.report_json_validation,report_conf=True)
     #     print("Report config has been validated")
     #TODO: Someday combinations of synthpop + covasim
         print("Validation of input files was successful")
-        
+
 
 # if __name__=="__main__":
 #     jsons={

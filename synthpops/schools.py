@@ -1,5 +1,4 @@
-"""
-This module generates school contacts by class and grade in flexible ways.
+"""This module generates school contacts by class and grade in flexible ways.
 Contacts can be clustered into classes and also mixed across the grade and
 across the school.
 
@@ -12,43 +11,41 @@ mixing (for 'age_clustered' school_mixing_type), and to choose whether contacts
 are clustered within a grade. Clustering contacts across different grades is not
 supported because there is no data to suggest that this happens commonly.
 """
+import logging
 from collections import Counter
 from itertools import combinations
 
-import sciris as sc
-import numpy as np
 import networkx as nx
-import logging
-
-from . import data_distributions as spdata
-from . import defaults
+import numpy as np
+import sciris as sc
 
 from . import base as spb
-from . import sampling as spsamp
 from . import contact_networks as spcnx
+from . import data_distributions as spdata
+from . import defaults
+from . import sampling as spsamp
 from .config import logger as log
 
-
-__all__ = ['get_school_type_labels', 'count_enrollment_by_school_type',
-           'get_generated_school_size_distributions', 'count_enrollment_by_age',
-           'get_enrollment_rates_by_age',
-           'School',
-           'Classroom',
+__all__ = ["get_school_type_labels", "count_enrollment_by_school_type",
+           "get_generated_school_size_distributions", "count_enrollment_by_age",
+           "get_enrollment_rates_by_age",
+           "School",
+           "Classroom",
            ]
 
 
 class School(spb.LayerGroup):
-    """
-    A class for individual schools and methods to operate on each.
+    """A class for individual schools and methods to operate on each.
 
     Args:
         kwargs (dict): data dictionary of the school
+
     """
+
     def __init__(self, scid=None, sc_type=None, school_mixing_type=None,
                  student_uids=np.array([], dtype=int), teacher_uids=np.array([], dtype=int),
                  non_teaching_staff_uids=np.array([], dtype=int), **kwargs):
-        """
-        Class constructor for an base empty setting group.
+        """Class constructor for an base empty setting group.
 
         Args:
             **scid (int)                         : id of the school
@@ -57,6 +54,7 @@ class School(spb.LayerGroup):
             **student_uids (np.array)            : ids of student members
             **teacher_uids (np.array)            : ids of teacher members
             **non_teaching_staff_uids (np.array) : ids of non_teaching_staff members
+
         """
         super().__init__(scid=scid, sc_type=sc_type, school_mixing_type=school_mixing_type,
                          student_uids=student_uids, teacher_uids=teacher_uids,
@@ -66,11 +64,10 @@ class School(spb.LayerGroup):
         return
 
     def validate(self):
-        """
-        Check that information supplied to make a school is valid and update
+        """Check that information supplied to make a school is valid and update
         to the correct type if necessary.
         """
-        for key in ['student_uids', 'teacher_uids', 'non_teaching_staff_uids']:
+        for key in ["student_uids", "teacher_uids", "non_teaching_staff_uids"]:
             if key in self.keys():
                 try:
                     self[key] = sc.promotetoarray(self[key], dtype=int)
@@ -78,14 +75,14 @@ class School(spb.LayerGroup):
                     errmsg = f"Could not convert school key {key} to an np.array() with type int. This key only takes arrays with int values."
                     raise TypeError(errmsg)
 
-        for key in ['scid']:
+        for key in ["scid"]:
             if key in self.keys():
                 if not isinstance(self[key], (int)):
                     if self[key] is not None:
                         errmsg = f"Error: Expected type int or None for school key {key}. Instead the type of this value is {type(self[key])}."
                         raise TypeError(errmsg)
 
-        for key in ['sc_type']:
+        for key in ["sc_type"]:
             if key in self.keys():
                 if not isinstance(self[key], str):
                     if self[key] is not None:
@@ -95,72 +92,70 @@ class School(spb.LayerGroup):
 
     @property
     def member_uids(self):
-        """
-        Return ids of all school members: students, teachers, and non teaching staff.
+        """Return ids of all school members: students, teachers, and non teaching staff.
 
         Returns:
             np.ndarray : school member ids
 
         """
-        return np.concatenate((self['student_uids'], self['teacher_uids'], self['non_teaching_staff_uids']))
+        return np.concatenate((self["student_uids"], self["teacher_uids"], self["non_teaching_staff_uids"]))
 
     def member_ages(self, age_by_uid):
-        """
-        Return ages of all school members: students, teachers, and non teaching staff.
+        """Return ages of all school members: students, teachers, and non teaching staff.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray: school member ages
+
         """
         return np.concatenate((self.student_ages(age_by_uid),
                                self.teacher_ages(age_by_uid),
                                self.non_teaching_staff_ages(age_by_uid)))
 
     def student_ages(self, age_by_uid):
-        """
-        Return student ages in the school.
+        """Return student ages in the school.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray : student ages in school
+
         """
-        return super().member_ages(age_by_uid, self['student_uids'])
+        return super().member_ages(age_by_uid, self["student_uids"])
 
     def teacher_ages(self, age_by_uid):
-        """
-        Return teacher ages in the school.
+        """Return teacher ages in the school.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray : teacher ages in school
+
         """
-        return super().member_ages(age_by_uid, self['teacher_uids'])
+        return super().member_ages(age_by_uid, self["teacher_uids"])
 
     def non_teaching_staff_ages(self, age_by_uid):
-        """
-        Return non-teaching staff ages in the school.
+        """Return non-teaching staff ages in the school.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray : non-teaching staff ages in school
+
         """
-        return super().member_ages(age_by_uid, self['non_teaching_staff_uids'])
+        return super().member_ages(age_by_uid, self["non_teaching_staff_uids"])
 
     def __len__(self):
         """Return the length as the number of members in the school."""
         return len(self.member_uids)
 
     def get_classroom(self, clid):
-        """
-        Return the classroom indexed at clid if school_mixing_type is equal to
+        """Return the classroom indexed at clid if school_mixing_type is equal to
         'age_and_class_clustered'.
 
         Args:
@@ -168,33 +163,33 @@ class School(spb.LayerGroup):
 
         Returns:
             sp.Classroom : the classroom indexed at clid
+
         """
-        if self['school_mixing_type'] == 'age_and_class_clustered':
+        if self["school_mixing_type"] == "age_and_class_clustered":
             if not isinstance(clid, int):
                 raise TypeError("clid must be an int.")
-            if len(self['classrooms']) <= clid:
+            if len(self["classrooms"]) <= clid:
                 raise IndexError(f"Classroom id (clid): {clid} out of range.")
-            return self['classrooms'][clid]
-        else:
-            return
+            return self["classrooms"][clid]
+        return None
 
 
 class Classroom(spb.LayerGroup):
-    """
-    A class for individual classrooms and methods to operate on each.
+    """A class for individual classrooms and methods to operate on each.
 
     Args:
         kwargs (dict): data dictionary of the classroom
+
     """
 
     def __init__(self, clid=None, student_uids=np.array([], dtype=int), teacher_uids=np.array([], dtype=int), **kwargs):
-        """
-        Class constructor for an base empty setting group.
+        """Class constructor for an base empty setting group.
 
         Args:
             **clid (int)              : id of the classroom
             **student_uids (np.array) : ids of student members
             **teacher_uids (np.array) : ids of teacher members
+
         """
         super().__init__(clid=clid, student_uids=student_uids, teacher_uids=teacher_uids, **kwargs)
 
@@ -203,11 +198,10 @@ class Classroom(spb.LayerGroup):
         return
 
     def validate(self):
-        """
-        Check that information supplied to make a school is valid and update
+        """Check that information supplied to make a school is valid and update
         to the correct type if necessary.
         """
-        for key in ['student_uids', 'teacher_uids']:
+        for key in ["student_uids", "teacher_uids"]:
             if key in self.keys():
                 try:
                     self[key] = sc.promotetoarray(self[key], dtype=int)
@@ -215,7 +209,7 @@ class Classroom(spb.LayerGroup):
                     errmsg = f"Could not convert classroom key {key} to a np.array()"
                     raise TypeError(errmsg)
 
-        for key in ['clid']:
+        for key in ["clid"]:
             if key in self.keys():
                 if not isinstance(self[key], int):
                     if self[key] is not None:
@@ -225,50 +219,50 @@ class Classroom(spb.LayerGroup):
 
     @property
     def member_uids(self):
-        """
-        Return ids of all classroom members: students and teachers.
+        """Return ids of all classroom members: students and teachers.
 
         Returns:
             np.ndarray : classroom member ids
+
         """
-        return np.concatenate((self['student_uids'], self['teacher_uids']))
+        return np.concatenate((self["student_uids"], self["teacher_uids"]))
 
     def member_ages(self, age_by_uid):
-        """
-        Return ages of all classroom members: students and teachers.
+        """Return ages of all classroom members: students and teachers.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray : classroom member ages
+
         """
         return np.concatenate((self.student_ages(age_by_uid),
                                self.teacher_ages(age_by_uid)))
 
     def student_ages(self, age_by_uid):
-        """
-        Return student ages in the classroom.
+        """Return student ages in the classroom.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray : student ages in classroom
+
         """
-        return super().member_ages(age_by_uid, self['student_uids'])
+        return super().member_ages(age_by_uid, self["student_uids"])
 
     def teacher_ages(self, age_by_uid):
-        """
-        Return teacher ages in the classroom.
+        """Return teacher ages in the classroom.
 
         Args:
             age_by_uid (np.ndarray) : mapping of age to uid
 
         Returns:
             np.ndarray : teacher ages in classroom
+
         """
-        return super().member_ages(age_by_uid, self['teacher_uids'])
+        return super().member_ages(age_by_uid, self["teacher_uids"])
 
     def __len__(self):
         """Return the length as the number of members in the classroom."""
@@ -276,8 +270,7 @@ class Classroom(spb.LayerGroup):
 
 
 def get_school(pop, scid):
-    """
-    Return school with id: scid.
+    """Return school with id: scid.
 
     Args:
         pop (sp.Pop) : population
@@ -285,17 +278,17 @@ def get_school(pop, scid):
 
     Returns:
         sp.School: A populated school.
+
     """
     if not isinstance(scid, int):
-        raise TypeError(f"scid must be an int.")
+        raise TypeError("scid must be an int.")
     if len(pop.schools) <= scid:
         raise IndexError(f"School id (scid): {scid} out of range.")
     return pop.schools[scid]
 
 
 def get_classroom(pop, scid, clid):
-    """
-    Return the classroom indexed at clid if school_mixing_type is equal to
+    """Return the classroom indexed at clid if school_mixing_type is equal to
     'age_and_class_clustered'.
 
     Args:
@@ -304,59 +297,60 @@ def get_classroom(pop, scid, clid):
 
     Returns:
         sp.Classroom: A populated classroom.
+
     """
     school = get_school(pop, scid)
     return school.get_classroom(clid)
 
 
 def add_school(pop, school):
-    """
-    Add a school to the list of schools.
+    """Add a school to the list of schools.
 
     Args:
         pop (sp.Pop) : population
         school (sp.School) : school
+
     """
     if not isinstance(school, School):
-        raise ValueError('school is not a sp.School')
+        raise ValueError("school is not a sp.School")
 
     # ensure scid to match the index in the list
-    if school['scid'] != len(pop.schools):
-        school['scid'] = len(pop.schools)
+    if school["scid"] != len(pop.schools):
+        school["scid"] = len(pop.schools)
     pop.schools.append(school)
     pop.n_schools = len(pop.schools)
     return
 
 
 def add_classroom(school, classroom):
-    """
-    Add a classroom to the school.
+    """Add a classroom to the school.
 
     Args:
         school (sp.School)       : school
         classroom (sp.Classroom) : classroom
+
     """
     if not isinstance(school, School):
-        raise ValueError('school is not a sp.School')
+        raise ValueError("school is not a sp.School")
 
     if not isinstance(classroom, Classroom):
-        raise ValueError('classroom is not a sp.Classroom')
+        raise ValueError("classroom is not a sp.Classroom")
 
     # ensure scid to match the index in the list
-    if classroom['scid'] != len(school['classrooms']):
-        school['scid'] = len(school['classrooms'])
-    school['classrooms'].append(classroom)
-    school['n_classrooms'] = len(school['classrooms'])
+    if classroom["scid"] != len(school["classrooms"]):
+        school["scid"] = len(school["classrooms"])
+    school["classrooms"].append(classroom)
+    school["n_classrooms"] = len(school["classrooms"])
     return
 
 
 def initialize_empty_schools(pop, n_schools=None):
-    """
-    Array of empty schools.
+    """Array of empty schools.
 
     Args:
         pop (sp.Pop)    : population
         n_schools (int) : the number of schools to initialize
+
     """
     if n_schools is not None and isinstance(n_schools, int):
         pop.n_schools = n_schools
@@ -367,26 +361,25 @@ def initialize_empty_schools(pop, n_schools=None):
 
 
 def initialize_empty_classrooms(school, n_classrooms=None):
-    """
-    Array of empty classrooms.
+    """Array of empty classrooms.
 
     Args:
         school (sp.School) : school
         n_classrooms (int) : the number of classrooms to initialize
+
     """
-    if school['school_mixing_type'] == 'age_and_class_clustered':
+    if school["school_mixing_type"] == "age_and_class_clustered":
         if n_classrooms is not None and isinstance(n_classrooms, int):
-            school['n_classrooms'] = n_classrooms
+            school["n_classrooms"] = n_classrooms
         else:
-            school['n_classrooms'] = 0
-        school['classrooms'] = [Classroom() for nc in range(school['n_classrooms'])]
+            school["n_classrooms"] = 0
+        school["classrooms"] = [Classroom() for nc in range(school["n_classrooms"])]
 
     return
 
 
 def populate_schools(pop, student_lists, teacher_lists, non_teaching_staff_lists, age_by_uid, school_types=None, school_mixing_types=None):
-    """
-    Populate all of the schools. Store each school at the index corresponding to it's scid.
+    """Populate all of the schools. Store each school at the index corresponding to it's scid.
 
     Args:
         pop (sp.Pop)                    : population
@@ -396,6 +389,7 @@ def populate_schools(pop, student_lists, teacher_lists, non_teaching_staff_lists
         age_by_uid (dict)               : dictionary mapping each person's id to their age
         school_types (list)             : list of the school types
         school_mixing_types (list)      : list of the school mixing types
+
     """
     initialize_empty_schools(pop, len(student_lists))
 
@@ -423,14 +417,13 @@ def populate_schools(pop, student_lists, teacher_lists, non_teaching_staff_lists
                       )
         school = School()
         school.set_layer_group(**kwargs)
-        pop.schools[school['scid']] = sc.dcp(school)
+        pop.schools[school["scid"]] = sc.dcp(school)
 
     return
 
 
 def populate_classrooms(school, student_lists, teacher_lists, age_by_uid):
-    """
-    Populate all of the classrooms in a school if
+    """Populate all of the classrooms in a school if
     school_mixing_type == 'age_and_class_clustered'. Store each school at the
     index corresponding to it's scid.
 
@@ -439,10 +432,11 @@ def populate_classrooms(school, student_lists, teacher_lists, age_by_uid):
         student_lists (list) : list of lists where each sublist represents a classroom and contains the ids of the students
         teacher_lists (list) : list of lists where each sublist represents a classroom and contains the ids of the teachers
         age_by_uid (dict)    : dictionary mapping each person's id to their age
+
     """
-    if school['school_mixing_type'] == 'age_and_class_clustered':
-        if len(school['classrooms']) < len(student_lists):
-            log.debug(f"Reinitializing list of classrooms")
+    if school["school_mixing_type"] == "age_and_class_clustered":
+        if len(school["classrooms"]) < len(student_lists):
+            log.debug("Reinitializing list of classrooms")
             initialize_empty_classrooms(school, len(student_lists))
 
         log.debug("Populating classrooms.")
@@ -457,20 +451,19 @@ def populate_classrooms(school, student_lists, teacher_lists, age_by_uid):
                           )
             classroom = Classroom()
             classroom.set_layer_group(**kwargs)
-            school['classrooms'][classroom['clid']] = sc.dcp(classroom)
+            school["classrooms"][classroom["clid"]] = sc.dcp(classroom)
     return
 
 
 def get_school_type_labels():
-    school_type_labels = {'pk': 'Pre-school', 'es': 'Elementary School',
-                          'ms': 'Middle School', 'hs': 'High School',
-                          'uv': 'University'}
+    school_type_labels = {"pk": "Pre-school", "es": "Elementary School",
+                          "ms": "Middle School", "hs": "High School",
+                          "uv": "University"}
     return school_type_labels
 
 
 def get_uids_in_school(datadir, n, location, state_location, country_location, age_by_uid=None, homes_by_uids=None, folder_name=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Identify who in the population is attending school based on enrollment rates
+    """Identify who in the population is attending school based on enrollment rates
     by age.
 
     Args:
@@ -489,6 +482,7 @@ def get_uids_in_school(datadir, n, location, state_location, country_location, a
         dictionary of students in school mapping age to the list of IDs with
         that age, and a dictionary mapping age to the number of students with
         that age.
+
     """
     uids_in_school = {}
     uids_in_school_by_age = {}
@@ -515,8 +509,7 @@ def get_uids_in_school(datadir, n, location, state_location, country_location, a
 
 
 def send_students_to_school_with_school_types(school_size_distr_by_type, school_size_brackets, uids_in_school, uids_in_school_by_age, ages_in_school_count, school_types_distr_by_age, school_type_age_ranges):
-    """
-    A method to send students to school together. This method uses the
+    """A method to send students to school together. This method uses the
     dictionaries school_types_distr_by_age, school_type_age_ranges, and
     school_size_distr_by_type to first determine the type of school based on the
     age of a sampled reference student. Then the school type is used to
@@ -544,8 +537,8 @@ def send_students_to_school_with_school_types(school_size_distr_by_type, school_
         but with the IDs of each student in place of their age. The third is a
         list of the school types for each school, where each school has a single
         string to represent it's school type.
-    """
 
+    """
     student_age_lists = []
     student_uid_lists = []
     school_types = []
@@ -595,7 +588,7 @@ def send_students_to_school_with_school_types(school_size_distr_by_type, school_
 
             # school is too small, try to merge it without another school of the same type
             if (size < school_size_brackets[0][0]) & (len(other_schools) > 0):
-                log.debug(f'School size ({size + 1}) smaller than minimum school size {school_size_brackets[0][0]}. Will try now to merge with another school of the same type already made.')
+                log.debug(f"School size ({size + 1}) smaller than minimum school size {school_size_brackets[0][0]}. Will try now to merge with another school of the same type already made.")
 
                 # another random school of the same type
                 rns = other_schools[spsamp.fast_choice(np.ones(len(other_schools)))]
@@ -612,7 +605,7 @@ def send_students_to_school_with_school_types(school_size_distr_by_type, school_
                 student_uid_lists[rns].extend(new_student_uids)
 
             else:
-                log.debug(f'School size ({size + 1}) smaller than minimum school size {school_size_brackets[0][0]} but there are no other schools of the same type to merge with, so creating this one with however many students are available.')
+                log.debug(f"School size ({size + 1}) smaller than minimum school size {school_size_brackets[0][0]} but there are no other schools of the same type to merge with, so creating this one with however many students are available.")
                 for n, a in enumerate(school_type_age_range):
                     count = len(uids_in_school_by_age[a])
                     school_uids_in_age = uids_in_school_by_age[a]
@@ -652,8 +645,7 @@ def send_students_to_school_with_school_types(school_size_distr_by_type, school_
 
 # adding edges to the popdict, either from an edgelist or groups (groups are better when you have fully connected graphs - no need to enumerate for n*(n-1)/2 edges!)
 def add_contacts_from_edgelist(popdict, edgelist, setting):
-    """
-    Add contacts to popdict from edges in an edgelist. Note that this simply
+    """Add contacts to popdict from edges in an edgelist. Note that this simply
     adds to the contacts already in the layer and does not overwrite the
     contacts.
 
@@ -669,15 +661,14 @@ def add_contacts_from_edgelist(popdict, edgelist, setting):
     for e in edgelist:
         i, j = e
 
-        popdict[i]['contacts'][setting].add(j)
-        popdict[j]['contacts'][setting].add(i)
+        popdict[i]["contacts"][setting].add(j)
+        popdict[j]["contacts"][setting].add(i)
 
     return popdict
 
 
 def add_contacts_from_group(popdict, group, setting):
-    """
-    Add contacts to popdict from fully connected group. Note that this simply
+    """Add contacts to popdict from fully connected group. Note that this simply
     adds to the contacts already in the layer and does not overwrite the
     contacts.
 
@@ -691,15 +682,14 @@ def add_contacts_from_group(popdict, group, setting):
 
     """
     for i in group:
-        popdict[i]['contacts'][setting] = popdict[i]['contacts'][setting].union(group)
-        popdict[i]['contacts'][setting].remove(i)
+        popdict[i]["contacts"][setting] = popdict[i]["contacts"][setting].union(group)
+        popdict[i]["contacts"][setting].remove(i)
 
     return popdict
 
 
 def generate_random_contacts_for_additional_school_members(school_uids, additional_school_member_uids, average_additional_school_members_degree=20):
-    """
-    Generate random contacts for additional school members. This might be people
+    """Generate random contacts for additional school members. This might be people
     like non teaching staff such as principals, administrative staff, cleaning
     staff, or school nurses.
 
@@ -726,8 +716,7 @@ def generate_random_contacts_for_additional_school_members(school_uids, addition
 
 
 def generate_random_classes_by_grade_in_school(student_uids, student_ages, age_by_uid, grade_age_mapping, age_grade_mapping, average_class_size=20, inter_grade_mixing=0.1):
-    """
-    Generate edges for contacts mostly within the same age/grade. Edges are
+    """Generate edges for contacts mostly within the same age/grade. Edges are
     randomly distributed so that clustering is roughly average_class_size/size
     of the grade. Inter grade mixing is done by rewiring edges, specifically
     swapping endpoints of pairs of randomly sampled edges.
@@ -823,7 +812,7 @@ def generate_random_classes_by_grade_in_school(student_uids, student_ages, age_b
             G.add_edges_from([new_ei, new_ej])
 
     # calculate school age mixing and print some debugging statements
-    if logging.getLevelName(log.level) == 'DEBUG': # pragma: no cover
+    if logging.getLevelName(log.level) == "DEBUG": # pragma: no cover
         print(f"clustering within age/grade clustered school: {nx.transitivity(G)}")
         print(f"missed rewiring {missed_rewiring} edge pairs out of {nE} possible pairs.")
         ecount = np.zeros((len(age_keys), len(age_keys)))
@@ -844,8 +833,7 @@ def generate_random_classes_by_grade_in_school(student_uids, student_ages, age_b
 
 
 def generate_clustered_classes_by_grade_in_school(student_uids, student_ages, age_by_uid, grade_age_mapping, age_grade_mapping, average_class_size=20, return_edges=False):
-    """
-    Generate edges for contacts mostly within the same age/grade. Edges are
+    """Generate edges for contacts mostly within the same age/grade. Edges are
     randomly distributed so that clustering is roughly average_class_size/size
     of the grade.
 
@@ -935,7 +923,7 @@ def generate_clustered_classes_by_grade_in_school(student_uids, student_ages, ag
                 node_j = group[j]
                 G.add_edge(node_i, node_j)
 
-    if logging.getLevelName(log.level) == 'DEBUG': # pragma: no cover
+    if logging.getLevelName(log.level) == "DEBUG": # pragma: no cover
 
         if return_edges:
             ecount = np.zeros((len(age_keys), len(age_keys)))
@@ -955,14 +943,12 @@ def generate_clustered_classes_by_grade_in_school(student_uids, student_ages, ag
     if return_edges:
         return list(G.edges())
 
-    else:
-        # if returning groups, much easier to add to population dictionaries and assign teachers to a single class
-        return groups
+    # if returning groups, much easier to add to population dictionaries and assign teachers to a single class
+    return groups
 
 
 def generate_edges_between_teachers(teacher_uids, average_teacher_teacher_degree):
-    """
-    Generate edges between teachers.
+    """Generate edges between teachers.
 
     Args:
         teachers (list)                      : a list of teachers
@@ -990,8 +976,7 @@ def generate_edges_between_teachers(teacher_uids, average_teacher_teacher_degree
 
 
 def generate_edges_for_teachers_in_random_classes(student_uids, student_ages, teacher_uids, age_by_uid, average_student_teacher_ratio=20, average_teacher_teacher_degree=4):
-    """
-    Generate edges for teachers, including to both students and other teachers
+    """Generate edges for teachers, including to both students and other teachers
     at the same school. Well mixed contacts within the same age/grade, some
     cross grade mixing. Teachers are clustered by grade mostly.
 
@@ -1084,8 +1069,7 @@ def generate_edges_for_teachers_in_random_classes(student_uids, student_ages, te
 
 
 def generate_edges_for_teachers_in_clustered_classes(groups, teacher_uids, average_teacher_teacher_degree=4, return_edges=False):
-    """
-    Generate edges for teachers, including to both students and other teachers
+    """Generate edges for teachers, including to both students and other teachers
     at the same school. Students and teachers are clustered into disjoint
     classes.
 
@@ -1155,13 +1139,11 @@ def generate_edges_for_teachers_in_clustered_classes(groups, teacher_uids, avera
         edges += teacher_teacher_edges
         # not returning student-student contacts
         return edges
-    else:
-        return groups, teacher_groups
+    return groups, teacher_groups
 
 
 def generate_random_contacts_across_school(all_school_uids, average_class_size):
-    """
-    Generate edges for contacts in a school where everyone mixes randomly.
+    """Generate edges for contacts in a school where everyone mixes randomly.
     Assuming class and thus class size determines effective contacts.
 
     Args:
@@ -1170,6 +1152,7 @@ def generate_random_contacts_across_school(all_school_uids, average_class_size):
 
     Returns:
         List of edges between individuals in school.
+
     """
     edges = []
     G = spcnx.random_graph_model(all_school_uids, average_class_size)  # undirected graph
@@ -1180,9 +1163,8 @@ def generate_random_contacts_across_school(all_school_uids, average_class_size):
     return edges
 
 
-def add_school_edges(popdict, student_uids, student_ages, teacher_uids, non_teaching_staff_uids, age_by_uid, grade_age_mapping, age_grade_mapping, average_class_size=20, inter_grade_mixing=0.1, average_student_teacher_ratio=20, average_teacher_teacher_degree=3, average_additional_staff_degree=20, school_mixing_type='random'):
-    """
-    Generate edges for teachers, including to both students and other teachers
+def add_school_edges(popdict, student_uids, student_ages, teacher_uids, non_teaching_staff_uids, age_by_uid, grade_age_mapping, age_grade_mapping, average_class_size=20, inter_grade_mixing=0.1, average_student_teacher_ratio=20, average_teacher_teacher_degree=3, average_additional_staff_degree=20, school_mixing_type="random"):
+    """Generate edges for teachers, including to both students and other teachers
     at the same school. When school_mixing_type is 'age_clustered' then
     inter_grade_mixing will rewire a fraction of the edges between students in
     the same age or grade to be edges with any other student in the school. When
@@ -1210,42 +1192,43 @@ def add_school_edges(popdict, student_uids, student_ages, teacher_uids, non_teac
 
     Notes:
         average_teacher_teacher_degree will not be used in school_mixing_type == 'random' scenario.
+
     """
     # completely random contacts across the school, no guarantee of contact with a teacher, much like universities
-    available_school_mixing_types = ['random', 'age_clustered', 'age_and_class_clustered']
+    available_school_mixing_types = ["random", "age_clustered", "age_and_class_clustered"]
 
     if school_mixing_type not in available_school_mixing_types:
         print(f"school_mixing_type: {school_mixing_type} 'does not exist. Please change this to one of: {available_school_mixing_types}")
 
-    if school_mixing_type == 'random':
+    if school_mixing_type == "random":
         school_uids = []
         school_uids.extend(student_uids)
         school_uids.extend(teacher_uids)
         edges = generate_random_contacts_across_school(school_uids, average_class_size)
-        add_contacts_from_edgelist(popdict, edges, 'S')
+        add_contacts_from_edgelist(popdict, edges, "S")
         student_groups = [student_uids]
         teacher_groups = [teacher_uids]
 
     # random contacts across a grade in the school, most edges will across the same age group, much like middle schools or high schools, the inter_grade_mixing parameter is a tuning parameter, students get at least one teacher as a contact
-    elif school_mixing_type == 'age_clustered':
+    elif school_mixing_type == "age_clustered":
         edges = generate_random_classes_by_grade_in_school(student_uids, student_ages, age_by_uid, grade_age_mapping, age_grade_mapping, average_class_size, inter_grade_mixing)
 
         teacher_edges = generate_edges_for_teachers_in_random_classes(student_uids, student_ages, teacher_uids, age_by_uid, average_student_teacher_ratio, average_teacher_teacher_degree)
         edges += teacher_edges
 
-        add_contacts_from_edgelist(popdict, edges, 'S')
+        add_contacts_from_edgelist(popdict, edges, "S")
         student_groups = [student_uids]
         teacher_groups = [teacher_uids]
 
     # completely clustered into classes by age, one teacher per class at least
-    elif school_mixing_type == 'age_and_class_clustered':
+    elif school_mixing_type == "age_and_class_clustered":
 
         student_groups = generate_clustered_classes_by_grade_in_school(student_uids, student_ages, age_by_uid, grade_age_mapping, age_grade_mapping, average_class_size=average_class_size, return_edges=False)
         student_groups_2 = sc.dcp(student_groups)
         student_groups, teacher_groups = generate_edges_for_teachers_in_clustered_classes(student_groups, teacher_uids, average_teacher_teacher_degree=average_teacher_teacher_degree)
 
         sum_diff = sum([len(group) for group in student_groups]) - sum([len(group) for group in student_groups_2])
-        assert sum_diff == 0, f'Check failed. sum of the differences between student groups is not zero. Total school enrollment changed between the step of creating student groups and assigning teachers to each group. sum is {sum_diff}'
+        assert sum_diff == 0, f"Check failed. sum of the differences between student groups is not zero. Total school enrollment changed between the step of creating student groups and assigning teachers to each group. sum is {sum_diff}"
 
         for ng in range(len(student_groups)):
             student_group = student_groups[ng]
@@ -1253,31 +1236,31 @@ def add_school_edges(popdict, student_uids, student_ages, teacher_uids, non_teac
             group = student_group
             group += teacher_group
 
-            add_contacts_from_group(popdict, group, 'S')
+            add_contacts_from_group(popdict, group, "S")
 
         log.debug(f"average_class_size, {average_class_size}, 'class_group sizes', {[len(group) for group in student_groups]}")
 
         # additional edges between teachers in different classes - makes distinct clusters connected - this may add edges again between teachers in the same class
         teacher_edges = generate_edges_between_teachers(teacher_uids, average_teacher_teacher_degree)
-        add_contacts_from_edgelist(popdict, teacher_edges, 'S')
+        add_contacts_from_edgelist(popdict, teacher_edges, "S")
 
     all_school_uids = []
     all_school_uids.extend(student_uids)
     all_school_uids.extend(teacher_uids)
     additional_staff_edges = generate_random_contacts_for_additional_school_members(all_school_uids, non_teaching_staff_uids, average_additional_staff_degree)
-    add_contacts_from_edgelist(popdict, additional_staff_edges, 'S')
+    add_contacts_from_edgelist(popdict, additional_staff_edges, "S")
 
     return popdict, student_groups, teacher_groups
 
 
 def get_school_types_distr_by_age(school_type_age_ranges):
-    """
-    Return probabilities of school type for each age. For now assuming no
+    """Return probabilities of school type for each age. For now assuming no
     overlapping of grades between school types.
 
     Return:
         A dictionary of default probabilities for the school type likely for
         each age.
+
     """
     school_types_distr_by_age = {}
     for a in range(101):
@@ -1291,8 +1274,7 @@ def get_school_types_distr_by_age(school_type_age_ranges):
 
 
 def get_school_types_by_age_single(school_types_distr_by_age):
-    """
-    Return school type by age by assigning the school type with the highest
+    """Return school type by age by assigning the school type with the highest
     probability.
 
     Return:
@@ -1311,8 +1293,7 @@ def get_school_types_by_age_single(school_types_distr_by_age):
 
 
 def get_school_type_data(datadir, location, state_location, country_location, use_default=False):
-    """
-    Get location specific distributions on school type data if it's available for all the distributions of interest, otherwise return default data if use_default.
+    """Get location specific distributions on school type data if it's available for all the distributions of interest, otherwise return default data if use_default.
 
     Args:
         datadir (string)          : file path to the data directory
@@ -1323,6 +1304,7 @@ def get_school_type_data(datadir, location, state_location, country_location, us
 
     Returns:
         3 dictionaries necessary to generate schools by the type of school (i.e. elementary, middle, high school, etc.).
+
     """
     school_size_distr_by_type = spdata.get_school_size_distr_by_type(datadir, location=location, state_location=state_location, country_location=country_location, use_default=use_default)
     school_size_brackets = spdata.get_school_size_brackets(datadir, location=location, state_location=state_location, country_location=country_location, use_default=use_default)  # for right now the size distribution for all school types will use the same brackets or bins
@@ -1339,8 +1321,7 @@ def get_school_type_data(datadir, location, state_location, country_location, us
 
 
 def assign_teachers_to_schools(student_age_lists, student_uid_lists, employment_rates, workers_by_age_to_assign_count, potential_worker_uids, potential_worker_uids_by_age, potential_worker_ages_left_count, average_student_teacher_ratio=20, teacher_age_min=25, teacher_age_max=75):
-    """
-    Assign teachers to each school according to the average student-teacher
+    """Assign teachers to each school according to the average student-teacher
     ratio.
 
     Args:
@@ -1361,9 +1342,9 @@ def assign_teachers_to_schools(student_age_lists, student_uid_lists, employment_
         potential workers mapping id to their age, dictionary mapping age to the
         list of potential workers of that age, dictionary with the count of
         workers left to assign for each age after teachers have been assigned.
-    """
 
-    log.debug('assign_teachers_to_schools()')
+    """
+    log.debug("assign_teachers_to_schools()")
     # matrix method will already get some teachers into schools so student_teacher_ratio should be higher
 
     all_teachers = dict.fromkeys(np.arange(101), 0)
@@ -1403,7 +1384,7 @@ def assign_teachers_to_schools(student_age_lists, student_uid_lists, employment_
         teacher_age_lists.append(teacher_ages)
         teacher_uid_lists.append(teacher_uids)
 
-        if logging.getLevelName(log.level) == 'DEBUG':
+        if logging.getLevelName(log.level) == "DEBUG":
             print(f"nteachers {nteachers}, student-teacher ratio, {(size / nteachers):.4f}")
             print(f"school with teachers {sorted(student_uids)}")
             print(f"nkids: {(np.array(student_ages) <= 19).sum()}, n20=>: {(np.array(student_ages) > 19).sum()}")
@@ -1413,8 +1394,7 @@ def assign_teachers_to_schools(student_age_lists, student_uid_lists, employment_
 
 
 def assign_additional_staff_to_schools(student_uid_lists, teacher_uid_lists, workers_by_age_to_assign_count, potential_worker_uids, potential_worker_uids_by_age, potential_worker_ages_left_count, average_student_teacher_ratio=20, average_student_all_staff_ratio=15, staff_age_min=20, staff_age_max=75, with_non_teaching_staff=False):
-    """
-    Assign additional staff to each school according to the average student to
+    """Assign additional staff to each school according to the average student to
     all staff ratio.
 
     Args:
@@ -1436,8 +1416,9 @@ def assign_additional_staff_to_schools(student_uid_lists, teacher_uid_lists, wor
         dictionary mapping age to the list of potential workers of that age,
         dictionary with the count of workers left to assign for each age after
         teachers have been assigned.
+
     """
-    log.debug('assign_additional_staff_to_schools()')
+    log.debug("assign_additional_staff_to_schools()")
 
     # with_non_teaching_staff is False so this method will not select anyone to be a non teaching staff member at schools - thus return empty lists for non_teaching_staff_uids
     if not with_non_teaching_staff:
@@ -1456,8 +1437,7 @@ def assign_additional_staff_to_schools(student_uid_lists, teacher_uid_lists, wor
     if average_student_all_staff_ratio == 0:
         raise ValueError(f"The ratio of students to all staff at school is {average_student_all_staff_ratio}. This would mean no students at the school. Try another value greater than 0 and less than the average_student_teacher_ratio: {average_student_teacher_ratio}.")
 
-    else:
-        n_all_staff_list = [max(1, int(i/average_student_all_staff_ratio)) for i in n_students_list]  # need at least one staff member
+    n_all_staff_list = [max(1, int(i/average_student_all_staff_ratio)) for i in n_students_list]  # need at least one staff member
     n_non_teaching_staff_list = [n_all_staff_list[i] - n_teachers_list[i] for i in range(len(n_students_list))]
 
     min_n_non_teaching_staff = min(n_non_teaching_staff_list)
@@ -1494,8 +1474,7 @@ def assign_additional_staff_to_schools(student_uid_lists, teacher_uid_lists, wor
 
 
 def add_random_contacts_from_graph(G, average_degree):
-    """
-    Add additional edges at random to achieve the expected or desired average
+    """Add additional edges at random to achieve the expected or desired average
     degree.
 
     Args:
@@ -1549,8 +1528,7 @@ def add_random_contacts_from_graph(G, average_degree):
 # %% Things added to enable not-by-type and random
 
 def generate_school_sizes(school_size_distr_by_bracket, school_size_brackets, uids_in_school):
-    """
-    Given a number of students in school, generate a list of school sizes to
+    """Given a number of students in school, generate a list of school sizes to
     place everyone in a school.
 
     Args:
@@ -1560,6 +1538,7 @@ def generate_school_sizes(school_size_distr_by_bracket, school_size_brackets, ui
 
     Returns:
         A list of school sizes whose sum is the length of ``uids_in_school``.
+
     """
     ns = len(uids_in_school)
     sorted_brackets = sorted(school_size_brackets.keys())
@@ -1579,9 +1558,8 @@ def generate_school_sizes(school_size_distr_by_bracket, school_size_brackets, ui
     return school_sizes
 
 
-def send_students_to_school(school_sizes, uids_in_school, uids_in_school_by_age, ages_in_school_count, age_brackets, age_by_brackets, contact_matrices): 
-    """
-    A method to send students to school together. Using the matrices to
+def send_students_to_school(school_sizes, uids_in_school, uids_in_school_by_age, ages_in_school_count, age_brackets, age_by_brackets, contact_matrices):
+    """A method to send students to school together. Using the matrices to
     construct schools is not a perfect method so some things are more forced
     than the matrix method alone would create. This method models schools using
     matrices and so it does not create explicit school types.
@@ -1601,8 +1579,9 @@ def send_students_to_school(school_sizes, uids_in_school, uids_in_school_by_age,
         but with the IDs of each student in place of their age. The third is a
         list of the school types for each school, where each school has a single
         string to represent it's school type.
+
     """
-    log.debug('send_students_to_school()')
+    log.debug("send_students_to_school()")
     school_age_lists = []
     school_uid_lists = []
     school_types = []
@@ -1641,7 +1620,7 @@ def send_students_to_school(school_sizes, uids_in_school, uids_in_school_by_age,
         log.debug(f"reference school age {aindex}, school size {size}, students left {len(uids_in_school)}, {left_in_bracket}")
 
         bindex = age_by_brackets[aindex]
-        b_prob = contact_matrices['S'][bindex, :]
+        b_prob = contact_matrices["S"][bindex, :]
 
         left_in_bracket[bindex] -= 1
 
@@ -1694,7 +1673,7 @@ def send_students_to_school(school_sizes, uids_in_school, uids_in_school_by_age,
         new_school = np.array(new_school)
         kids = new_school <= 19
 
-        if logging.getLevelName(log.level) == 'DEBUG':
+        if logging.getLevelName(log.level) == "DEBUG":
             print(f"new school size {len(new_school)}, ages: {sorted(new_school)}, nkids: {kids.sum()}, n20=>: {len(new_school) - kids.sum()}, kid-adult ratio: {np.divide(kids.sum() , (len(new_school) - kids.sum()) )}")
 
     log.debug(f"people in school {np.sum([len(school) for school in school_age_lists])}, left to send: {len(uids_in_school)}")
@@ -1703,26 +1682,25 @@ def send_students_to_school(school_sizes, uids_in_school, uids_in_school_by_age,
 
 
 def count_enrollment_by_age(popdict):
-    """
-    Get enrollment count by age for students in the popdict.
+    """Get enrollment count by age for students in the popdict.
 
     Args:
         popdict (dict): population dictionary
 
     Returns:
         dict: Dictionary of the count of enrolled students by age in popdict.
+
     """
     enrollment_count_by_age = dict.fromkeys(np.arange(0, defaults.settings.max_age), 0)
     for i, person in popdict.items():
-        if person['scid'] is not None and person['sc_student']:
-            enrollment_count_by_age[person['age']] += 1
+        if person["scid"] is not None and person["sc_student"]:
+            enrollment_count_by_age[person["age"]] += 1
 
     return enrollment_count_by_age
 
 
 def get_enrollment_rates_by_age(enrollment_count_by_age, age_count):
-    """
-    Get enrollment rates by age.
+    """Get enrollment rates by age.
 
     Args:
         enrollment_count_by_age (dict) : dictionary of the count of enrolled students
@@ -1730,13 +1708,13 @@ def get_enrollment_rates_by_age(enrollment_count_by_age, age_count):
 
     Returns:
         dict: Dictionary of the enrollment rates by age.
+
     """
     return {a: enrollment_count_by_age[a] / age_count[a] if age_count[a] > 0 else 0 for a in sorted(age_count.keys())}
 
 
 def count_enrollment_by_school_type(popdict, **kwargs):
-    """
-    Get enrollment sizes by school types in popdict.
+    """Get enrollment sizes by school types in popdict.
 
     Args:
         popdict (dict)             : population dictionary
@@ -1745,20 +1723,21 @@ def count_enrollment_by_school_type(popdict, **kwargs):
 
     Returns:
         dict: Dictionary of generated enrollment sizes by school type.
+
     """
     kwargs = sc.objdict(sc.mergedicts(dict(with_school_types=False, keys_to_exclude=[]), kwargs))
     schools = dict()
     enrollment_by_school_type = dict()
     for i, person in popdict.items():
-        if person['scid'] is not None and person['sc_student']:
-            schools.setdefault(person['scid'], dict())
-            schools[person['scid']]['sc_type'] = person['sc_type']
-            schools[person['scid']].setdefault('enrolled', 0)
-            schools[person['scid']]['enrolled'] += 1
+        if person["scid"] is not None and person["sc_student"]:
+            schools.setdefault(person["scid"], dict())
+            schools[person["scid"]]["sc_type"] = person["sc_type"]
+            schools[person["scid"]].setdefault("enrolled", 0)
+            schools[person["scid"]]["enrolled"] += 1
 
     for i, school_i in schools.items():
-        enrollment_by_school_type.setdefault(school_i['sc_type'], [])
-        enrollment_by_school_type[school_i['sc_type']].append(school_i['enrolled'])
+        enrollment_by_school_type.setdefault(school_i["sc_type"], [])
+        enrollment_by_school_type[school_i["sc_type"]].append(school_i["enrolled"])
 
     if not kwargs.with_school_types:
         sc_types = set(enrollment_by_school_type.keys())
@@ -1772,8 +1751,7 @@ def count_enrollment_by_school_type(popdict, **kwargs):
 
 
 def get_generated_school_size_distributions(enrollment_by_school_type, bins):
-    """
-    Get school size distributions by type.
+    """Get school size distributions by type.
 
     Args:
         enrollment_by_school_type (dict) : generated enrollment sizes by school types
@@ -1781,6 +1759,7 @@ def get_generated_school_size_distributions(enrollment_by_school_type, bins):
 
     Returns:
         dict: Dictionary of generated school size distribution by school type.
+
     """
     generated_school_size_dist = dict()
     for sc_type in enrollment_by_school_type:

@@ -1,27 +1,26 @@
-"""
-This module provides the main class for interacting with SynthPops, the Pop class.
+"""This module provides the main class for interacting with SynthPops, the Pop class.
 """
 
 import numpy as np
 import sciris as sc
-from .config import logger as log
-from . import version as spv
-from . import defaults
-from . import base as spb
-from . import config as cfg
-from . import sampling as spsamp
-from . import data_distributions as spdata
-from . import ltcfs as spltcf
-from . import households as sphh
-from . import schools as spsch
-from . import workplaces as spw
-from . import contact_networks as spcnx
-from . import plotting as sppl
-from . import people as spp
+
 import abmshare.utils as exut
 
+from . import base as spb
+from . import config as cfg
+from . import contact_networks as spcnx
+from . import data_distributions as spdata
+from . import defaults
+from . import households as sphh
+from . import ltcfs as spltcf
+from . import people as spp
+from . import plotting as sppl
+from . import sampling as spsamp
+from . import schools as spsch
+from . import workplaces as spw
+from .config import logger as log
 
-__all__ = ['Pop', 'make_population', 'generate_synthetic_population']
+__all__ = ["Pop", "make_population", "generate_synthetic_population"]
 
 
 class Pop(sc.prettyobj):
@@ -39,7 +38,7 @@ class Pop(sc.prettyobj):
                  ltcf_staff_age_min=20,
                  ltcf_staff_age_max=60,
                  with_school_types=False,
-                 school_mixing_type='random',
+                 school_mixing_type="random",
                  average_class_size=20,
                  inter_grade_mixing=0.1,
                  average_student_teacher_ratio=20,
@@ -56,16 +55,15 @@ class Pop(sc.prettyobj):
                  state_location=None,
                  location=None,
                  sheet_name=None,
-                 household_method='infer_ages',
+                 household_method="infer_ages",
                  smooth_ages=False,
                  window_length=7,
-                 config_dirpath=None,                 
+                 config_dirpath=None,
                  location_code=None,
                  region_config_path=None,
-                 parent_config_path=None
+                 parent_config_path=None,
                  ):
-        '''
-        Make a full population network including both people (ages, sexes) and
+        """Make a full population network including both people (ages, sexes) and
         contacts. By default uses Seattle, Washington data. Note about the
         household methods available: 'infer_ages' and 'fixed_ages'.
 
@@ -117,10 +115,12 @@ class Pop(sc.prettyobj):
             location_code (string)                  : location code for the location
             region_config_path (string)         : location of the region config file (has priority over country location, state_location, location)
             parent_config_path (string)         : location of the parent config file (has priority over region_config_path, country location, state_location, location)
+
         Returns:
             network (dict): A dictionary of the full population with ages, connections, and other attributes.
-        '''
-        log.debug('Pop()')
+
+        """
+        log.debug("Pop()")
 
         # General parameters
         if n is None:
@@ -136,7 +136,7 @@ class Pop(sc.prettyobj):
         self.ltcf_pars          = sc.objdict()
 
         self.n                  = int(n)
-        self.max_contacts       = sc.mergedicts({'W': 20}, max_contacts)
+        self.max_contacts       = sc.mergedicts({"W": 20}, max_contacts)
         self.with_industry_code = with_industry_code
         self.rand_seed          = rand_seed
         self.country_location   = country_location
@@ -185,10 +185,10 @@ class Pop(sc.prettyobj):
 
         # what are the layers generated?
         if self.ltcf_pars.with_facilities:
-            self.layers = ['H', 'S', 'W', 'LTCF']
+            self.layers = ["H", "S", "W", "LTCF"]
         else:
-            self.layers = ['H', 'S', 'W']
-        self.layer_mappings = dict(H='Households', S='Schools', W='Workplaces', LTCF='Long Term Care facilities')
+            self.layers = ["H", "S", "W"]
+        self.layer_mappings = dict(H="Households", S="Schools", W="Workplaces", LTCF="Long Term Care facilities")
 
         # Handle the seed
         if self.rand_seed is not None:
@@ -205,7 +205,7 @@ class Pop(sc.prettyobj):
         else:
             print(f"========== setting country location = {country_location}")
             cfg.set_location_defaults(country_location)
-            
+
         self.max_age = defaults.settings.max_age
 
         # if country is specified, and state is not, we are doing a country population
@@ -235,11 +235,11 @@ class Pop(sc.prettyobj):
             self.loc_pars.parent_config = self.parent_config_path
 
         # Heavy lift: make the contacts and their connections
-        log.debug('Generating a new population...')
+        log.debug("Generating a new population...")
         population = self.generate()
 
         self.popdict = population
-        log.debug('Pop(): done.')
+        log.debug("Pop(): done.")
 
         # Add summaries post hoc  --- TBD: summaries during generation
         self.compute_information()  # compute full information
@@ -254,13 +254,13 @@ class Pop(sc.prettyobj):
         return
 
     def generate(self):
-        """
-        Actually generate the network.
+        """Actually generate the network.
 
         Returns:
             network (dict): A dictionary of the full population with ages, connections, and other attributes.
+
         """
-        log.debug('generate()')
+        log.debug("generate()")
 
         # TODO: unpack variables -- to be refactored to pass parameters directly
 
@@ -322,7 +322,7 @@ class Pop(sc.prettyobj):
         self.age_by_brackets = age_by_brackets
 
         # Load the contact matrix
-        contact_matrices = spdata.get_contact_matrices(datadir, sheet_name=sheet_name) #The only place for use of default synthpops/data 
+        contact_matrices = spdata.get_contact_matrices(datadir, sheet_name=sheet_name) #The only place for use of default synthpops/data
         # Store expected contact matrices
         self.contact_matrices = contact_matrices
 
@@ -350,7 +350,7 @@ class Pop(sc.prettyobj):
         hha_brackets = spdata.get_head_age_brackets(**loc_pars)
         hha_by_size = spdata.get_head_age_by_size_distr(**loc_pars)
 
-        if household_method == 'fixed_ages':
+        if household_method == "fixed_ages":
 
             homes_dic, homes = sphh.generate_all_households_fixed_ages(n_nonltcf, hh_sizes, hha_by_size, hha_brackets, cm_age_brackets, cm_age_by_brackets, contact_matrices, ages_left_to_assign)
 
@@ -505,10 +505,10 @@ class Pop(sc.prettyobj):
 
         # Change types
         for key, person in population.items():
-            for layerkey in population[key]['contacts'].keys():
-                population[key]['contacts'][layerkey] = list(population[key]['contacts'][layerkey])
+            for layerkey in population[key]["contacts"].keys():
+                population[key]["contacts"][layerkey] = list(population[key]["contacts"][layerkey])
 
-        school_mixing_types = [self.schools_in_groups[ns]['school_mixing_type'] for ns in range(len(self.schools_in_groups))]
+        school_mixing_types = [self.schools_in_groups[ns]["school_mixing_type"] for ns in range(len(self.schools_in_groups))]
 
         # temporarily store some information
         self.homes_by_uids = homes_by_uids
@@ -524,8 +524,8 @@ class Pop(sc.prettyobj):
 
             sum_ltcf_res = sum([len(f) for f in self.facilities_by_uid_lists])
             if sum_ltcf_res == 0:
-                log.warning(f"Heads up: Population size and long term care facility use rates were too low, no facilities were created for this population. If you wish to include people living in this type of layer, consider using a larger population size or checking your data on long term care facility use rates. Changing pop.with_facilities to False.")
-                self.layers.remove('LTCF')
+                log.warning("Heads up: Population size and long term care facility use rates were too low, no facilities were created for this population. If you wish to include people living in this type of layer, consider using a larger population size or checking your data on long term care facility use rates. Changing pop.with_facilities to False.")
+                self.layers.remove("LTCF")
                 self.ltcf_pars.with_facilities = False
 
         self.set_layer_classes()
@@ -553,13 +553,12 @@ class Pop(sc.prettyobj):
         return
 
     def clean_up_layer_info(self):
+        """Clean up temporary data from the pop object after storing them in specific layer classes.
         """
-        Clean up temporary data from the pop object after storing them in specific layer classes.
-        """
-        for key in ['workplace_uid_lists', 'student_uid_lists', 'teacher_uid_lists',
-                    'non_teaching_staff_uid_lists', 'school_types',
-                    'school_mixing_types', 'schools_in_groups',
-                    'facilities_by_uid_lists', 'facilities_staff_uid_lists']:
+        for key in ["workplace_uid_lists", "student_uid_lists", "teacher_uid_lists",
+                    "non_teaching_staff_uid_lists", "school_types",
+                    "school_mixing_types", "schools_in_groups",
+                    "facilities_by_uid_lists", "facilities_staff_uid_lists"]:
             self.pop_item(key)
         return
 
@@ -568,8 +567,7 @@ class Pop(sc.prettyobj):
         self.__dict__.pop(key, None)  # pop checks if the key exists as an attribute and removes it in that case. Returns a default value of None if the key does not exist
 
     def to_dict(self):
-        """
-        Export to a dictionary -- official way to get the popdict.
+        """Export to a dictionary -- official way to get the popdict.
 
         **Example**::
 
@@ -578,8 +576,7 @@ class Pop(sc.prettyobj):
         return sc.dcp(self.popdict)
 
     def to_json(self, filename, indent=2, **kwargs):
-        """
-        Export to a JSON file.
+        """Export to a JSON file.
 
         **Example**::
 
@@ -588,8 +585,7 @@ class Pop(sc.prettyobj):
         return sc.savejson(filename, self.popdict, indent=indent, **kwargs)
 
     def save(self, filename, **kwargs):
-        """
-        Save population to an binary, gzipped object file.
+        """Save population to an binary, gzipped object file.
 
         **Example**::
 
@@ -599,8 +595,7 @@ class Pop(sc.prettyobj):
 
     @staticmethod
     def load(filename:str|None, reference_size:int=None, *args, **kwargs):
-        """
-        Load from disk from a gzipped pickle.
+        """Load from disk from a gzipped pickle.
 
         Args:
             filename (str): the name or path of the file to load from
@@ -609,20 +604,20 @@ class Pop(sc.prettyobj):
         **Example**::
 
             pop = sp.Pop.load('my-pop.pop')
+
         """
         if filename is None or type(filename) != str:
-            return
+            return None
         pop = sc.loadobj(filename, *args, **kwargs)
         if not isinstance(pop, Pop):
-            errormsg = f'Cannot load object of {type(pop)} as a Pop object'
+            errormsg = f"Cannot load object of {type(pop)} as a Pop object"
             raise TypeError(errormsg)
         if reference_size is not None and exut.validate_pop_size(pop.n,reference_size):
             return pop
-        elif reference_size is not None and not exut.validate_pop_size(pop.n,reference_size):
+        if reference_size is not None and not exut.validate_pop_size(pop.n,reference_size):
             print(f"Population size {pop.n} does not match expected size {reference_size}, ignoring synthpops population, and creatinga new one")
             return None
-        else:
-            return pop
+        return pop
 
     def initialize_households_list(self):
         """Initialize a new households list."""
@@ -630,44 +625,44 @@ class Pop(sc.prettyobj):
         return
 
     def initialize_empty_households(self, n_households=None):
-        """
-        Create a list of empty households.
+        """Create a list of empty households.
 
         Args:
             n_households (int) : the number of households to initialize
+
         """
         sphh.initialize_empty_households(self, n_households)
         return
 
     def populate_households(self, households, age_by_uid):
-        """
-        Populate all of the households. Store each household at the index corresponding to it's hhid.
+        """Populate all of the households. Store each household at the index corresponding to it's hhid.
 
         Args:
             households (list) : list of lists where each sublist represents a household and contains the ids of the household members
             age_by_uid (dict) : dictionary mapping each person's id to their age
+
         """
         sphh.populate_households(self, households, age_by_uid)
         return
 
     def get_household(self, hhid):
-        """
-        Return household with id: hhid.
+        """Return household with id: hhid.
 
         Args:
             hhid (int) : household id number
 
         Returns:
             sp.Household: A populated household.
+
         """
         return sphh.get_household(self, hhid)
 
     def add_household(self, household):
-        """
-        Add a household to the list of households.
+        """Add a household to the list of households.
 
         Args:
             household (sp.Household): household with at minimum the hhid, member_uids, member_ages, reference_uid, and reference_age.
+
         """
         sphh.add_household(self, household)
         return
@@ -678,44 +673,44 @@ class Pop(sc.prettyobj):
         return
 
     def initialize_empty_workplaces(self, n_workplaces=None):
-        """
-        Create a list of empty workplaces.
+        """Create a list of empty workplaces.
 
         Args:
             n_households (int) : the number of workplaces to initialize
+
         """
         sphh.initialize_empty_workplaces(self, n_workplaces)
         return
 
     def populate_workplaces(self, workplaces):
-        """
-        Populate all of the workplaces. Store each workplace at the index corresponding to it's wpid.
+        """Populate all of the workplaces. Store each workplace at the index corresponding to it's wpid.
 
         Args:
             workplaces (list) : list of lists where each sublist represents a workplace and contains the ids of the workplace members
             age_by_uid (dict) : dictionary mapping each person's id to their age
+
         """
         spw.populate_workplaces(self, workplaces)
         return
 
     def get_workplace(self, wpid):
-        """
-        Return workplace with id: wpid.
+        """Return workplace with id: wpid.
 
         Args:
             wpid (int) : workplace id number
 
         Returns:
             sp.Workplace: A populated workplace.
+
         """
         return spw.get_workplace(self, wpid)
 
     def add_workplace(self, workplace):
-        """
-        Add a workplace to the list of workplaces.
+        """Add a workplace to the list of workplaces.
 
         Args:
             workplace (sp.Workplace): workplace with at minimum the wpid, member_uids, member_ages, reference_uid, and reference_age.
+
         """
         spw.add_workplace(self, workplace)
         return
@@ -726,44 +721,44 @@ class Pop(sc.prettyobj):
         return
 
     def initialize_empty_ltcfs(self, n_ltcfs=None):
-        """
-        Create a list of empty ltcfs.
+        """Create a list of empty ltcfs.
 
         Args:
             n_ltcfs (int) : the number of ltcfs to initialize
+
         """
         spltcf.initialize_empty_ltcfs(self, n_ltcfs)
         return
 
     def populate_ltcfs(self, resident_lists, staff_lists):
-        """
-        Populate all of the ltcfs. Store each ltcf at the index corresponding to it's ltcfid.
+        """Populate all of the ltcfs. Store each ltcf at the index corresponding to it's ltcfid.
 
         Args:
             residents_list (list) : list of lists where each sublist represents a ltcf and contains the ids of the residents
             staff_lists (list)    : list of lists where each sublist represents a ltcf and contains the ids of the staff
+
         """
         spltcf.populate_ltcfs(self, resident_lists, staff_lists)
         return
 
     def get_ltcf(self, ltcfid):
-        """
-        Return ltcf with id: ltcfid.
+        """Return ltcf with id: ltcfid.
 
         Args:
             ltcfid (int) : ltcf id number
 
         Returns:
             sp.LongTermCareFacility: A populated ltcf.
+
         """
         return spltcf.get_ltcf(self, ltcfid)
 
     def add_ltcf(self, ltcf):
-        """
-        Add a ltcf to the list of ltcfs.
+        """Add a ltcf to the list of ltcfs.
 
         Args:
             ltcf (sp.LongTermCareFacility): ltcf with at minimum the ltcfid, resident_uids, staff_uids, resident_ages, staff_ages, reference_uid, and reference_age.
+
         """
         spltcf.add_ltcf(self, ltcf)
 
@@ -773,18 +768,17 @@ class Pop(sc.prettyobj):
         return
 
     def initialize_empty_schools(self, n_schools=None):
-        """
-        Create a list of empty schools.
+        """Create a list of empty schools.
 
         Args:
             n_schools (int) : the number of schools to initialize
+
         """
         spsch.initialize_empty_schools(self, n_schools)
         return
 
     def populate_schools(self, student_lists, teacher_lists, non_teaching_staff_lists, age_by_uid, school_types=None, school_mixing_types=None):
-        """
-        Populate all of the schools. Store each school at the index corresponding to it's scid.
+        """Populate all of the schools. Store each school at the index corresponding to it's scid.
 
         Args:
             student_lists (list)            : list of lists where each sublist represents a school and contains the ids of the students
@@ -793,49 +787,49 @@ class Pop(sc.prettyobj):
             age_by_uid (dict)               : dictionary mapping each person's id to their age
             school_types (list)             : list of the school types
             school_mixing_types (list)      : list of the school mixing types
+
         """
         spsch.populate_schools(self, student_lists, teacher_lists, non_teaching_staff_lists, age_by_uid, school_types, school_mixing_types)
         return
 
     def get_school(self, scid):
-        """
-        Return school with id: scid.
+        """Return school with id: scid.
 
         Args:
             scid (int) : school id number
 
         Returns:
             sp.School: A populated school.
+
         """
         return spsch.get_school(self, scid)
 
     def add_school(self, school):
-        """
-        Add a school to the list of schools.
+        """Add a school to the list of schools.
 
         Args:
             school (sp.School): school
+
         """
         spsch.add_school(self, school)
         return
 
     def populate_all_classrooms(self, schools_in_groups):
-        """
-        Populate all of the classrooms in schools for each school that has
+        """Populate all of the classrooms in schools for each school that has
         school_mixing_type equal to 'age_and_class_clustered'. Each classroom
         will be indexed at id clid.
 
         Args:
             schools_in_groups (dict) : a dictionary representing each school in terms of student_groups and teacher_groups corresponding to classrooms
+
         """
         for ns in range(self.n_schools):
-            spsch.initialize_empty_classrooms(self.schools[ns], len(schools_in_groups[ns]['student_groups']))
-            spsch.populate_classrooms(self.schools[ns], schools_in_groups[ns]['student_groups'], schools_in_groups[ns]['teacher_groups'], self.age_by_uid)
+            spsch.initialize_empty_classrooms(self.schools[ns], len(schools_in_groups[ns]["student_groups"]))
+            spsch.populate_classrooms(self.schools[ns], schools_in_groups[ns]["student_groups"], schools_in_groups[ns]["teacher_groups"], self.age_by_uid)
         return
 
     def get_classroom(self, scid, clid):
-        """
-        Return classroom with id: clid from school with id: scid.
+        """Return classroom with id: clid from school with id: scid.
 
         Args:
             scid (int) : school id number
@@ -843,6 +837,7 @@ class Pop(sc.prettyobj):
 
         Returns:
             sp.Classroom : A populated classroom.
+
         """
         return spsch.get_classroom(self, scid, clid)
 
@@ -856,8 +851,8 @@ class Pop(sc.prettyobj):
 
         for layer in self.layers:
             self.information.layer_degrees[layer] = spcnx.count_layer_degree(self, layer=layer)
-            self.information.layer_stats[layer] = self.information.layer_degrees[layer].describe()[['age', 'degree']]
-            self.information.layer_degree_description[layer] = self.information.layer_degrees[layer].groupby('age')['degree'].describe(percentiles=[0.05, 0.25, 0.5, 0.75, 0.95])  # default percentiles to include
+            self.information.layer_stats[layer] = self.information.layer_degrees[layer].describe()[["age", "degree"]]
+            self.information.layer_degree_description[layer] = self.information.layer_degrees[layer].groupby("age")["degree"].describe(percentiles=[0.05, 0.25, 0.5, 0.75, 0.95])  # default percentiles to include
 
         self.information.household_sizes = self.get_household_sizes()
         self.information.household_size_count = self.count_household_sizes()
@@ -891,23 +886,23 @@ class Pop(sc.prettyobj):
 
         percentiles = [5, 95]
 
-        self.summary.layers['H']['mean'] = np.mean(list(self.information.household_sizes.values()))
-        self.summary.layers['H']['std'] = np.std(list(self.information.household_sizes.values()))
+        self.summary.layers["H"]["mean"] = np.mean(list(self.information.household_sizes.values()))
+        self.summary.layers["H"]["std"] = np.std(list(self.information.household_sizes.values()))
         for p in percentiles:
-            self.summary.layers['H'][p] = np.percentile(list(self.information.household_sizes.values()), q=p)
+            self.summary.layers["H"][p] = np.percentile(list(self.information.household_sizes.values()), q=p)
 
         sizes = []
         for s in self.information.enrollment_by_school_type.keys():
             sizes.extend(self.information.enrollment_by_school_type[s])
-        self.summary.layers['S']['mean'] = np.mean(sizes)
-        self.summary.layers['S']['std'] = np.std(sizes)
+        self.summary.layers["S"]["mean"] = np.mean(sizes)
+        self.summary.layers["S"]["std"] = np.std(sizes)
         for p in percentiles:
-            self.summary.layers['S'][p] = np.percentile(sizes, q=p)
+            self.summary.layers["S"][p] = np.percentile(sizes, q=p)
 
-        self.summary.layers['W']['mean'] = np.mean(list(self.information.workplace_sizes.values()))
-        self.summary.layers['W']['std'] = np.std(list(self.information.workplace_sizes.values()))
+        self.summary.layers["W"]["mean"] = np.mean(list(self.information.workplace_sizes.values()))
+        self.summary.layers["W"]["std"] = np.std(list(self.information.workplace_sizes.values()))
         for p in percentiles:
-            self.summary.layers['W'][p] = np.percentile(list(self.information.workplace_sizes.values()), q=p)
+            self.summary.layers["W"][p] = np.percentile(list(self.information.workplace_sizes.values()), q=p)
 
     def summarize(self, return_msg=False):
         """Print and optionally return a brief summary string of the pop."""
@@ -925,7 +920,7 @@ class Pop(sc.prettyobj):
             msg += f"   Number of edges: {self.n * s.loc[s.index == 'mean']['degree'][0] * 2:.0f} ({s.loc[s.index == 'mean']['degree'][0]:.1f} ± {s.loc[s.index == 'std']['degree'][0]:.1f} per person)\n"
             msg += f"   Age (years): {s.loc[s.index == 'mean']['age'][0]:.1f} ({s.loc[s.index == 'min']['age'][0]:.0f}-{s.loc[s.index == 'max']['age'][0]:.0f})\n"
 
-            if layer in ['H', 'S', 'W']:
+            if layer in ["H", "S", "W"]:
                 msg += f"   {self.layer_mappings[layer].title()} size: {self.summary.layers[layer]['mean']:.1f} ± {self.summary.layers[layer]['std']:.1f} people (range is {self.summary.layers[layer][5]:.1f}-{self.summary.layers[layer][95]:.1f}).\n"
 
             msg += "\n"
@@ -935,35 +930,34 @@ class Pop(sc.prettyobj):
         print(msg)
         if return_msg:
             return msg
-        else:
-            return
+        return None
 
     def count_pop_ages(self):
-        """
-        Create an age count of the generated population post generation.
+        """Create an age count of the generated population post generation.
 
         Returns:
             dict: Dictionary of the age count of the generated population.
+
         """
         return spb.count_ages(self.popdict)
 
     # convert to work on array
     def get_household_sizes(self):
-        """
-        Create household sizes in the generated population post generation.
+        """Create household sizes in the generated population post generation.
 
         Returns:
             dict: Dictionary of household size by household id (hhid).
+
         """
         return sphh.get_household_sizes(self.popdict)
 
     # convert to work on array
     def count_household_sizes(self):
-        """
-        Count of household sizes in the generated population.
+        """Count of household sizes in the generated population.
 
         Returns:
             dict: Dictionary of the count of household sizes.
+
         """
         return spb.count_values(self.information.household_sizes)
 
@@ -974,41 +968,39 @@ class Pop(sc.prettyobj):
 
     def get_household_head_ages(self):
         """Get the age of the head of each household in the generated population post generation."""
-        return {hhid: self.popdict[head_id]['age'] for hhid, head_id in self.information.household_heads.items()}
+        return {hhid: self.popdict[head_id]["age"] for hhid, head_id in self.information.household_heads.items()}
 
     def count_household_head_ages(self, bins=None):
-        """
-        Count of household head ages in the generated population.
+        """Count of household head ages in the generated population.
 
         Args:
             bins (array) : If supplied, use this to create a binned count of the household head ages. Otherwise, count discrete household head ages.
 
         Returns:
             dict: Dictionary of the count of household head ages.
+
         """
         if bins is None:
             return spb.count_values(self.information.household_head_ages)
-        else:
-            head_ages = list(self.information.household_head_ages.values())
-            hist, bins = np.histogram(head_ages, bins=bins, density=0)
-            return {i: hist[i] for i in range(len(hist))}
+        head_ages = list(self.information.household_head_ages.values())
+        hist, bins = np.histogram(head_ages, bins=bins, density=0)
+        return {i: hist[i] for i in range(len(hist))}
 
     def get_household_head_ages_by_size(self):
-        """
-        Get the count of households by size and the age of the head of the
+        """Get the count of households by size and the age of the head of the
         household, assuming the minimal household members id is the id of the
         head of the household.
 
         Returns:
             np.ndarray: An array with row as household size and columns as
             household head age brackets.
+
         """
         return sphh.get_household_head_ages_by_size(self)
 
     # convert to work on array
     def get_ltcf_sizes(self, keys_to_exclude=[]):
-        """
-        Create long term care facility sizes in the generated population post generation.
+        """Create long term care facility sizes in the generated population post generation.
 
         Args:
             keys_to_exclude (list) : possible keys to exclude for roles in long term care facilities. See notes.
@@ -1022,13 +1014,13 @@ class Pop(sc.prettyobj):
             'snf_staff' for staff. If either role is included in the parameter
             keys_to_exclude, then individuals with that value equal to 1 will not
             be counted.
+
         """
         return spltcf.get_ltcf_sizes(self.popdict, keys_to_exclude)
 
     # convert to work on array
     def count_ltcf_sizes(self, keys_to_exclude=[]):
-        """
-        Count of long term care facility sizes in the generated population.
+        """Count of long term care facility sizes in the generated population.
 
         Args:
             keys_to_exclude (list) : possible keys to exclude for roles in long term care facilities. See notes.
@@ -1042,90 +1034,91 @@ class Pop(sc.prettyobj):
             'snf_staff' for staff. If either role is included in the parameter
             keys_to_exclude, then individuals with that value equal to 1 will not
             be counted.
+
         """
         return spb.count_values(self.get_ltcf_sizes(keys_to_exclude))
 
     def count_enrollment_by_age(self):
-        """
-        Create enrollment count by age for students in the generated population post generation.
+        """Create enrollment count by age for students in the generated population post generation.
 
         Returns:
             dict: Dictionary of the count of enrolled students by age in the generated population.
+
         """
         return spsch.count_enrollment_by_age(self.popdict)
 
     @property
     def enrollment_rates_by_age(self):
-        """
-        Enrollment rates by age for students in the generated population.
+        """Enrollment rates by age for students in the generated population.
 
         Returns:
             dict: Dictionary of the enrollment rates by age for students in the generated population.
+
         """
         return {k: self.information.enrollment_by_age[k]/self.information.age_count[k] if self.information.age_count[k] > 0 else 0 for k in range(defaults.settings.max_age)}
 
     def count_enrollment_by_school_type(self, *args, **kwargs):
-        """
-        Create enrollment sizes by school types in the generated population post generation.
+        """Create enrollment sizes by school types in the generated population post generation.
 
         Returns:
             list: List of generated enrollment sizes by school type.
+
         """
         enrollment_by_school_type = spsch.count_enrollment_by_school_type(self.popdict, *args, **kwargs)
         return enrollment_by_school_type
 
     def count_employment_by_age(self):
-        """
-        Create employment count by age for workers in the generated population post generation.
+        """Create employment count by age for workers in the generated population post generation.
 
         Returns:
             dict: Dictionary of the count of employed workers by age in the generated population.
+
         """
         return spw.count_employment_by_age(self.popdict)
 
     @property
     def employment_rates_by_age(self):
-        """
-        Employment rates by age for workers in the generated population.
+        """Employment rates by age for workers in the generated population.
 
         Returns:
             dict: Dictionary of the employment rates by age for workers in the generated population.
+
         """
         return {k: self.information.employment_by_age[k]/self.information.age_count[k] if self.information.age_count[k] > 0 else 0 for k in range(defaults.settings.max_age)}
 
     # convert to work on array
     def get_workplace_sizes(self):
-        """
-        Create workplace sizes in the generated population post generation.
+        """Create workplace sizes in the generated population post generation.
 
         Returns:
             dict: Dictionary of workplace size by workplace id (wpid).
+
         """
         return spw.get_workplace_sizes(self.popdict)
 
     # convert to work on array
     def count_workplace_sizes(self):
-        """
-        Count of workplace sizes in the generated population.
+        """Count of workplace sizes in the generated population.
 
         Returns:
             dict:Dictionary of the count of workplace sizes.
+
         """
         return spb.count_values(self.information.workplace_sizes)
 
-    def get_contact_counts_by_layer(self, layer='S', **kwargs):
-        """
-        Get the number of contacts by layer.
+    def get_contact_counts_by_layer(self, layer="S", **kwargs):
+        """Get the number of contacts by layer.
 
         Returns:
             dict: Dictionary of the count of contacts in the layer for the
             different people types in the layer. See
             sp.contact_networks.get_contact_counts_by_layer() for method details.
+
         """
         return spcnx.get_contact_counts_by_layer(self.popdict, layer, **kwargs)
 
     def to_people(self):
-        ''' Convert to the alternative People representation of a population '''
+        """Convert to the alternative People representation of a population"""
         ppl = spp.make_people(popdict=self.popdict, rand_seed=self.rand_seed)  # Create the corresponding population
         return ppl
 
@@ -1141,8 +1134,7 @@ class Pop(sc.prettyobj):
         return fig
 
     def plot_contact_counts(self, contact_counter, **kwargs):
-        """
-        Plot the number of contacts by contact types as a histogram.
+        """Plot the number of contacts by contact types as a histogram.
 
         Args:
             contact_counter (dict)  : A dictionary with people_types as keys and value as list of counts for each type of contacts
@@ -1161,12 +1153,12 @@ class Pop(sc.prettyobj):
             layer = 'S'
             contact_counter = pop.get_contact_counts_by_layer(layer=layer)
             fig, ax = pop.plot_contact_counts(contact_counter)
+
         """
         return sppl.plot_contact_counts(contact_counter, **kwargs)
 
     def plot_ages(self, **kwargs):
-        """
-        Plot a comparison of the expected and generated age distribution.
+        """Plot a comparison of the expected and generated age distribution.
 
         **Example**::
 
@@ -1178,8 +1170,7 @@ class Pop(sc.prettyobj):
         return fig, ax
 
     def plot_household_sizes(self, **kwargs):
-        """
-        Plot a comparison of the expected and generated household size distribution.
+        """Plot a comparison of the expected and generated household size distribution.
 
         **Example**::
 
@@ -1191,8 +1182,7 @@ class Pop(sc.prettyobj):
         return fig, ax
 
     def plot_household_head_ages_by_size(self, **kwargs):
-        """
-        Plot a comparison of the expected and generated age distribution of the
+        """Plot a comparison of the expected and generated age distribution of the
         household heads by the household size.
 
         **Examples**::
@@ -1208,8 +1198,7 @@ class Pop(sc.prettyobj):
         return fig, ax
 
     def plot_ltcf_resident_sizes(self, **kwargs):
-        """
-        Plot a comparison of the expected and generated ltcf resident sizes.
+        """Plot a comparison of the expected and generated ltcf resident sizes.
 
         **Examples**::
 
@@ -1235,8 +1224,7 @@ class Pop(sc.prettyobj):
     #     return fig, ax
 
     def plot_enrollment_rates_by_age(self, **kwargs):
-        """
-        Plot a comparison of the expected and generated enrollment rates by age.
+        """Plot a comparison of the expected and generated enrollment rates by age.
 
         **Example**::
 
@@ -1248,8 +1236,7 @@ class Pop(sc.prettyobj):
         return fig, ax
 
     def plot_employment_rates_by_age(self, **kwargs):
-        """
-        Plot a comparison of the expected and generated employment rates by age.
+        """Plot a comparison of the expected and generated employment rates by age.
 
         **Example**::
 
@@ -1261,8 +1248,7 @@ class Pop(sc.prettyobj):
         return fig, ax
 
     def plot_school_sizes(self, *args, **kwargs):
-        """
-        Plot a comparison of the expected and generated school size distributions by school type.
+        """Plot a comparison of the expected and generated school size distributions by school type.
 
         **Example**::
 
@@ -1274,8 +1260,7 @@ class Pop(sc.prettyobj):
         return fig, ax
 
     def plot_workplace_sizes(self, **kwargs):
-        """
-        Plot a comparison of the expected and generated workplace sizes for
+        """Plot a comparison of the expected and generated workplace sizes for
         workplaces that are not schools or long term care facilities.
 
         **Examples**::
@@ -1289,28 +1274,27 @@ class Pop(sc.prettyobj):
 
 
 def make_population(*args, **kwargs):
-    '''
-    Interface to sp.Pop().to_dict(). Included for backwards compatibility.
-    '''
-    log.debug('make_population()')
+    """Interface to sp.Pop().to_dict(). Included for backwards compatibility.
+    """
+    log.debug("make_population()")
 
-    deprecated = ['generate', 'datadir', 'sheet_name', 'verbose', 'plot', 'write', 'return_popdict', 'use_demography']
+    deprecated = ["generate", "datadir", "sheet_name", "verbose", "plot", "write", "return_popdict", "use_demography"]
     for key in list(kwargs.keys()):
         if key in deprecated:
-            log.warning(f'You have specified parameter {key}, but this parameter is deprecated and will be ignored.')
+            log.warning(f"You have specified parameter {key}, but this parameter is deprecated and will be ignored.")
             kwargs.pop(key)
 
     # Heavy lift 1: make the contacts and their connections
-    log.debug('Generating a new population...')
+    log.debug("Generating a new population...")
     pop = Pop(*args, **kwargs)
 
     population = pop.to_dict()
 
-    log.debug('make_population(): done.')
+    log.debug("make_population(): done.")
     return population
 
 
 def generate_synthetic_population(*args, **kwargs):
-    ''' For backwards compatibility only. '''
-    log.warning('This function is deprecated and may be removed in future releases')
+    """For backwards compatibility only."""
+    log.warning("This function is deprecated and may be removed in future releases")
     return make_population(*args, **kwargs)

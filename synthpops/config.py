@@ -1,38 +1,38 @@
-'''
-This module sets the location of the data folder and other global settings.
+"""This module sets the location of the data folder and other global settings.
 
 To change the level of log messages displayed, use e.g.
 
     sp.logger.setLevel('CRITICAL')
-'''
+"""
 
 # %% Housekeeping
 
+import logging
 import os
 import sys
+
 import psutil
 import sciris as sc
-import logging
-from . import version as spv
+
 from . import defaults as spd
+from . import version as spv
 
-
-__all__ = ['logger',
-           'checkmem',
-           'set_nbrackets',
-           'set_datadir',
-           'validate_datadir',
-           'set_location_defaults',
-           'version_info',
+__all__ = ["logger",
+           "checkmem",
+           "set_nbrackets",
+           "set_datadir",
+           "validate_datadir",
+           "set_location_defaults",
+           "version_info",
            ]
 
 
 # %% Logger
 
 # Set the default logging level
-default_log_level = ['DEBUG', 'INFO', 'WARNING', 'CRITICAL'][1]
+default_log_level = ["DEBUG", "INFO", "WARNING", "CRITICAL"][1]
 
-logger = logging.getLogger('synthpops')
+logger = logging.getLogger("synthpops")
 
 if not logger.hasHandlers(): # pragma: no cover
     # Only add handlers if they don't already exist in the module-level logger
@@ -51,24 +51,24 @@ if not logger.hasHandlers(): # pragma: no cover
     info_handler.addFilter(type("ThresholdFilter", (object,), {"filter": lambda x, logRecord: logRecord.levelno < logging.WARNING})())  # Don't display WARNING or higher
 
     # Set formatting and log level
-    formatter = logging.Formatter('%(levelname)s %(asctime)s.%(msecs)d %(filename)s:%(lineno)d → %(message)s', datefmt='%H:%M:%S')
+    formatter = logging.Formatter("%(levelname)s %(asctime)s.%(msecs)d %(filename)s:%(lineno)d → %(message)s", datefmt="%H:%M:%S")
     debug_handler.setFormatter(formatter)
     for handler in [debug_handler, info_handler, warning_handler]:
         logger.addHandler(handler)
     logger.setLevel(default_log_level)  # Set the overall log level
 
 
-def checkmem(unit='mb', fmt='0.2f', start=0, to_string=True):
-    ''' For use with logger, check current memory usage '''
+def checkmem(unit="mb", fmt="0.2f", start=0, to_string=True):
+    """For use with logger, check current memory usage"""
     process = psutil.Process(os.getpid())
-    mapping = {'b': 1, 'kb': 1e3, 'mb': 1e6, 'gb': 1e9}
+    mapping = {"b": 1, "kb": 1e3, "mb": 1e6, "gb": 1e9}
     try:
         factor = mapping[unit.lower()]
     except KeyError: # pragma: no cover
-        raise sc.KeyNotFoundError(f'Unit {unit} not found')
+        raise sc.KeyNotFoundError(f"Unit {unit} not found")
     mem_use = process.memory_info().rss / factor - start
     if to_string:
-        output = f'{mem_use:{fmt}} {unit.upper()}'
+        output = f"{mem_use:{fmt}} {unit.upper()}"
     else:
         output = mem_use
     return output
@@ -76,11 +76,11 @@ def checkmem(unit='mb', fmt='0.2f', start=0, to_string=True):
 
 # %% Functions
 def version_info():
-    print(f'Loading SynthPops v{spv.__version__} ({spv.__versiondate__}) from {spd.settings.thisdir}')
-    print(f'Data folder: {spd.settings.datadir}')
+    print(f"Loading SynthPops v{spv.__version__} ({spv.__versiondate__}) from {spd.settings.thisdir}")
+    print(f"Data folder: {spd.settings.datadir}")
     try:
         gitinfo = sc.gitinfo(__file__)
-        print(f'Git information:')
+        print("Git information:")
         sc.pp(gitinfo)
     except:
         pass # Don't worry if git info isn't available
@@ -88,7 +88,7 @@ def version_info():
 
 
 def set_metadata(obj):
-    ''' Set standard metadata for an object '''
+    """Set standard metadata for an object"""
     obj.version = spv.__version__
     obj.created = sc.now()
     obj.git_info = sc.gitinfo(__file__, verbose=False)
@@ -106,22 +106,21 @@ def set_location_defaults(country_location=None,data_object=None):
 
     elif country_location is not None and data_object is not None:
         logger.debug(f"Setting  location information with {country_location}.")
-        spd.settings['localdatadir'] = spd.default_datadir_path(data_object['filepath'])
-        spd.reset_settings(data_object['pars'])            
+        spd.settings["localdatadir"] = spd.default_datadir_path(data_object["filepath"])
+        spd.reset_settings(data_object["pars"])
 
     elif country_location is None:
         logger.debug(f"Setting default location information with {spd.default_data['defaults']}.")
         # logger.warning(f"Setting default location information with {spd.default_data['defaults']}.")  # we may want to set as a warning instead
-        loc = data['defaults']
+        loc = data["defaults"]
         spd.reset_settings(loc)
 
     else:
          logger.warning(f"synthpops has no defaults for {country_location}. You can use sp.reset_settings() to set the default location information for the keys: {spd.settings.keys()}")
-        
+
 
 def set_region_config_path(country_location:str,parent_config_path:str=None):
-    '''
-    Set the default path to the configuration file for a given country location.
+    """Set the default path to the configuration file for a given country location.
 
     Args:
         country_location (str) : country location to set the configuration file path for
@@ -129,20 +128,20 @@ def set_region_config_path(country_location:str,parent_config_path:str=None):
 
     Returns:
         str: path to the configuration file for the given country location
-    '''
+
+    """
     #TODO: not implemented yet, maybe not needed
     # logger.warning(f"Setting default location information with {spd.default_data['defaults']}.")  # we may want to set as a warning instead
     data = spd.default_data
-    loc = data['defaults']
-    spd.reset_settings(loc)    
-    
+    loc = data["defaults"]
+    spd.reset_settings(loc)
+
 # initially set defaults for the usa
-# set_location_defaults() #comented 
+# set_location_defaults() #comented
 
 
 def set_datadir(root_dir, relative_path=None):
-    '''
-    Set the data folder and relative path to the user-specified location.
+    """Set the data folder and relative path to the user-specified location.
 
     On startup, the datadir and rel_path are set to the conventions used to
     store data. datadir is the root directory to the data, and relative_path is a
@@ -159,37 +158,37 @@ def set_datadir(root_dir, relative_path=None):
 
     Returns:
         str: path to the updated settings.datadir
-    '''
+
+    """
     datadir = root_dir
     if relative_path is not None:
-        spd.reset_settings_by_key('relative_path', relative_path)
+        spd.reset_settings_by_key("relative_path", relative_path)
 
-    logger.info(f'Done: data directory set to {root_dir}.')
-    logger.info(f'Relative Path set to  {spd.settings.relative_path}.')
+    logger.info(f"Done: data directory set to {root_dir}.")
+    logger.info(f"Relative Path set to  {spd.settings.relative_path}.")
 
-    spd.reset_settings_by_key('datadir', datadir)
+    spd.reset_settings_by_key("datadir", datadir)
 
     return spd.settings.datadir
 
 
 def set_nbrackets(n):
-    '''Set the number of census brackets -- usually 16, 18 or 20.'''
+    """Set the number of census brackets -- usually 16, 18 or 20."""
     logger.info(f"set_nbrackets n = {n}")
-    spd.reset_settings_by_key('nbrackets', n)
+    spd.reset_settings_by_key("nbrackets", n)
 
     if spd.settings.nbrackets not in spd.settings.valid_nbracket_ranges:
-        logger.warning(f'Note: current supported bracket choices are {spd.settings.valid_nbracket_ranges}, use {spd.settings.nbrackets} at your own risk.')
-    logger.info(f'Done: number of brackets is set to {n}.')
+        logger.warning(f"Note: current supported bracket choices are {spd.settings.valid_nbracket_ranges}, use {spd.settings.nbrackets} at your own risk.")
+    logger.info(f"Done: number of brackets is set to {n}.")
 
     return spd.settings.nbrackets
 
 
 def validate_datadir(verbose=True):
-    ''' Check that the data folder can be found. '''
+    """Check that the data folder can be found."""
     if os.path.isdir(spd.settings.datadir):
         logger.info(f"The data folder {spd.settings.datadir} was found.")
     else:
         if spd.settings.datadir is None:
-            raise FileNotFoundError(f'The datadir has not been set; use synthpops.set_datadir() and try again.')
-        else:
-            raise FileNotFoundError(f'The folder "{spd.settings.datadir}" does not exist.')
+            raise FileNotFoundError("The datadir has not been set; use synthpops.set_datadir() and try again.")
+        raise FileNotFoundError(f'The folder "{spd.settings.datadir}" does not exist.')

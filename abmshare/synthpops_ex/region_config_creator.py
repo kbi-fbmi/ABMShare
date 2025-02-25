@@ -1,16 +1,18 @@
-import abmshare.utils as exut
+import multiprocessing as mp
+
 import abmshare.defaults as exdf
 import abmshare.synthpops_ex.synthpops_conf_getter as spcg
+import abmshare.utils as exut
 from abmshare.synthpops_ex.region import Region
-import multiprocessing as mp
+
 
 class RegionConfigCreator:
     def __init__(self,configuration:dict|str,
-                 parent_configuration:dict|str=None,                 
+                 parent_configuration:dict|str=None,
                  wait:bool=False,
                  save_settings:dict=None,
                  test:bool=False,
-                 mobility:bool=None
+                 mobility:bool=None,
                  ):
         """_summary_
 
@@ -19,6 +21,7 @@ class RegionConfigCreator:
             parent_configuration (dict, optional): there can be preloaded configuration with some pars. Can be loaded from main conf
             wait (bool, optional): if wait is true, then its manually needed to call process function
             save_settings (dict, optional): (OPTIONAL) if provided, then its changed output filepath
+
         """
         # Some pars
         if isinstance(configuration,str):
@@ -32,34 +35,34 @@ class RegionConfigCreator:
         self.save_settings=save_settings or {}
         self.regions={}
         # Other parameters
-        self.num_of_regions=None        
+        self.num_of_regions=None
         # Creator parameters
-        self.multiprocess=self.configuration.get(exdf.confkeys['multiprocess'],False)
+        self.multiprocess=self.configuration.get(exdf.confkeys["multiprocess"],False)
         self.mobility=mobility
 
-        if exut.get_nested_value_from_dict(dictionary=self.configuration,keys=exdf.synthpops_mobility_confkeys+['value']) and self.mobility==None or self.mobility==True: 
+        if exut.get_nested_value_from_dict(dictionary=self.configuration,keys=exdf.synthpops_mobility_confkeys+["value"]) and self.mobility==None or self.mobility==True:
             self.mobility_dict=exut.prepare_mobility(exut.load_datafile(spcg.get_mobility_filepath(self.configuration)))
         else:
-            self.mobility_dict=False     
+            self.mobility_dict=False
         # Check and assign/empty configuration structure
-        self.empty_configuration=exut.load_config(exut.merge_file_path("synthpops_ex/data/empty_region.json"))        
+        self.empty_configuration=exut.load_config(exut.merge_file_path("synthpops_ex/data/empty_region.json"))
         if not wait:
             self.process()
-        
+
     def preparation_region_pop_creator(self):
         for region in spcg.get_all_regions(self.configuration):
             # First add popsize and mobility
             if self.test and isinstance(self.mobility_dict,bool):
-                self.regions[region].add_pop_size(exdf.testsettings['n_size'])
+                self.regions[region].add_pop_size(exdf.testsettings["n_size"])
             elif self.test and self.mobility_dict:
-                self.regions[region].add_pop_size(exdf.testsettings['n_size']+(int(exdf.testsettings['mobility_size']*(self.num_of_regions-1))))     
+                self.regions[region].add_pop_size(exdf.testsettings["n_size"]+(int(exdf.testsettings["mobility_size"]*(self.num_of_regions-1))))
             elif isinstance(self.mobility_dict,bool):
                 self.regions[region].add_pop_size(spcg.get_popsize(self.configuration,location_code=self.regions[region].location_code,
-                                                               age_distribution_filepath=self.regions[region].data_files[exdf.synthpops_input_files['population_age_distributions']]))
-            else:                
+                                                               age_distribution_filepath=self.regions[region].data_files[exdf.synthpops_input_files["population_age_distributions"]]))
+            else:
                 self.regions[region].add_pop_size(spcg.get_popsize(self.configuration,location_code=self.regions[region].location_code,
-                                                               age_distribution_filepath=self.regions[region].data_files[exdf.synthpops_input_files['population_age_distributions']])
-                                                               +int(exut.get_mobility_num(self.mobility_dict,self.regions[region].location_code,all_location_codes=self.regions.keys())))        
+                                                               age_distribution_filepath=self.regions[region].data_files[exdf.synthpops_input_files["population_age_distributions"]])
+                                                               +int(exut.get_mobility_num(self.mobility_dict,self.regions[region].location_code,all_location_codes=self.regions.keys())))
             # Pars
             for key,value in exdf.synthpops_creator_pars_mapped.items():
                 if key in self.regions[region].__dict__:
@@ -82,40 +85,40 @@ class RegionConfigCreator:
             for key in self.regions.keys():
                 self.regions[key].create_population_object()
 
-        
+
 
     def preparation_region_config(self):
         # Look for csv files, otherwise regions
         for region in spcg.get_all_regions(self.configuration):
             self.regions[region]=""
-        self.num_of_regions=len(self.regions) 
+        self.num_of_regions=len(self.regions)
 
     def process(self):
         # Region config creation
         self.region_config_creator(test=self.test)
         # Population object creation
         self.preparation_region_pop_creator()
-        self.create_population_objects() 
+        self.create_population_objects()
         print()
 
     def region_config_creator(self,test:bool=False):
-        self.preparation_region_config()        
+        self.preparation_region_config()
         creator_data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=self.configuration,
-                            keys=exdf.synthpops_creator_confkeys).get(exdf.confkeys['filepath'], None))
+                            keys=exdf.synthpops_creator_confkeys).get(exdf.confkeys["filepath"], None))
         for key,value in self.regions.items():
-            id=exut.get_index_by_column_and_value(df=creator_data,column=exdf.synthpops_region_csv_columns['location_code'],value=key)
-            self.regions[key]=Region(location_code=creator_data[exdf.synthpops_region_csv_columns['location_code']][id],
-                                     region_name=creator_data[exdf.synthpops_region_csv_columns['region_name']][id],
-                                     untrimmed_name=creator_data[exdf.synthpops_region_csv_columns['untrimmed_name']][id],
-                                     sheet_name=creator_data[exdf.synthpops_region_csv_columns['sheet_name']][id],
-                                     pars=spcg.get_synthpops_parameters(self.configuration,location_code=creator_data[exdf.synthpops_region_csv_columns['location_code']][id]
-                                                                        ,region_parent_name=creator_data[exdf.synthpops_region_csv_columns['region_parent_name']][id]),
-                                     notes=creator_data[exdf.synthpops_region_csv_columns['notes']][id],
-                                     region_parent_name=creator_data[exdf.synthpops_region_csv_columns['region_parent_name']][id],
-                                     parent_config=spcg.get_parent_location(config=self.configuration,code=creator_data[exdf.synthpops_region_csv_columns['location_code']][id]),
-                                     save_settings=self.save_settings     
+            id=exut.get_index_by_column_and_value(df=creator_data,column=exdf.synthpops_region_csv_columns["location_code"],value=key)
+            self.regions[key]=Region(location_code=creator_data[exdf.synthpops_region_csv_columns["location_code"]][id],
+                                     region_name=creator_data[exdf.synthpops_region_csv_columns["region_name"]][id],
+                                     untrimmed_name=creator_data[exdf.synthpops_region_csv_columns["untrimmed_name"]][id],
+                                     sheet_name=creator_data[exdf.synthpops_region_csv_columns["sheet_name"]][id],
+                                     pars=spcg.get_synthpops_parameters(self.configuration,location_code=creator_data[exdf.synthpops_region_csv_columns["location_code"]][id]
+                                                                        ,region_parent_name=creator_data[exdf.synthpops_region_csv_columns["region_parent_name"]][id]),
+                                     notes=creator_data[exdf.synthpops_region_csv_columns["notes"]][id],
+                                     region_parent_name=creator_data[exdf.synthpops_region_csv_columns["region_parent_name"]][id],
+                                     parent_config=spcg.get_parent_location(config=self.configuration,code=creator_data[exdf.synthpops_region_csv_columns["location_code"]][id]),
+                                     save_settings=self.save_settings,
                                      )
-            self.regions[key].add_datafiles(datafiles=spcg.get_region_specific_csv_files(config=self.configuration,location_code=creator_data[exdf.synthpops_region_csv_columns['location_code']][id],mapped_output=True))
+            self.regions[key].add_datafiles(datafiles=spcg.get_region_specific_csv_files(config=self.configuration,location_code=creator_data[exdf.synthpops_region_csv_columns["location_code"]][id],mapped_output=True))
             self.regions[key].add_naming_object(naming_object=exut.get_nested_value_from_dict(dictionary=self.configuration,keys=exdf.synthpops_naming_confkeys))
             self.regions[key].process_region_creation(test=test)
 
@@ -123,7 +126,7 @@ class RegionConfigCreator:
 
     def return_regions(self):
         return self.regions
-    
+
 
 
 

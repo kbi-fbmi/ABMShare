@@ -1,29 +1,25 @@
-"""
-Read in data distributions.
+"""Read in data distributions.
 """
 
 import os
-import json
+
 import numpy as np
 import pandas as pd
 import sciris as sc
-from collections import Counter
+
 from . import base as spb
-from . import config as cfg
-from . import defaults
-from . import logger
-from . import data
+from . import data, defaults, logger
 
 
 def get_relative_path(datadir):
-    """
-    Get the path relative for the datadir.
+    """Get the path relative for the datadir.
 
     Args:
         datadir (str): path to a specified data directory
 
     Returns:
         str: A path relative to a specified data directory datadir
+
     """
     base_dir = datadir
     if len(defaults.settings.relative_path) > 1:
@@ -37,14 +33,14 @@ def get_nbrackets():
 
 
 def calculate_which_nbrackets_to_use(location_data, nbrackets=None):
-    """
-    Calculate the number of age brackets to use by default.
+    """Calculate the number of age brackets to use by default.
 
     Args:
         nbrackets (int): the number of age brackets to use
 
     Returns:
         int: The number of age brackets to use.
+
     """
     if nbrackets is None:
         nbrackets = [d.num_bins for d in location_data.population_age_distributions if d.num_bins is not None]
@@ -57,28 +53,26 @@ def calculate_which_nbrackets_to_use(location_data, nbrackets=None):
 
 
 def sanitize_location(location):
-    """
-    Process and return a valid name for a location.
+    """Process and return a valid name for a location.
 
     Args:
         location (str): name of the location
 
     Returns:
         str: A processed location name.
+
     """
     if location is None:
         return ""
-    else:
-        # No spaces in filenames.
-        location = location.replace(" ", "_")
-        # Our convention is to separate location segments with "-".
-        location = location.replace("-", "_")
+    # No spaces in filenames.
+    location = location.replace(" ", "_")
+    # Our convention is to separate location segments with "-".
+    location = location.replace("-", "_")
     return location
 
 
 def calculate_location_filename(location, state_location, country_location):
-    """
-    Process a location filename.
+    """Process a location filename.
 
     Args:
         location (string)         : name of the location
@@ -87,6 +81,7 @@ def calculate_location_filename(location, state_location, country_location):
 
     Returns:
         str: A filename for where the location data reside.
+
     """
     separator = "-"
     if location != "":
@@ -99,8 +94,7 @@ def calculate_location_filename(location, state_location, country_location):
 
 
 def calculate_location_filepath(location, state_location, country_location):
-    """
-    Process a location filepath.
+    """Process a location filepath.
 
     Args:
         location (string)         : name of the location
@@ -109,6 +103,7 @@ def calculate_location_filepath(location, state_location, country_location):
 
     Returns:
         str: A filename for where the location data reside.
+
     """
     logger.debug(f"Calculating filepath for (location, state_location, country_location) = "
                  f"({location}, {state_location}, {country_location})")
@@ -123,8 +118,7 @@ def calculate_location_filepath(location, state_location, country_location):
 
 
 def load_location(specific_location:str=None, state_location:str=None, country_location:str=None, revert_to_default=None,different_location=None,region_config:str=None,parent_config:str=None):
-    """
-    Loading json object for the location data.
+    """Loading json object for the location data.
 
     Args:
         specific_location (string) : name of the location
@@ -135,6 +129,7 @@ def load_location(specific_location:str=None, state_location:str=None, country_l
         region_config (str)      : Filepath to configuration file
     Returns:
         str: A filename for where the location data reside.
+
     """
     if region_config:
         try:
@@ -147,7 +142,7 @@ def load_location(specific_location:str=None, state_location:str=None, country_l
                 return location_object
             except:
                 logger.debug(f"Cannot load configuration from {region_config}")
-                return
+                return None
     if revert_to_default is None:
         revert_to_default = False
     location_filepath = calculate_location_filepath(specific_location, state_location, country_location)
@@ -172,19 +167,17 @@ def load_location(specific_location:str=None, state_location:str=None, country_l
                         f"country_location [{country_location}], reverting to default.")
             if revert_to_default:
                 return load_location(defaults.settings.location, defaults.settings.state_location, defaults.settings.country_location, revert_to_default=False)
-            else:
-                msg =   f"Data unavailable for " \
+            msg =   f"Data unavailable for " \
                         f"(location, state_location, country_location) = " \
                         f"({specific_location}, {state_location}, {country_location}). " \
                         f"Please check input strings, or set use_default to True to use the default values from " \
                         f"(location, state_location, country_location) = " \
                         f"({defaults.settings.location}, {defaults.settings.state_location}, {defaults.settings.country_location}). "
-                raise NotImplementedError(msg)
+            raise NotImplementedError(msg)
 
 
 def read_age_bracket_distr(datadir=None, location=None, state_location=None, country_location=None, nbrackets=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    A dict of the age distribution by age brackets. If use_default, then we'll
+    """A dict of the age distribution by age brackets. If use_default, then we'll
     first try to look for location specific data and if that's not available
     we'll use default data from settings.location,
     settings.state_location, settings.country_location. This may not
@@ -212,7 +205,7 @@ def read_age_bracket_distr(datadir=None, location=None, state_location=None, cou
             try:
                 location_data = load_location(region_config=region_config,parent_config=parent_config)
             except:
-                print(f"An error occured due to loading age bracket distribution")
+                print("An error occured due to loading age bracket distribution")
     else:
         location_data = load_location(location, state_location, country_location, revert_to_default=use_default)
     nbrackets = calculate_which_nbrackets_to_use(location_data, nbrackets)
@@ -230,8 +223,7 @@ def read_age_bracket_distr(datadir=None, location=None, state_location=None, cou
 
 # TODO: need to adapt this to new data.py
 def get_smoothed_single_year_age_distr(datadir=None, location=None, state_location=None, country_location=None, nbrackets=None, file_path=None, use_default=False, window_length=7,region_config:str=None,parent_config:str=None):
-    """
-    A smoothed dict of the age distribution by single years. If use_default,
+    """A smoothed dict of the age distribution by single years. If use_default,
     then we'll first try to look for location specific data and if that's not
     available we'll use default data from settings.location,
     settings.state_location, settings.country_location. This may not
@@ -251,6 +243,7 @@ def get_smoothed_single_year_age_distr(datadir=None, location=None, state_locati
     Returns:
         dict: A dictionary of the age distribution by age bracket. Keys map to a
         range of ages in that age bracket.
+
     """
     if region_config:
         age_bracket_distr = read_age_bracket_distr(region_config=region_config)
@@ -292,8 +285,7 @@ def get_smoothed_single_year_age_distr(datadir=None, location=None, state_locati
 
 
 def get_household_size_distr(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    A dictionary of the distribution of household sizes. If you don't give the
+    """A dictionary of the distribution of household sizes. If you don't give the
     file_path, then supply the location, state_location, and country_location
     strings. If use_default, then we'll first try to look for location specific
     data and if that's not available we'll use default data from
@@ -316,6 +308,7 @@ def get_household_size_distr(datadir=None, location=None, state_location=None, c
         dict: A dictionary of the household size distribution data. Keys map to
         the household size as an integer, values are the percent of households
         of that size.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -340,8 +333,7 @@ def get_household_size_distr(datadir=None, location=None, state_location=None, c
 
 
 def get_head_age_brackets(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get a dictionary of head age brackets either from the file_path directly, or
+    """Get a dictionary of head age brackets either from the file_path directly, or
     using the other parameters to figure out what the file_path should be. If
     use_default, then we'll first try to look for location specific data and if
     that's not available we'll use default data from settings.location,
@@ -363,6 +355,7 @@ def get_head_age_brackets(datadir=None, location=None, state_location=None, coun
         dict: A dictionary of the age brackets for head of household
         distribution data. Keys map to the age bracket as an integer, values are
         the percent of households which head of household in that age bracket.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -389,8 +382,7 @@ def get_head_age_brackets(datadir=None, location=None, state_location=None, coun
 
 
 def get_head_age_by_size_distr(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Create an array of head of household age bracket counts (column) given by
+    """Create an array of head of household age bracket counts (column) given by
     size (row). If use_default, then we'll first try to look for location
     specific data and if that's not available we'll use default data from the
     settings.location, settings.state_location,
@@ -410,6 +402,7 @@ def get_head_age_by_size_distr(datadir=None, location=None, state_location=None,
     Returns:
         ndarray: An array where each row s represents the age distribution of
         the head of households for households of size s-1.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -434,8 +427,7 @@ def get_head_age_by_size_distr(datadir=None, location=None, state_location=None,
 
 
 def get_census_age_brackets(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False, nbrackets=None,region_config:str=None,parent_config:str=None):
-    """
-    Get census age brackets: depends on the country or source of the age
+    """Get census age brackets: depends on the country or source of the age
     distribution and the contact pattern data. If use_default, then we'll first
     try to look for location specific data and if that's not available we'll use
     default data from settings.location, settings.state_location,
@@ -483,9 +475,8 @@ def get_census_age_brackets(datadir=None, location=None, state_location=None, co
     return age_brackets
 
 # TODO: still open question on how to handle these.
-def get_contact_matrix(datadir, setting_code, sheet_name=None, file_path=None, delimiter=' ', header=None):
-    """
-    Get setting specific age contact matrix given sheet name to use. If
+def get_contact_matrix(datadir, setting_code, sheet_name=None, file_path=None, delimiter=" ", header=None):
+    """Get setting specific age contact matrix given sheet name to use. If
     file_path is given, then delimiter and header should also be specified.
 
     Args:
@@ -503,26 +494,27 @@ def get_contact_matrix(datadir, setting_code, sheet_name=None, file_path=None, d
         then the contact rate, number, or frequency for the average individual
         in age bracket i with all of their contacts in age bracket j in that
         physical contact setting.
+
     """
     if file_path is None:
-        setting_names = {'H': 'home', 'S': 'school', 'W': 'work', 'C': 'other_locations'}
+        setting_names = {"H": "home", "S": "school", "W": "work", "C": "other_locations"}
         base_dir = get_relative_path(datadir)
 
         if setting_code in setting_names:
-            file_path = os.path.join(base_dir, 'MUestimates_' + setting_names[setting_code] + '_1.xlsx')
+            file_path = os.path.join(base_dir, "MUestimates_" + setting_names[setting_code] + "_1.xlsx")
 
             try: # Shortcut: use pre-processed data
-                obj_path = file_path.replace('_1.xlsx', '.obj').replace('_2.xlsx', '.obj')
+                obj_path = file_path.replace("_1.xlsx", ".obj").replace("_2.xlsx", ".obj")
                 data = sc.loadobj(obj_path)
                 arr = data[sheet_name]
                 return arr
             except Exception as E:
-                errormsg = f'Warning: could not load pickled data ({str(E)}), defaulting to Excel...'
+                errormsg = f"Warning: could not load pickled data ({str(E)}), defaulting to Excel..."
                 print(errormsg)
                 try:
                     df = pd.read_excel(file_path, sheet_name=sheet_name, header=0)
                 except:
-                    file_path = file_path.replace('_1.xlsx', '_2.xlsx')
+                    file_path = file_path.replace("_1.xlsx", "_2.xlsx")
                     df = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
                 return np.array(df)
         else:
@@ -535,10 +527,9 @@ def get_contact_matrix(datadir, setting_code, sheet_name=None, file_path=None, d
             raise NotImplementedError("Contact matrix did not open. Check inputs.")
 
 # TODO: still open question on how to handle these.
-def get_contact_matrices(datadir=None, sheet_name=None, file_path_dic=None, delimiter=' ', header=None, use_default=False):
+def get_contact_matrices(datadir=None, sheet_name=None, file_path_dic=None, delimiter=" ", header=None, use_default=False):
     # need review for additional countries
-    """
-    Create a dict of setting specific age contact matrices. If use_default, then
+    """Create a dict of setting specific age contact matrices. If use_default, then
     we'll first try to look for location specific data and if that's not
     available we'll use default data from settings.sheet_name. This may
     not be appropriate for the population under study so it's best to provide as
@@ -556,16 +547,17 @@ def get_contact_matrices(datadir=None, sheet_name=None, file_path_dic=None, deli
         dict: A dictionary of the different contact matrices for each
         population, given by the sheet name. Keys map to the different possible
         physical contact settings for which data are available.
+
     """
     matrices = {}
     if file_path_dic is None:
-        file_path_dic = dict.fromkeys(['H', 'S', 'W', 'C'], None)
+        file_path_dic = dict.fromkeys(["H", "S", "W", "C"], None)
     try:
-        for setting_code in ['H', 'S', 'W', 'C']:
+        for setting_code in ["H", "S", "W", "C"]:
             matrices[setting_code] = get_contact_matrix(datadir, setting_code, sheet_name, file_path_dic[setting_code], delimiter, header)
     except:
         if use_default:
-            for setting_code in ['H', 'S', 'W', 'C']:
+            for setting_code in ["H", "S", "W", "C"]:
                 matrices[setting_code] = get_contact_matrix(datadir, setting_code, sheet_name=defaults.settings.sheet_name)
         else:
             raise NotImplementedError(f"Data unavailable for the location specified. Please check input strings or set use_default to True to use default values from the {defaults.settings.sheet_name}.")
@@ -573,8 +565,7 @@ def get_contact_matrices(datadir=None, sheet_name=None, file_path_dic=None, deli
 
 
 def get_school_enrollment_rates(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get dictionary of enrollment rates by age. If use_default, then we'll first
+    """Get dictionary of enrollment rates by age. If use_default, then we'll first
     try to look for location specific data and if that's not available we'll use
     default data from settings.location, settings.state_location,
     settings.country_location. This may not be appropriate for the
@@ -593,6 +584,7 @@ def get_school_enrollment_rates(datadir=None, location=None, state_location=None
 
     Returns:
         dict: A dictionary of school enrollment rates by age.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -617,8 +609,7 @@ def get_school_enrollment_rates(datadir=None, location=None, state_location=None
 
 
 def get_school_size_brackets(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get school size brackets: depends on the source/location of the data. If
+    """Get school size brackets: depends on the source/location of the data. If
     use_default, then we'll first try to look for location specific data and if
     that's not available we'll use default data from settings.location,
     settings.state_location, settings.country_location. This may not
@@ -637,6 +628,7 @@ def get_school_size_brackets(datadir=None, location=None, state_location=None, c
 
     Returns:
         dict: A dictionary of school size brackets.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -665,8 +657,7 @@ def get_school_size_brackets(datadir=None, location=None, state_location=None, c
 
 
 def get_school_size_distr_by_brackets(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get distribution of school sizes by size bracket or bin. If use_default,
+    """Get distribution of school sizes by size bracket or bin. If use_default,
     then we'll first try to look for location specific data and if that's not
     available we'll use default data from settings.location, settings.state_location,
     settings.country_location. This may not be appropriate for the population under study
@@ -684,6 +675,7 @@ def get_school_size_distr_by_brackets(datadir=None, location=None, state_locatio
 
     Returns:
         dict: A dictionary of the distribution of school sizes by bracket.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -710,29 +702,29 @@ def get_school_size_distr_by_brackets(datadir=None, location=None, state_locatio
 
 # ### Default school type data ### #
 def get_default_school_type_age_ranges():
-    """
-    Define and return default school types and the age range for each.
+    """Define and return default school types and the age range for each.
 
     Return:
         dict: A dictionary of default school types and the age range for each.
+
     """
     school_type_age_ranges = {}
-    school_type_age_ranges['pk'] = np.arange(3, 6)
-    school_type_age_ranges['es'] = np.arange(6, 11)
-    school_type_age_ranges['ms'] = np.arange(11, 14)
-    school_type_age_ranges['hs'] = np.arange(14, 18)
-    school_type_age_ranges['uv'] = np.arange(18, 101)
+    school_type_age_ranges["pk"] = np.arange(3, 6)
+    school_type_age_ranges["es"] = np.arange(6, 11)
+    school_type_age_ranges["ms"] = np.arange(11, 14)
+    school_type_age_ranges["hs"] = np.arange(14, 18)
+    school_type_age_ranges["uv"] = np.arange(18, 101)
 
     return school_type_age_ranges
 
 
 def get_default_school_types_distr_by_age():
-    """
-    Define and return default probabilities of school type for each age.
+    """Define and return default probabilities of school type for each age.
 
     Return:
         dict: A dictionary of default probabilities for the school type likely
         for each age.
+
     """
     school_type_age_ranges = get_default_school_type_age_ranges()
 
@@ -748,8 +740,7 @@ def get_default_school_types_distr_by_age():
 
 
 def get_default_school_types_by_age_single():
-    """
-    Define and return default school type by age by assigning the school type
+    """Define and return default school type by age by assigning the school type
     with the highest probability.
 
     Return:
@@ -769,8 +760,7 @@ def get_default_school_types_by_age_single():
 
 
 def get_default_school_size_distr_brackets():
-    """
-    Define and return default school size distribution brackets.
+    """Define and return default school size distribution brackets.
 
     Return:
         dict: A dictionary of school size brackets.
@@ -780,17 +770,17 @@ def get_default_school_size_distr_brackets():
 
 
 def get_default_school_size_distr_by_type():
-    """
-    Define and return default school size distribution for each school type. The
+    """Define and return default school size distribution for each school type. The
     school size distributions are binned to size groups or brackets.
 
     Return:
         dict: A dictionary of school size distributions binned by size groups or
         brackets for each type of default school.
+
     """
     school_size_distr_by_type = {}
 
-    school_types = ['pk', 'es', 'ms', 'hs', 'uv']
+    school_types = ["pk", "es", "ms", "hs", "uv"]
 
     for k in school_types:
         school_size_distr_by_type[k] = get_school_size_distr_by_brackets(defaults.settings.datadir, country_location=defaults.settings.country_location, state_location=defaults.settings.state_location, location=defaults.settings.location, use_default=True)
@@ -799,8 +789,7 @@ def get_default_school_size_distr_by_type():
 
 
 def get_school_type_age_ranges(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get a dictionary of the school types and the age range for each for the
+    """Get a dictionary of the school types and the age range for each for the
     location specified.
 
     Args:
@@ -815,6 +804,7 @@ def get_school_type_age_ranges(datadir=None, location=None, state_location=None,
 
     Returns:
         dict: A dictionary of default school types and the age range for each.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -843,8 +833,7 @@ def get_school_type_age_ranges(datadir=None, location=None, state_location=None,
 
 
 def get_school_size_distr_by_type(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get the school size distribution by school types. If use_default, then we'll
+    """Get the school size distribution by school types. If use_default, then we'll
     try to look for location specific data first, and if that's not available
     we'll use default data from the set default locations (see sp.defaults.py).
     This may not be appropriate for the population under study so it's best to
@@ -863,6 +852,7 @@ def get_school_size_distr_by_type(datadir=None, location=None, state_location=No
     Returns:
         dict: A dictionary of school size distributions binned by size groups or
         brackets for each type of default school.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -890,8 +880,7 @@ def get_school_size_distr_by_type(datadir=None, location=None, state_location=No
 
 
 def get_employment_rates(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get employment rates by age. If use_default, then we'll first try to look
+    """Get employment rates by age. If use_default, then we'll first try to look
     for location specific data and if that's not available we'll use default
     data from settings.location, settings.state_location,
     settings.country_location. This may not be appropriate for the
@@ -910,6 +899,7 @@ def get_employment_rates(datadir=None, location=None, state_location=None, count
 
     Returns:
         dict: A dictionary of employment rates by age.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -933,8 +923,7 @@ def get_employment_rates(datadir=None, location=None, state_location=None, count
 
 
 def get_workplace_size_brackets(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get workplace size brackets. If use_default, then we'll first try to look
+    """Get workplace size brackets. If use_default, then we'll first try to look
     for location specific data and if that's not available we'll use default
     data from settings.location, settings.state_location,
     settings.country_location. This may not be appropriate for the
@@ -953,6 +942,7 @@ def get_workplace_size_brackets(datadir=None, location=None, state_location=None
 
     Returns:
         dict: A dictionary of workplace size brackets.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -981,8 +971,7 @@ def get_workplace_size_brackets(datadir=None, location=None, state_location=None
 
 
 def get_workplace_size_distr_by_brackets(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get the distribution of workplace size by brackets. If use_default, then
+    """Get the distribution of workplace size by brackets. If use_default, then
     we'll first try to look for location specific data and if that's not
     available we'll use default data from settings.location, settings.state_location,
     settings.country_location. This may not be appropriate for the population under study
@@ -999,6 +988,7 @@ def get_workplace_size_distr_by_brackets(datadir=None, location=None, state_loca
         parent_config (string)        : file path to user specified workplace size distribution data
     Returns:
         dict: A dictionary of the distribution of workplace sizes by bracket.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -1025,8 +1015,7 @@ def get_workplace_size_distr_by_brackets(datadir=None, location=None, state_loca
 
 
 def get_state_postal_code(state_location, country_location):
-    """
-    Get the state postal code.
+    """Get the state postal code.
 
     Args:
         state_location (string)   : name of the state
@@ -1034,17 +1023,17 @@ def get_state_postal_code(state_location, country_location):
 
     Return:
         str: A postal code for the state_location.
-    """
-    file_path = os.path.join(defaults.settings.datadir, country_location, 'postal_codes.csv')
 
-    df = pd.read_csv(file_path, delimiter=',')
+    """
+    file_path = os.path.join(defaults.settings.datadir, country_location, "postal_codes.csv")
+
+    df = pd.read_csv(file_path, delimiter=",")
     dic = dict(zip(df.state, df.postal_code))
     return dic[state_location]
 
 
 def get_long_term_care_facility_residents_distr(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get size distribution of residents per facility for Long Term Care
+    """Get size distribution of residents per facility for Long Term Care
     Facilities.
 
     Args:
@@ -1060,6 +1049,7 @@ def get_long_term_care_facility_residents_distr(datadir=None, location=None, sta
     Returns:
         dict: A dictionary of the distribution of residents per facility for
         Long Term Care Facilities.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -1085,8 +1075,7 @@ def get_long_term_care_facility_residents_distr(datadir=None, location=None, sta
 
 
 def get_long_term_care_facility_residents_distr_brackets(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get size bins for the distribution of residents per facility for Long Term
+    """Get size bins for the distribution of residents per facility for Long Term
     Care Facilities.
 
     Args:
@@ -1100,6 +1089,7 @@ def get_long_term_care_facility_residents_distr_brackets(datadir=None, location=
         parent_config (string)        : file path to user specified LTCF resident size brackets data
     Returns:
         dict: A dictionary of size brackets or bins for residents per facility.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -1128,8 +1118,7 @@ def get_long_term_care_facility_residents_distr_brackets(datadir=None, location=
 
 
 def get_long_term_care_facility_resident_to_staff_ratios_distr(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get size distribution of resident to staff ratios per facility for Long Term
+    """Get size distribution of resident to staff ratios per facility for Long Term
     Care Facilities.
 
     Args:
@@ -1144,6 +1133,7 @@ def get_long_term_care_facility_resident_to_staff_ratios_distr(datadir=None, loc
     Returns:
         dict: A dictionary of the distribution of residents per facility for
         Long Term Care Facilities.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -1169,8 +1159,7 @@ def get_long_term_care_facility_resident_to_staff_ratios_distr(datadir=None, loc
 
 
 def get_long_term_care_facility_resident_to_staff_ratios_brackets(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get size bins for the distribution of resident to staff ratios per facility
+    """Get size bins for the distribution of resident to staff ratios per facility
     for Long Term Care Facilities.
 
     Args:
@@ -1184,6 +1173,7 @@ def get_long_term_care_facility_resident_to_staff_ratios_brackets(datadir=None, 
     Returns:
         dict: A dictionary of size brackets or bins for resident to staff ratios
         per facility.
+
     """
     # Use default if no file for this location.
     if region_config:
@@ -1212,8 +1202,7 @@ def get_long_term_care_facility_resident_to_staff_ratios_brackets(datadir=None, 
 
 
 def get_long_term_care_facility_use_rates(datadir=None, location=None, state_location=None, country_location=None, file_path=None, use_default=False,region_config:str=None,parent_config:str=None):
-    """
-    Get Long Term Care Facility use rates by age for a state.
+    """Get Long Term Care Facility use rates by age for a state.
 
     Args:
         datadir (str)          : file path to the data directory
@@ -1229,6 +1218,7 @@ def get_long_term_care_facility_use_rates(datadir=None, location=None, state_loc
 
     Note:
         Currently only available for the United States.
+
     """
     # Use default if no file for this location.
     if region_config:

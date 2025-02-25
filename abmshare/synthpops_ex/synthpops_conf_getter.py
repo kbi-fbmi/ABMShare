@@ -1,6 +1,8 @@
-import abmshare.utils as exut
-import abmshare.defaults as exdf
 import pandas as pd
+
+import abmshare.defaults as exdf
+import abmshare.utils as exut
+
 # This utils script is for getting selected values from configuration
 
 
@@ -11,9 +13,10 @@ def get_mobility_filepath(config: dict | str):
 
     Returns:
         str/none: path to mobility file, or None
+
     """
     config = exut.load_config_dict(config)
-    output = exut.get_nested_value_from_dict(dictionary=config,keys=exdf.synthpops_mobility_confkeys).get(exdf.confkeys['filepath'], None)
+    output = exut.get_nested_value_from_dict(dictionary=config,keys=exdf.synthpops_mobility_confkeys).get(exdf.confkeys["filepath"], None)
     if output != "" and not None:
         return output
     return None
@@ -27,22 +30,23 @@ def get_parent_location(config: dict | str, code: str = None):
 
     Returns:
         str/none: path to parent json config, or None
+
     """
     config = exut.load_config_dict(config)
     try:
         data = exut.load_datafile(exut.get_nested_value_from_dict(
-            config, exdf.synthpops_creator_confkeys).get(exdf.confkeys['filepath'], None))
+            config, exdf.synthpops_creator_confkeys).get(exdf.confkeys["filepath"], None))
         id = exut.get_index_by_column_and_value(
-            data, exdf.synthpops_region_csv_columns['location_code'], code)
+            data, exdf.synthpops_region_csv_columns["location_code"], code)
         if id == None:
             output = []
             for i in range(len(data)):
-                if data['use'][i]:
-                    output.append(calculate_filepath(data=data, i=i, dirpath=exdf.synthpops_region_csv_columns['parent_dirpath'], filename=exdf.synthpops_region_csv_columns['parent_filename'],
-                                                    filepath=exdf.synthpops_region_csv_columns['parent_filepath'], region_parent_name=exdf.synthpops_region_csv_columns['region_parent_name']))
+                if data["use"][i]:
+                    output.append(calculate_filepath(data=data, i=i, dirpath=exdf.synthpops_region_csv_columns["parent_dirpath"], filename=exdf.synthpops_region_csv_columns["parent_filename"],
+                                                    filepath=exdf.synthpops_region_csv_columns["parent_filepath"], region_parent_name=exdf.synthpops_region_csv_columns["region_parent_name"]))
         else:
-            output = calculate_filepath(data, id, dirpath=exdf.synthpops_region_csv_columns['parent_dirpath'], filename=exdf.synthpops_region_csv_columns['parent_filename'],
-                                        filepath=exdf.synthpops_region_csv_columns['parent_filepath'], region_parent_name=exdf.synthpops_region_csv_columns['region_parent_name'])
+            output = calculate_filepath(data, id, dirpath=exdf.synthpops_region_csv_columns["parent_dirpath"], filename=exdf.synthpops_region_csv_columns["parent_filename"],
+                                        filepath=exdf.synthpops_region_csv_columns["parent_filepath"], region_parent_name=exdf.synthpops_region_csv_columns["region_parent_name"])
     except:
         print("There is not provided parent location")
     if output != "" and not None:
@@ -65,7 +69,8 @@ def calculate_filepath(data: pd.DataFrame, i: int, dirpath: str = None, filename
 
     Returns:
         str|None: filepath
-    """    
+
+    """
     if exut.is_none_or_empty(data[filepath][i]) and exut.file_validator(data[filepath][i]):
         output = data[filepath][i]
     elif exut.is_none_or_empty(data[dirpath][i]) and exut.is_none_or_empty(data[filename][i]) and exut.file_validator(exut.merge_twoPaths(data[dirpath][i], data[filename][i])):
@@ -91,15 +96,16 @@ def get_region_true(config: dict | str, code:int|str):
 
     Returns:
         _type_: _description_
+
     """
     config = exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
     try:
         data = exut.load_datafile(exut.get_nested_value_from_dict(
-            dictionary=config,keys= exdf.synthpops_creator_confkeys).get(exdf.confkeys['filepath'], None))
+            dictionary=config,keys= exdf.synthpops_creator_confkeys).get(exdf.confkeys["filepath"], None))
         id = exut.get_index_by_column_and_value(
-            data, exdf.synthpops_region_csv_columns['location_code'], code)
-        if data[exdf.synthpops_region_csv_columns['use']][id] in valid_true:
+            data, exdf.synthpops_region_csv_columns["location_code"], code)
+        if data[exdf.synthpops_region_csv_columns["use"]][id] in valid_true:
             return True
     except:
         return False
@@ -113,22 +119,23 @@ def get_all_regions(config:dict|str,return_codes:bool=True):
         return_cored (bool): if return codes when true, otherwise return IDs of rows
     Returns:
         _type_: _description_
+
     """
     config = exut.load_config_dict(config)
     output = list()
     try:
         data = exut.load_datafile(exut.get_nested_value_from_dict(
-            dictionary=config,keys= exdf.synthpops_creator_confkeys).get(exdf.confkeys['filepath'], None))
+            dictionary=config,keys= exdf.synthpops_creator_confkeys).get(exdf.confkeys["filepath"], None))
         for id in range(len(data)):
-            if get_region_true(config,data[exdf.synthpops_region_csv_columns['location_code']][id]):
-                    output.append(data[exdf.synthpops_region_csv_columns['location_code']][id])
+            if get_region_true(config,data[exdf.synthpops_region_csv_columns["location_code"]][id]):
+                    output.append(data[exdf.synthpops_region_csv_columns["location_code"]][id])
     except:
         print("There is an error durring parsing synthpops csv input files")
         return False
     return output
 
 
-def get_region_specific_csv_files(config:dict|str,location_code:str=None,mapped_output:bool=False): 
+def get_region_specific_csv_files(config:dict|str,location_code:str=None,mapped_output:bool=False):
     """Get region specific csv files
 
     Args:
@@ -136,32 +143,33 @@ def get_region_specific_csv_files(config:dict|str,location_code:str=None,mapped_
 
     Returns:
         list: list of paths region specific csv files
+
     """
     config = exut.load_config_dict(config)
     output = list()
     mapped_output=dict()
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                            keys=exdf.synthpops_global_input_data_confkeys).get(exdf.confkeys['filepath'], None))
+                            keys=exdf.synthpops_global_input_data_confkeys).get(exdf.confkeys["filepath"], None))
         region_data=exut.load_datafile(exut.get_nested_value_from_dict(
-                dictionary=config, keys=exdf.synthpops_creator_confkeys).get(exdf.confkeys['filepath'], None))
+                dictionary=config, keys=exdf.synthpops_creator_confkeys).get(exdf.confkeys["filepath"], None))
         pattern={"location_code":"","region_parent_name":""}
         temp=list()
-        i=exut.get_index_by_column_and_value(region_data,exdf.synthpops_region_csv_columns['location_code'],location_code)
-        if region_data['use'][i]:
-            pattern[exdf.synthpops_region_csv_columns['location_code']]=region_data[exdf.synthpops_region_csv_columns['location_code']][i]
-            pattern[exdf.synthpops_region_csv_columns['region_parent_name']]=region_data[exdf.synthpops_region_csv_columns['region_parent_name']][i]
+        i=exut.get_index_by_column_and_value(region_data,exdf.synthpops_region_csv_columns["location_code"],location_code)
+        if region_data["use"][i]:
+            pattern[exdf.synthpops_region_csv_columns["location_code"]]=region_data[exdf.synthpops_region_csv_columns["location_code"]][i]
+            pattern[exdf.synthpops_region_csv_columns["region_parent_name"]]=region_data[exdf.synthpops_region_csv_columns["region_parent_name"]][i]
             temp.append(pattern)
 
-        for i in range(len(temp)): # Get all used global csv files        
-            if exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],temp[i][exdf.synthpops_region_csv_columns['location_code']]) is not None:
-                id= exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],temp[i][exdf.synthpops_region_csv_columns['location_code']])
+        for i in range(len(temp)): # Get all used global csv files
+            if exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],temp[i][exdf.synthpops_region_csv_columns["location_code"]]) is not None:
+                id= exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],temp[i][exdf.synthpops_region_csv_columns["location_code"]])
                 for col_name,value in data.items():
                     if col_name in exdf.synthpops_csv_files:
                         output.append(data[col_name][id]) if data[col_name][id]!="" else None
                         mapped_output[col_name]=data[col_name][id] if data[col_name][id]!="" else None
-            elif exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],temp[i][exdf.synthpops_region_csv_columns['region_parent_name']]) is not None:    
-                id=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],temp[i][exdf.synthpops_region_csv_columns['region_parent_name']])
+            elif exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],temp[i][exdf.synthpops_region_csv_columns["region_parent_name"]]) is not None:
+                id=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],temp[i][exdf.synthpops_region_csv_columns["region_parent_name"]])
                 for col_name,value in data.items():
                     if col_name in exdf.synthpops_csv_files:
                         output.append(data[col_name][id]) if data[col_name][id]!="" else None
@@ -178,23 +186,23 @@ def get_synthpops_parameters(config:str|dict,location_code:str=None,region_paren
     config = exut.load_config_dict(config)
     pars=dict()
     # try:
-    filepath = exut.get_nested_value_from_dict(dictionary=config,keys=exdf.synthpops_parameters_confkeys).get(exdf.confkeys['filepath'],None)
+    filepath = exut.get_nested_value_from_dict(dictionary=config,keys=exdf.synthpops_parameters_confkeys).get(exdf.confkeys["filepath"],None)
     data = exut.load_datafile(filepath) if filepath is not None else print("There is no filepath for synthpops parameters") # Pars data
 
-    if location_code is not None and exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],location_code) is not None:
-        row=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],location_code)
+    if location_code is not None and exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],location_code) is not None:
+        row=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],location_code)
         for key, value in data.items():
-            if key in exdf.synthpops_pars['pop_creator_pars']:
+            if key in exdf.synthpops_pars["pop_creator_pars"]:
                 pars[key]=value[row]
-    elif region_parent_name is not None and exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],region_parent_name) is not None:
-        row=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],region_parent_name)
+    elif region_parent_name is not None and exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],region_parent_name) is not None:
+        row=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],region_parent_name)
         for key, value in data.items():
-            if key in exdf.synthpops_pars['pop_creator_pars']:
+            if key in exdf.synthpops_pars["pop_creator_pars"]:
                 pars[key]=value[row]
-    elif len(data[exdf.synthpops_region_csv_columns['location_code']].isin(exdf.global_values))>0:
-        row=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],exdf.global_values)[0] # First occurence of default value
+    elif len(data[exdf.synthpops_region_csv_columns["location_code"]].isin(exdf.global_values))>0:
+        row=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],exdf.global_values)[0] # First occurence of default value
         for key, value in data.items():
-            if key in exdf.synthpops_pars['pop_creator_pars']:
+            if key in exdf.synthpops_pars["pop_creator_pars"]:
                 pars[key]=value[row]
     return pars
     # except:
@@ -210,6 +218,7 @@ def get_all_synthpops_csv_files(config:dict|str):
 
     Returns:
         list: list of paths to all input csv files
+
     """
     config = exut.load_config_dict(config)
     output = list()
@@ -221,25 +230,24 @@ def get_all_synthpops_csv_files(config:dict|str):
     return output
 
 def get_popsize(config:dict|str, location_code:str, age_distribution_filepath:str):
-    '''
-        Method for creating list of population sizes. 
-        filepath (string)                       : filepath to age_distribution file if provided, or load via config path
-    '''
+    """Method for creating list of population sizes.
+    filepath (string)                       : filepath to age_distribution file if provided, or load via config path
+    """
     config = exut.load_config_dict(config)
     # try:
     data = exut.load_datafile(age_distribution_filepath) if exut.file_validator(age_distribution_filepath) else print(f"There is no valid filepath :{age_distribution_filepath}")
-    id=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns['location_code'],location_code)
-    return data[exdf.confkeys['population_size']][id]
+    id=exut.get_index_by_column_and_value(data,exdf.synthpops_region_csv_columns["location_code"],location_code)
+    return data[exdf.confkeys["population_size"]][id]
 
 def get_all_data_based_on_input_csv(config:dict|str):
     config = exut.load_config_dict(config)
     data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                        keys=exdf.synthpops_global_input_data_confkeys).get(exdf.confkeys['filepath'], None))
+                        keys=exdf.synthpops_global_input_data_confkeys).get(exdf.confkeys["filepath"], None))
     output=[]
     for key, val in data.items():
-        if key in ['location_code','code']:
+        if key in ["location_code","code"]:
             continue
-        elif key in exdf.synthpops_input_files.keys():
+        if key in exdf.synthpops_input_files.keys():
                 output.append(val[0])
         else:
             pass

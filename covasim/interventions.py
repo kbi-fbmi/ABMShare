@@ -1,29 +1,28 @@
-'''
-Specify the core interventions available in Covasim. Other interventions can be
+"""Specify the core interventions available in Covasim. Other interventions can be
 defined by the user by inheriting from these classes.
-'''
+"""
+
+import datetime as dt
+import inspect
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
-import scipy as sp
 import pylab as pl
+import scipy as sp
 import sciris as sc
-import inspect
-import datetime as dt
-from . import misc as cvm
-from . import utils as cvu
+
 from . import base as cvb
 from . import defaults as cvd
-from . import parameters as cvpar
 from . import immunity as cvi
-from collections import defaultdict
-
+from . import misc as cvm
+from . import parameters as cvpar
+from . import utils as cvu
 
 #%% Helper functions
 
-def find_day(arr, t=None, interv=None, sim=None, which='first'):
-    '''
-    Helper function to find if the current simulation time matches any day in the
+def find_day(arr, t=None, interv=None, sim=None, which="first"):
+    """Helper function to find if the current simulation time matches any day in the
     intervention. Although usually never more than one index is returned, it is
     returned as a list for the sake of easy iteration.
 
@@ -38,16 +37,17 @@ def find_day(arr, t=None, interv=None, sim=None, which='first'):
         inds (list): list of matching days; length zero or one unless which is 'all'
 
     New in version 2.1.2: arr can be a function with arguments interv and sim.
-    '''
+
+    """
     if callable(arr):
         arr = arr(interv, sim)
         arr = sc.promotetoarray(arr)
     all_inds = sc.findinds(arr=arr, val=t)
-    if len(all_inds) == 0 or which == 'all':
+    if len(all_inds) == 0 or which == "all":
         inds = all_inds
-    elif which == 'first':
+    elif which == "first":
         inds = [all_inds[0]]
-    elif which == 'last':
+    elif which == "last":
         inds = [all_inds[-1]]
     else: # pragma: no cover
         errormsg = f'Argument "which" must be "first", "last", or "all", not "{which}"'
@@ -56,63 +56,55 @@ def find_day(arr, t=None, interv=None, sim=None, which='first'):
 
 
 def preprocess_day(day, sim):
-    '''
-    Preprocess a day: leave it as-is if it's a function, or try to convert it to
+    """Preprocess a day: leave it as-is if it's a function, or try to convert it to
     an integer if it's anything else.
-    '''
+    """
     if callable(day):  # pragma: no cover
         return day # If it's callable, leave it as-is
-    else:
-        day = sim.day(day) # Otherwise, convert it to an int
+    day = sim.day(day) # Otherwise, convert it to an int
     return day
 
 
 def get_day(day, interv=None, sim=None):
-    '''
-    Return the day if it's an integer, or call it if it's a function.
-    '''
+    """Return the day if it's an integer, or call it if it's a function.
+    """
     if callable(day): # pragma: no cover
         return day(interv, sim) # If it's callable, call it
-    else:
-        return day # Otherwise, leave it as-is
+    return day # Otherwise, leave it as-is
 
 
 def process_days(sim, days, return_dates=False):
-    '''
-    Ensure lists of days are in consistent format. Used by change_beta, clip_edges,
+    """Ensure lists of days are in consistent format. Used by change_beta, clip_edges,
     and some analyzers. If day is 'end' or -1, use the final day of the simulation.
     Optionally return dates as well as days. If days is callable, leave unchanged.
-    '''
+    """
     if callable(days):
         return days
     if sc.isstring(days) or not sc.isiterable(days):
         days = sc.promotetolist(days)
     for d,day in enumerate(days):
-        if day in ['end', -1]: # pragma: no cover
-            day = sim['end_day']
+        if day in ["end", -1]: # pragma: no cover
+            day = sim["end_day"]
         days[d] = preprocess_day(day, sim) # Ensure it's an integer and not a string or something
     days = np.sort(sc.promotetoarray(days)) # Ensure they're an array and in order
     if return_dates:
         dates = [sim.date(day) for day in days] # Store as date strings
         return days, dates
-    else:
-        return days
+    return days
 
 
 def process_changes(sim, changes, days):
-    '''
-    Ensure lists of changes are in consistent format. Used by change_beta and clip_edges.
-    '''
+    """Ensure lists of changes are in consistent format. Used by change_beta and clip_edges.
+    """
     changes = sc.promotetoarray(changes)
     if sc.isiterable(days) and len(days) != len(changes): # pragma: no cover
-        errormsg = f'Number of days supplied ({len(days)}) does not match number of changes ({len(changes)})'
+        errormsg = f"Number of days supplied ({len(days)}) does not match number of changes ({len(changes)})"
         raise ValueError(errormsg)
     return changes
 
 
 def process_daily_data(daily_data, sim, start_day, as_int=False):
-    '''
-    This function performs one of three things: if the daily test data are supplied as
+    """This function performs one of three things: if the daily test data are supplied as
     a number, then it converts it to an array of the right length. If the daily
     data are supplied as a Pandas series or dataframe with a date index, then it
     reindexes it to match the start date of the simulation. If the daily data are
@@ -124,11 +116,12 @@ def process_daily_data(daily_data, sim, start_day, as_int=False):
         sim (Sim): the simulation object
         start_day (date): the start day of the simulation, in already-converted datetime.date format
         as_int (bool): whether to convert to an integer
-    '''
+
+    """
     # Handle string arguments
     if sc.isstring(daily_data):
-        if daily_data == 'data':
-            daily_data = sim.data['new_tests'] # Use default name
+        if daily_data == "data":
+            daily_data = sim.data["new_tests"] # Use default name
         else: # pragma: no cover
             try:
                 daily_data = sim.data[daily_data]
@@ -141,7 +134,7 @@ def process_daily_data(daily_data, sim, start_day, as_int=False):
         if as_int: daily_data = int(daily_data) # Make it an integer
         daily_data = np.array([daily_data] * sim.npts)
     elif isinstance(daily_data, (pd.Series, pd.DataFrame)):
-        start_date = sim['start_day'] + dt.timedelta(days=start_day)
+        start_date = sim["start_day"] + dt.timedelta(days=start_day)
         end_date = daily_data.index[-1]
         dateindex = pd.date_range(start_date, end_date)
         daily_data = daily_data.reindex(dateindex, fill_value=0).to_numpy()
@@ -150,8 +143,7 @@ def process_daily_data(daily_data, sim, start_day, as_int=False):
 
 
 def get_subtargets(subtarget, sim):
-    '''
-    A small helper function to see if subtargeting is a list of indices to use,
+    """A small helper function to see if subtargeting is a list of indices to use,
     or a function that needs to be called. If a function, it must take a single
     argument, a sim object, and return a list of indices. Also validates the values.
     Currently designed for use with testing interventions, but could be generalized
@@ -160,43 +152,42 @@ def get_subtargets(subtarget, sim):
     Args:
         subtarget (dict): dict with keys 'inds' and 'vals'; see test_num() for examples of a valid subtarget dictionary
         sim (Sim): the simulation object
-    '''
 
+    """
     # Validation
     if callable(subtarget):
         subtarget = subtarget(sim)
 
-    if 'inds' not in subtarget: # pragma: no cover
+    if "inds" not in subtarget: # pragma: no cover
         errormsg = f'The subtarget dict must have keys "inds" and "vals", but you supplied {subtarget}'
         raise ValueError(errormsg)
 
     # Handle the two options of type
-    if callable(subtarget['inds']): # A function has been provided
-        subtarget_inds = subtarget['inds'](sim) # Call the function to get the indices
+    if callable(subtarget["inds"]): # A function has been provided
+        subtarget_inds = subtarget["inds"](sim) # Call the function to get the indices
     else:
-        subtarget_inds = subtarget['inds'] # The indices are supplied directly
+        subtarget_inds = subtarget["inds"] # The indices are supplied directly
 
     # Validate the values
-    if callable(subtarget['vals']): # A function has been provided
-        subtarget_vals = subtarget['vals'](sim) # Call the function to get the indices
+    if callable(subtarget["vals"]): # A function has been provided
+        subtarget_vals = subtarget["vals"](sim) # Call the function to get the indices
     else:
-        subtarget_vals = subtarget['vals'] # The indices are supplied directly
+        subtarget_vals = subtarget["vals"] # The indices are supplied directly
     if sc.isiterable(subtarget_vals):
         if len(subtarget_vals) != len(subtarget_inds): # pragma: no cover
-            errormsg = f'Length of subtargeting indices ({len(subtarget_inds)}) does not match length of values ({len(subtarget_vals)})'
+            errormsg = f"Length of subtargeting indices ({len(subtarget_inds)}) does not match length of values ({len(subtarget_vals)})"
             raise ValueError(errormsg)
 
     return subtarget_inds, subtarget_vals
 
 def InterventionDict(which, pars):
-    '''
-    Generate an intervention from a dictionary. Although a function, it acts
+    """Generate an intervention from a dictionary. Although a function, it acts
     like a class, since it returns a class instance.
 
     **Example**::
 
         interv = cv.InterventionDict(which='change_beta', pars={'days': 30, 'changes': 0.5, 'layers': None})
-    '''
+    """
     mapping = dict(
         dynamic_pars    = dynamic_pars,
         sequence        = sequence,
@@ -209,7 +200,7 @@ def InterventionDict(which, pars):
     try:
         IntervClass = mapping[which]
     except:
-        available = ', '.join(mapping.keys())
+        available = ", ".join(mapping.keys())
         errormsg = f'Only interventions "{available}" are available in dictionary representation, not "{which}"'
         raise sc.KeyNotFoundError(errormsg)
     intervention = IntervClass(**pars)
@@ -219,12 +210,11 @@ def InterventionDict(which, pars):
 
 #%% Generic intervention classes
 
-__all__ = ['InterventionDict', 'Intervention', 'dynamic_pars', 'sequence']
+__all__ = ["InterventionDict", "Intervention", "dynamic_pars", "sequence"]
 
 
 class Intervention:
-    '''
-    Base class for interventions. By default, interventions are printed using a
+    """Base class for interventions. By default, interventions are printed using a
     dict format, which they can be recreated from. To display all the attributes
     of the intervention, use disp() instead.
 
@@ -235,14 +225,16 @@ class Intervention:
         show_label (bool): whether or not to include the label in the legend
         do_plot    (bool): whether or not to plot the intervention
         line_args  (dict): arguments passed to pl.axvline() when plotting
-    '''
+
+    """
+
     def __init__(self, label=None, show_label=False, do_plot=None, line_args=None, days=None):
         self._store_args() # Store the input arguments so the intervention can be recreated
         if label is None: label = self.__class__.__name__ # Use the class name if no label is supplied
         self.label = label # e.g. "Close schools"
         self.show_label = show_label # Do not show the label by default
         self.do_plot = do_plot if do_plot is not None else True # Plot the intervention, including if None
-        self.line_args = sc.mergedicts(dict(linestyle='--', c='#aaa', lw=1.0), line_args) # Do not set alpha by default due to the issue of overlapping interventions
+        self.line_args = sc.mergedicts(dict(linestyle="--", c="#aaa", lw=1.0), line_args) # Do not set alpha by default due to the issue of overlapping interventions
         self.days = [] # The start and end days of the intervention
         self.initialized = False # Whether or not it has been initialized
         self.finalized = False # Whether or not it has been initialized
@@ -250,37 +242,35 @@ class Intervention:
 
 
     def __repr__(self, jsonify=False):
-        ''' Return a JSON-friendly output if possible, else revert to short repr '''
-
+        """Return a JSON-friendly output if possible, else revert to short repr"""
         if self.__class__.__name__ in __all__ or jsonify:
             try:
                 json = self.to_json()
-                which = json['which']
-                pars = json['pars']
-                parstr = ', '.join([f'{k}={v}' for k,v in pars.items()])
+                which = json["which"]
+                pars = json["pars"]
+                parstr = ", ".join([f"{k}={v}" for k,v in pars.items()])
                 output = f"cv.{which}({parstr})"
             except Exception as E:
-                output = f'{type(self)} (error: {str(E)})' # If that fails, print why
+                output = f"{type(self)} (error: {str(E)})" # If that fails, print why
             return output
-        else:
-            return f'{self.__module__}.{self.__class__.__name__}()'
+        return f"{self.__module__}.{self.__class__.__name__}()"
 
 
     def __call__(self, *args, **kwargs):
         # Makes Intervention(sim) equivalent to Intervention.apply(sim)
         if not self.initialized:  # pragma: no cover
-            errormsg = f'Intervention (label={self.label}, {type(self)}) has not been initialized'
+            errormsg = f"Intervention (label={self.label}, {type(self)}) has not been initialized"
             raise RuntimeError(errormsg)
         return self.apply(*args, **kwargs)
 
 
     def disp(self):
-        ''' Print a detailed representation of the intervention '''
+        """Print a detailed representation of the intervention"""
         return sc.pr(self)
 
 
     def _store_args(self):
-        ''' Store the user-supplied arguments for later use in to_json '''
+        """Store the user-supplied arguments for later use in to_json"""
         f0 = inspect.currentframe() # This "frame", i.e. Intervention.__init__()
         f1 = inspect.getouterframes(f0) # The list of outer frames
         parent = f1[2].frame # The parent frame, e.g. change_beta.__init__()
@@ -288,40 +278,37 @@ class Intervention:
         if values:
             self.input_args = {}
             for key,value in values.items():
-                if key == 'kwargs': # Store additional kwargs directly
+                if key == "kwargs": # Store additional kwargs directly
                     for k2,v2 in value.items(): # pragma: no cover
                         self.input_args[k2] = v2 # These are already a dict
-                elif key not in ['self', '__class__']: # Everything else, but skip these
+                elif key not in ["self", "__class__"]: # Everything else, but skip these
                     self.input_args[key] = value
         return
 
 
     def initialize(self, sim=None):
-        '''
-        Initialize intervention -- this is used to make modifications to the intervention
+        """Initialize intervention -- this is used to make modifications to the intervention
         that can't be done until after the sim is created.
-        '''
+        """
         self.initialized = True
         self.finalized = False
         return
 
 
     def finalize(self, sim=None):
-        '''
-        Finalize intervention
+        """Finalize intervention
 
         This method is run once as part of `sim.finalize()` enabling the intervention to perform any
         final operations after the simulation is complete (e.g. rescaling)
-        '''
+        """
         if self.finalized: # pragma: no cover
-            raise RuntimeError('Intervention already finalized')  # Raise an error because finalizing multiple times has a high probability of producing incorrect results e.g. applying rescale factors twice
+            raise RuntimeError("Intervention already finalized")  # Raise an error because finalizing multiple times has a high probability of producing incorrect results e.g. applying rescale factors twice
         self.finalized = True
         return
 
 
     def apply(self, sim):
-        '''
-        Apply the intervention. This is the core method which each derived intervention
+        """Apply the intervention. This is the core method which each derived intervention
         class must implement. This method gets called at each timestep and can make
         arbitrary changes to the Sim object, as well as storing or modifying the
         state of the intervention.
@@ -331,26 +318,25 @@ class Intervention:
 
         Returns:
             None
-        '''
+
+        """
         raise NotImplementedError
 
 
     def shrink(self, in_place=False):
-        '''
-        Remove any excess stored data from the intervention; for use with sim.shrink().
+        """Remove any excess stored data from the intervention; for use with sim.shrink().
 
         Args:
             in_place (bool): whether to shrink the intervention (else shrink a copy)
-        '''
+
+        """
         if in_place: # pragma: no cover
             return self
-        else:
-            return sc.dcp(self)
+        return sc.dcp(self)
 
 
     def plot_intervention(self, sim, ax=None, **kwargs):
-        '''
-        Plot the intervention
+        """Plot the intervention
 
         This can be used to do things like add vertical lines on days when
         interventions take place. Can be disabled by setting self.do_plot=False.
@@ -368,12 +354,13 @@ class Intervention:
 
         Returns:
             None
-        '''
+
+        """
         line_args = sc.mergedicts(self.line_args, kwargs)
         if self.do_plot or self.do_plot is None:
             if ax is None:
                 ax = pl.gca()
-            if hasattr(self, 'plot_days'):
+            if hasattr(self, "plot_days"):
                 days = self.plot_days
             else:
                 days = self.days
@@ -392,8 +379,7 @@ class Intervention:
 
 
     def to_json(self):
-        '''
-        Return JSON-compatible representation
+        """Return JSON-compatible representation
 
         Custom classes can't be directly represented in JSON. This method is a
         one-way export to produce a JSON-compatible representation of the
@@ -406,7 +392,8 @@ class Intervention:
 
         Returns:
             JSON-serializable representation (typically a dict, but could be anything else)
-        '''
+
+        """
         which = self.__class__.__name__
         pars = sc.jsonify(self.input_args)
         output = dict(which=which, pars=pars)
@@ -414,8 +401,7 @@ class Intervention:
 
 
 class dynamic_pars(Intervention):
-    '''
-    A generic intervention that modifies a set of parameters at specified points
+    """A generic intervention that modifies a set of parameters at specified points
     in time.
 
     The intervention takes a single argument, pars, which is a dictionary of which
@@ -434,14 +420,14 @@ class dynamic_pars(Intervention):
         interv = cv.dynamic_pars(n_imports=dict(days=10, vals=100))
         interv = cv.dynamic_pars({'beta':{'days':[14, 28], 'vals':[0.005, 0.015]}, 'rel_death_prob':{'days':30, 'vals':2.0}}) # Change beta, and make diagnosed people stop transmitting
 
-    '''
+    """
 
     def __init__(self, pars=None, **kwargs):
 
         # Find valid sim parameters and move matching keyword arguments to the pars dict
         pars = sc.mergedicts(pars) # Ensure it's a dictionary
         sim_par_keys = list(cvpar.make_pars().keys()) # Get valid sim parameters
-        kwarg_keys = [k for k in kwargs.keys() if k in sim_par_keys]
+        kwarg_keys = [k for k in kwargs if k in sim_par_keys]
         for kkey in kwarg_keys:
             pars[kkey] = kwargs.pop(kkey)
 
@@ -449,32 +435,32 @@ class dynamic_pars(Intervention):
         super().__init__(**kwargs) # Initialize the Intervention object
 
         # Handle the rest of the initialization
-        subkeys = ['days', 'vals']
+        subkeys = ["days", "vals"]
         for parkey in pars.keys():
             for subkey in subkeys:
                 if subkey not in pars[parkey].keys(): # pragma: no cover
-                    errormsg = f'Parameter {parkey} is missing subkey {subkey}'
+                    errormsg = f"Parameter {parkey} is missing subkey {subkey}"
                     raise sc.KeyNotFoundError(errormsg)
                 if sc.isnumber(pars[parkey][subkey]): # Allow scalar values or dicts, but leave everything else unchanged
                     pars[parkey][subkey] = sc.promotetoarray(pars[parkey][subkey])
-            days = pars[parkey]['days']
-            vals = pars[parkey]['vals']
+            days = pars[parkey]["days"]
+            vals = pars[parkey]["vals"]
             if sc.isiterable(days):
                 len_days = len(days)
                 len_vals = len(vals)
                 if len_days != len_vals: # pragma: no cover
-                    raise ValueError(f'Length of days ({len_days}) does not match length of values ({len_vals}) for parameter {parkey}')
+                    raise ValueError(f"Length of days ({len_days}) does not match length of values ({len_vals}) for parameter {parkey}")
         self.pars = pars
         return
 
 
     def apply(self, sim):
-        ''' Loop over the parameters, and then loop over the days, applying them if any are found '''
+        """Loop over the parameters, and then loop over the days, applying them if any are found"""
         t = sim.t
         for parkey,parval in self.pars.items():
-            for ind in find_day(parval['days'], t, interv=self, sim=sim):
+            for ind in find_day(parval["days"], t, interv=self, sim=sim):
                 self.days.append(t)
-                val = parval['vals'][ind]
+                val = parval["vals"][ind]
                 if isinstance(val, dict):
                     sim[parkey].update(val) # Set the parameter if a nested dict
                 else:
@@ -483,8 +469,7 @@ class dynamic_pars(Intervention):
 
 
 class sequence(Intervention):
-    '''
-    This is an example of a meta-intervention which switches between a sequence of interventions.
+    """This is an example of a meta-intervention which switches between a sequence of interventions.
 
     Args:
         days (list): the days on which to start applying each intervention
@@ -497,7 +482,8 @@ class sequence(Intervention):
                     cv.test_num(n_tests=[100]*npts),
                     cv.test_prob(symptomatic_prob=0.2, asymptomatic_prob=0.002),
                 ])
-    '''
+
+    """
 
     def __init__(self, days, interventions, **kwargs):
         super().__init__(**kwargs) # Initialize the Intervention object
@@ -509,7 +495,7 @@ class sequence(Intervention):
 
 
     def initialize(self, sim):
-        ''' Fix the dates '''
+        """Fix the dates"""
         super().initialize()
         self.days = [sim.day(day) for day in self.days]
         self.days_arr = np.array(self.days + [sim.npts])
@@ -519,20 +505,19 @@ class sequence(Intervention):
 
 
     def apply(self, sim):
-        ''' Find the matching day, and see which intervention to activate '''
-        inds = find_day(self.days_arr <= sim.t, which='last')
+        """Find the matching day, and see which intervention to activate"""
+        inds = find_day(self.days_arr <= sim.t, which="last")
         if len(inds):
             return self.interventions[inds[0]].apply(sim)
 
 
 #%% Beta interventions
 
-__all__+= ['change_beta', 'clip_edges']
+__all__+= ["change_beta", "clip_edges"]
 
 
 class change_beta(Intervention):
-    '''
-    The most basic intervention -- change beta (transmission) by a certain amount
+    """The most basic intervention -- change beta (transmission) by a certain amount
     on a given day or days. This can be used to represent physical distancing (although
     clip_edges() is more appropriate for overall changes in mobility, e.g. school
     or workplace closures), as well as hand-washing, masks, and other behavioral
@@ -548,7 +533,8 @@ class change_beta(Intervention):
 
         interv = cv.change_beta(25, 0.3) # On day 25, reduce overall beta by 70% to 0.3
         interv = cv.change_beta([14, 28], [0.7, 1], layers='s') # On day 14, reduce beta by 30%, and on day 28, return to 1 for schools
-    '''
+
+    """
 
     def __init__(self, days, changes, layers=None, **kwargs):
         super().__init__(**kwargs) # Initialize the Intervention object
@@ -560,7 +546,7 @@ class change_beta(Intervention):
 
 
     def initialize(self, sim):
-        ''' Fix days and store beta '''
+        """Fix days and store beta"""
         super().initialize()
         self.days    = process_days(sim, self.days)
         self.changes = process_changes(sim, self.changes, self.days)
@@ -568,9 +554,9 @@ class change_beta(Intervention):
         self.orig_betas = {}
         for lkey in self.layers:
             if lkey is None:
-                self.orig_betas['overall'] = sim['beta']
+                self.orig_betas["overall"] = sim["beta"]
             else:
-                self.orig_betas[lkey] = sim['beta_layer'][lkey]
+                self.orig_betas[lkey] = sim["beta_layer"][lkey]
 
         return
 
@@ -581,17 +567,16 @@ class change_beta(Intervention):
         for ind in find_day(self.days, sim.t, interv=self, sim=sim):
             for lkey,new_beta in self.orig_betas.items():
                 new_beta = new_beta * self.changes[ind]
-                if lkey == 'overall':
-                    sim['beta'] = new_beta
+                if lkey == "overall":
+                    sim["beta"] = new_beta
                 else:
-                    sim['beta_layer'][lkey] = new_beta
+                    sim["beta_layer"][lkey] = new_beta
 
         return
 
 
 class clip_edges(Intervention):
-    '''
-    Isolate contacts by removing them from the simulation. Contacts are treated as
+    """Isolate contacts by removing them from the simulation. Contacts are treated as
     "edges", and this intervention works by removing them from sim.people.contacts
     and storing them internally. When the intervention is over, they are moved back.
     This intervention has quite similar effects as change_beta(), but is more appropriate
@@ -614,7 +599,8 @@ class clip_edges(Intervention):
 
         interv = cv.clip_edges(25, 0.3) # On day 25, reduce overall contacts by 70% to 0.3
         interv = cv.clip_edges([14, 28], [0.7, 1], layers='s') # On day 14, remove 30% of school contacts, and on day 28, restore them
-    '''
+
+    """
 
     def __init__(self, days, changes, layers=None, **kwargs):
         super().__init__(**kwargs) # Initialize the Intervention object
@@ -670,7 +656,7 @@ class clip_edges(Intervention):
 
 
     def finalize(self, sim):
-        ''' Ensure the edges get deleted at the end '''
+        """Ensure the edges get deleted at the end"""
         super().finalize()
         self.contacts = None # Reset to save memory
         return
@@ -679,12 +665,11 @@ class clip_edges(Intervention):
 
 #%% Testing interventions
 
-__all__+= ['test_num', 'test_prob', 'contact_tracing']
+__all__+= ["test_num", "test_prob", "contact_tracing"]
 
 
 def get_quar_inds(quar_policy, sim):
-    '''
-    Helper function to return the appropriate indices for people in quarantine
+    """Helper function to return the appropriate indices for people in quarantine
     based on the current quarantine testing "policy". Used by test_num and test_prob.
     Not for use by the user.
 
@@ -695,13 +680,14 @@ def get_quar_inds(quar_policy, sim):
     Args:
         quar_policy (str, int, list, func): 'start', people entering quarantine; 'end', people leaving; 'both', entering and leaving; 'daily', every day in quarantine
         sim (Sim): the simulation object
-    '''
+
+    """
     t = sim.t
     if   quar_policy is None:    quar_test_inds = np.array([])
-    elif quar_policy == 'start': quar_test_inds = cvu.true(sim.people.date_quarantined==t-1) # Actually do the day after since testing usually happens before contact tracing
-    elif quar_policy == 'end':   quar_test_inds = cvu.true(sim.people.date_end_quarantine==t+1) # +1 since they are released on date_end_quarantine, so do the day before
-    elif quar_policy == 'both':  quar_test_inds = np.concatenate([cvu.true(sim.people.date_quarantined==t-1), cvu.true(sim.people.date_end_quarantine==t+1)])
-    elif quar_policy == 'daily': quar_test_inds = cvu.true(sim.people.quarantined)
+    elif quar_policy == "start": quar_test_inds = cvu.true(sim.people.date_quarantined==t-1) # Actually do the day after since testing usually happens before contact tracing
+    elif quar_policy == "end":   quar_test_inds = cvu.true(sim.people.date_end_quarantine==t+1) # +1 since they are released on date_end_quarantine, so do the day before
+    elif quar_policy == "both":  quar_test_inds = np.concatenate([cvu.true(sim.people.date_quarantined==t-1), cvu.true(sim.people.date_end_quarantine==t+1)])
+    elif quar_policy == "daily": quar_test_inds = cvu.true(sim.people.quarantined)
     elif sc.isnumber(quar_policy) or (sc.isiterable(quar_policy) and not sc.isstring(quar_policy)):
         quar_policy = sc.promotetoarray(quar_policy)
         quar_test_inds = np.unique(np.concatenate([cvu.true(sim.people.date_quarantined==t-1-q) for q in quar_policy]))
@@ -714,8 +700,7 @@ def get_quar_inds(quar_policy, sim):
 
 
 class test_num(Intervention):
-    '''
-    Test the specified number of people per day. Useful for including historical
+    """Test the specified number of people per day. Useful for including historical
     testing data. The probability of a given person getting a test is dependent
     on the total number of tests, population size, and odds ratios. Compare this
     intervention with cv.test_prob().
@@ -742,7 +727,8 @@ class test_num(Intervention):
         interv = cv.test_num(daily_tests=[0.10*n_people]*npts, subtarget={'inds': lambda sim: cv.true(sim.people.age>50), 'vals': 1.2}) # People over 50 are 20% more likely to test
         interv = cv.test_num(daily_tests='data') # Take number of tests from loaded data using default column name (new_tests)
         interv = cv.test_num(daily_tests='swabs_per_day') # Take number of tests from loaded data using a custom column name
-    '''
+
+    """
 
     def __init__(self, daily_tests, symp_test=100.0, quar_test=1.0, quar_policy=None, subtarget=None,
                  ili_prev=None, sensitivity=1.0, loss_prob=0, test_delay=0,
@@ -751,7 +737,7 @@ class test_num(Intervention):
         self.daily_tests = daily_tests # Should be a list of length matching time
         self.symp_test   = symp_test   # Set probability of testing symptomatics
         self.quar_test   = quar_test # Probability of testing people in quarantine
-        self.quar_policy = quar_policy if quar_policy else 'start'
+        self.quar_policy = quar_policy if quar_policy else "start"
         self.subtarget   = subtarget  # Set any other testing criteria
         self.ili_prev    = ili_prev     # Should be a list of length matching time or a float or a dataframe
         self.sensitivity = sensitivity
@@ -764,8 +750,7 @@ class test_num(Intervention):
 
 
     def initialize(self, sim):
-        ''' Fix the dates and number of tests '''
-
+        """Fix the dates and number of tests"""
         # Handle days
         super().initialize()
 
@@ -781,7 +766,7 @@ class test_num(Intervention):
 
 
     def finalize(self, sim):
-        ''' Ensure variables with large memory footprints get erased '''
+        """Ensure variables with large memory footprints get erased"""
         super().finalize()
         self.subtarget = None # Reset to save memory
         return
@@ -792,21 +777,18 @@ class test_num(Intervention):
         t = sim.t
         start_day = get_day(self.start_day, self, sim)
         end_day   = get_day(self.end_day,   self, sim)
-        if t < start_day:
-            return
-        elif end_day is not None and t > end_day:
-            return
+        if t < start_day or end_day is not None and t > end_day:
+            return None
 
         # Check that there are still tests
         rel_t = t - start_day
         if rel_t < len(self.daily_tests):
             n_tests = sc.randround(self.daily_tests[rel_t]/sim.rescale_vec[t]) # Correct for scaling that may be applied by rounding to the nearest number of tests
             if not (n_tests and pl.isfinite(n_tests)): # If there are no tests today, abort early
-                return
-            else:
-                sim.results['new_tests'][t] += n_tests
+                return None
+            sim.results["new_tests"][t] += n_tests
         else:
-            return
+            return None
 
         test_probs = np.ones(sim.n) # Begin by assigning equal testing weight (converted to a probability) to everyone
 
@@ -825,8 +807,8 @@ class test_num(Intervention):
         # Handle symptomatic testing, taking into account prevalence of ILI symptoms
         if self.ili_prev is not None:
             if rel_t < len(self.ili_prev):
-                n_ili = int(self.ili_prev[rel_t] * sim['pop_size'])  # Number with ILI symptoms on this day
-                ili_inds = cvu.choose(sim['pop_size'], n_ili) # Give some people some symptoms. Assuming that this is independent of COVID symptomaticity...
+                n_ili = int(self.ili_prev[rel_t] * sim["pop_size"])  # Number with ILI symptoms on this day
+                ili_inds = cvu.choose(sim["pop_size"], n_ili) # Give some people some symptoms. Assuming that this is independent of COVID symptomaticity...
                 ili_inds = np.setdiff1d(ili_inds, symp_inds)
                 test_probs[ili_inds] *= self.symp_test
 
@@ -844,9 +826,9 @@ class test_num(Intervention):
         test_probs[diag_inds] = 0.0
 
         # With dynamic rescaling, we have to correct for uninfected people outside of the population who would test
-        if sim.rescale_vec[t]/sim['pop_scale'] < 1: # We still have rescaling to do
+        if sim.rescale_vec[t]/sim["pop_scale"] < 1: # We still have rescaling to do
             in_pop_tot_prob = test_probs.sum()*sim.rescale_vec[t] # Total "testing weight" of people in the subsampled population
-            out_pop_tot_prob = sim.scaled_pop_size - sim.rescale_vec[t]*sim['pop_size'] # Find out how many people are missing and assign them each weight 1
+            out_pop_tot_prob = sim.scaled_pop_size - sim.rescale_vec[t]*sim["pop_size"] # Find out how many people are missing and assign them each weight 1
             in_frac = in_pop_tot_prob/(in_pop_tot_prob + out_pop_tot_prob) # Fraction of tests which should fall in the sample population
             n_tests = sc.randround(n_tests*in_frac) # Recompute the number of tests
 
@@ -859,8 +841,7 @@ class test_num(Intervention):
 
 
 class test_prob(Intervention):
-    '''
-    Assign each person a probability of being tested for COVID based on their
+    """Assign each person a probability of being tested for COVID based on their
     symptom state, quarantine state, and other states. Unlike test_num, the
     total number of tests not specified, but rather is an output.
 
@@ -884,7 +865,9 @@ class test_prob(Intervention):
 
         interv = cv.test_prob(symp_prob=0.1, asymp_prob=0.01) # Test 10% of symptomatics and 1% of asymptomatics
         interv = cv.test_prob(symp_quar_prob=0.4) # Test 40% of those in quarantine with symptoms
-    '''
+
+    """
+
     def __init__(self, symp_prob, asymp_prob=0.0, symp_quar_prob=None, asymp_quar_prob=None, quar_policy=None, subtarget=None, ili_prev=None,
                  sensitivity=1.0, loss_prob=0.0, test_delay=0, start_day=0, end_day=None, swab_delay=None, **kwargs):
         super().__init__(**kwargs) # Initialize the Intervention object
@@ -892,7 +875,7 @@ class test_prob(Intervention):
         self.asymp_prob       = asymp_prob
         self.symp_quar_prob   = symp_quar_prob  if  symp_quar_prob is not None else  symp_prob
         self.asymp_quar_prob  = asymp_quar_prob if asymp_quar_prob is not None else asymp_prob
-        self.quar_policy      = quar_policy if quar_policy else 'start'
+        self.quar_policy      = quar_policy if quar_policy else "start"
         self.subtarget        = subtarget
         self.ili_prev         = ili_prev
         self.sensitivity      = sensitivity
@@ -905,7 +888,7 @@ class test_prob(Intervention):
 
 
     def initialize(self, sim):
-        ''' Fix the dates '''
+        """Fix the dates"""
         super().initialize()
         self.start_day = preprocess_day(self.start_day, sim)
         self.end_day   = preprocess_day(self.end_day,   sim)
@@ -915,22 +898,19 @@ class test_prob(Intervention):
 
 
     def finalize(self, sim):
-        ''' Ensure variables with large memory footprints get erased '''
+        """Ensure variables with large memory footprints get erased"""
         super().finalize()
         self.subtarget = None # Reset to save memory
         return
 
 
     def apply(self, sim):
-        ''' Perform testing '''
-
+        """Perform testing"""
         t = sim.t
         start_day = get_day(self.start_day, self, sim)
         end_day   = get_day(self.end_day,   self, sim)
-        if t < start_day:
-            return
-        elif end_day is not None and t > end_day:
-            return
+        if t < start_day or end_day is not None and t > end_day:
+            return None
 
         # Find probablity for symptomatics to be tested
         symp_inds  = cvu.true(sim.people.symptomatic)
@@ -941,12 +921,12 @@ class test_prob(Intervention):
             count = np.nan * np.ones(inv_count.shape)
             count[inv_count != 0] = 1/inv_count[inv_count != 0]
             symp_prob = np.ones(len(symp_time))
-            inds = 1 > (symp_time*self.symp_prob)
+            inds = (symp_time*self.symp_prob) < 1
             symp_prob[inds] = self.symp_prob/(1-symp_time[inds]*self.symp_prob)
             symp_prob = self.pdf.pdf(symp_time) * symp_prob * count[symp_time]
 
         # Define symptomatics, accounting for ILI prevalence
-        pop_size = sim['pop_size']
+        pop_size = sim["pop_size"]
         ili_inds = []
         if self.ili_prev is not None:
             rel_t = t - start_day
@@ -965,7 +945,7 @@ class test_prob(Intervention):
         diag_inds       = cvu.true(sim.people.diagnosed)
 
         # Construct the testing probabilities piece by piece -- complicated, since need to do it in the right order
-        test_probs = np.zeros(sim['pop_size']) # Begin by assigning equal testing probability to everyone
+        test_probs = np.zeros(sim["pop_size"]) # Begin by assigning equal testing probability to everyone
         test_probs[symp_inds]       = symp_prob            # People with symptoms (true positive)
         test_probs[ili_inds]        = self.symp_prob       # People with symptoms (false positive) -- can't use swab delay since no date symptomatic
         test_probs[asymp_inds]      = self.asymp_prob      # People without symptoms
@@ -979,14 +959,13 @@ class test_prob(Intervention):
 
         # Actually test people
         sim.people.test(test_inds, test_sensitivity=self.sensitivity, loss_prob=self.loss_prob, test_delay=self.test_delay) # Actually test people
-        sim.results['new_tests'][t] += len(test_inds)*sim['pop_scale']/sim.rescale_vec[t] # If we're using dynamic scaling, we have to scale by pop_scale, not rescale_vec
+        sim.results["new_tests"][t] += len(test_inds)*sim["pop_scale"]/sim.rescale_vec[t] # If we're using dynamic scaling, we have to scale by pop_scale, not rescale_vec
 
         return test_inds
 
 
 class contact_tracing(Intervention):
-    '''
-    Contact tracing of people who are diagnosed. When a person is diagnosed positive
+    """Contact tracing of people who are diagnosed. When a person is diagnosed positive
     (by either test_num() or test_prob(); this intervention has no effect if there
     is not also a testing intervention active), a certain proportion of the index
     case's contacts (defined by trace_prob) are contacted after a certain number
@@ -1010,7 +989,9 @@ class contact_tracing(Intervention):
         tp = cv.test_prob(symp_prob=0.1, asymp_prob=0.01)
         ct = cv.contact_tracing(trace_probs=0.5, trace_time=2)
         sim = cv.Sim(interventions=[tp, ct]) # Note that without testing, contact tracing has no effect
-    '''
+
+    """
+
     def __init__(self, trace_probs=None, trace_time=None, start_day=0, end_day=None, presumptive=False, quar_period=None, capacity=None, **kwargs):
         super().__init__(**kwargs) # Initialize the Intervention object
         self.trace_probs = trace_probs
@@ -1024,7 +1005,7 @@ class contact_tracing(Intervention):
 
 
     def initialize(self, sim):
-        ''' Process the dates and dictionaries '''
+        """Process the dates and dictionaries"""
         super().initialize()
         self.start_day = preprocess_day(self.start_day, sim)
         self.end_day   = preprocess_day(self.end_day,   sim)
@@ -1034,7 +1015,7 @@ class contact_tracing(Intervention):
         if self.trace_time is None:
             self.trace_time = 0.0
         if self.quar_period is None:
-            self.quar_period = sim['quar_period']
+            self.quar_period = sim["quar_period"]
         if sc.isnumber(self.trace_probs):
             val = self.trace_probs
             self.trace_probs = {k:val for k in sim.people.layer_keys()}
@@ -1045,8 +1026,7 @@ class contact_tracing(Intervention):
 
 
     def apply(self, sim):
-        '''
-        Trace and notify contacts
+        """Trace and notify contacts
 
         Tracing involves three steps that can independently be overloaded or extended
         by derived classes
@@ -1054,14 +1034,12 @@ class contact_tracing(Intervention):
         - Select which confirmed cases get interviewed by contact tracers
         - Identify the contacts of the confirmed case
         - Notify those contacts that they have been exposed and need to take some action
-        '''
+        """
         t = sim.t
         start_day = get_day(self.start_day, self, sim)
         end_day   = get_day(self.end_day,   self, sim)
-        if t < start_day:
-            return
-        elif end_day is not None and t > end_day:
-            return
+        if t < start_day or end_day is not None and t > end_day:
+            return None
 
         trace_inds = self.select_cases(sim)
         contacts = self.identify_contacts(sim, trace_inds)
@@ -1070,9 +1048,8 @@ class contact_tracing(Intervention):
 
 
     def select_cases(self, sim):
-        '''
-        Return people to be traced at this time step
-        '''
+        """Return people to be traced at this time step
+        """
         if not self.presumptive:
             inds = cvu.true(sim.people.date_diagnosed == sim.t) # Diagnosed this time step, time to trace
         else:
@@ -1089,8 +1066,7 @@ class contact_tracing(Intervention):
 
 
     def identify_contacts(self, sim, trace_inds):
-        '''
-        Return contacts to notify by trace time
+        """Return contacts to notify by trace time
 
         In the base class, the trace time is the same per-layer, but derived classes might
         provide different functionality e.g. sampling the trace time from a distribution. The
@@ -1102,8 +1078,8 @@ class contact_tracing(Intervention):
             trace_inds: Indices of people to trace
 
         Returns: {trace_time: np.array(inds)} dictionary storing which people to notify
-        '''
 
+        """
         if not len(trace_inds):
             return {}
 
@@ -1126,8 +1102,7 @@ class contact_tracing(Intervention):
 
 
     def notify_contacts(self, sim, contacts):
-        '''
-        Notify contacts
+        """Notify contacts
 
         This method represents notifying people that they have had contact with a confirmed case.
         In this base class, that involves
@@ -1138,7 +1113,8 @@ class contact_tracing(Intervention):
         Args:
             sim: Simulation object
             contacts: {trace_time: np.array(inds)} dictionary storing which people to notify
-        '''
+
+        """
         is_dead = cvu.true(sim.people.dead) # Find people who are not alive
         for trace_time, contact_inds in contacts.items():
             contact_inds = np.setdiff1d(contact_inds, is_dead) # Do not notify contacts who are dead
@@ -1151,12 +1127,11 @@ class contact_tracing(Intervention):
 
 #%% Treatment and prevention interventions
 
-__all__+= ['simple_vaccine', 'BaseVaccination', 'vaccinate', 'vaccinate_prob', 'vaccinate_num']
+__all__+= ["simple_vaccine", "BaseVaccination", "vaccinate", "vaccinate_prob", "vaccinate_num"]
 
 
 class simple_vaccine(Intervention):
-    '''
-    Apply a simple vaccine to a subset of the population. In addition to changing the
+    """Apply a simple vaccine to a subset of the population. In addition to changing the
     relative susceptibility and the probability of developing symptoms if still
     infected, this intervention stores several types of data:
 
@@ -1183,7 +1158,9 @@ class simple_vaccine(Intervention):
 
         interv = cv.simple_vaccine(days=50, prob=0.3, rel_sus=0.5, rel_symp=0.1)
         interv = cv.simple_vaccine(days=[10,20,30,40], prob=0.8, rel_sus=0.5, cumulative=[1, 0.3, 0.1, 0]) # A vaccine with efficacy up to the 3rd dose
-    '''
+
+    """
+
     def __init__(self, days, prob=1.0, rel_sus=0.0, rel_symp=0.0, subtarget=None, cumulative=False, **kwargs):
         super().__init__(**kwargs) # Initialize the Intervention object
         self.days      = sc.dcp(days)
@@ -1200,7 +1177,7 @@ class simple_vaccine(Intervention):
 
 
     def initialize(self, sim):
-        ''' Fix the dates and store the doses '''
+        """Fix the dates and store the doses"""
         super().initialize()
         self.days = process_days(sim, self.days)
         self.doses             = np.zeros(sim.n, dtype=cvd.default_int) # Number of doses given per person of this vaccine
@@ -1214,8 +1191,7 @@ class simple_vaccine(Intervention):
 
 
     def apply(self, sim):
-        ''' Perform vaccination '''
-
+        """Perform vaccination"""
         # If this day is found in the list, apply the intervention
         for ind in find_day(self.days, sim.t, interv=self, sim=sim):
 
@@ -1252,8 +1228,7 @@ class simple_vaccine(Intervention):
 
 
 class BaseVaccination(Intervention):
-    '''
-    Apply a vaccine to a subset of the population.
+    """Apply a vaccine to a subset of the population.
 
     This base class implements the mechanism of vaccinating people to modify their immunity.
     It does not implement allocation of the vaccines, which is implemented by derived classes
@@ -1295,7 +1270,8 @@ class BaseVaccination(Intervention):
     See ``parameters.py`` for additional examples of these parameters.
 
 
-    '''
+    """
+
     def __init__(self, vaccine, label=None, **kwargs):
         super().__init__(**kwargs) # Initialize the Intervention object
         self.index = None # Index of the vaccine in the sim; set later
@@ -1309,8 +1285,7 @@ class BaseVaccination(Intervention):
 
 
     def _parse_vaccine_pars(self, vaccine=None):
-        ''' Unpack vaccine information, which may be given as a string or dict '''
-
+        """Unpack vaccine information, which may be given as a string or dict"""
         # Option 1: vaccines can be chosen from a list of pre-defined vaccines
         if isinstance(vaccine, str):
 
@@ -1319,8 +1294,8 @@ class BaseVaccination(Intervention):
             dose_pars = cvpar.get_vaccine_dose_pars()
 
             label = vaccine.lower()
-            for txt in ['.', ' ', '&', '-', 'vaccine']:
-                label = label.replace(txt, '')
+            for txt in [".", " ", "&", "-", "vaccine"]:
+                label = label.replace(txt, "")
 
             if label in mapping:
                 label = mapping[label]
@@ -1337,15 +1312,15 @@ class BaseVaccination(Intervention):
 
             # Parse label
             vaccine_pars = vaccine
-            label = vaccine_pars.pop('label', None) # Allow including the label in the parameters
+            label = vaccine_pars.pop("label", None) # Allow including the label in the parameters
             if self.label is None: # pragma: no cover
                 if label is None:
-                    self.label = 'custom'
+                    self.label = "custom"
                 else:
                     self.label = label
 
         else: # pragma: no cover
-            errormsg = f'Could not understand {type(vaccine)}, please specify as a string indexing a predefined vaccine or a dict.'
+            errormsg = f"Could not understand {type(vaccine)}, please specify as a string indexing a predefined vaccine or a dict."
             raise ValueError(errormsg)
 
         # Set label and parameters
@@ -1358,14 +1333,14 @@ class BaseVaccination(Intervention):
         super().initialize()
 
         # Check that the simulation parameters are correct
-        if not sim['use_waning']: # pragma: no cover
-            errormsg = f'The cv.{self.__class__.__name__} intervention requires use_waning=True. Please enable waning, or else use cv.simple_vaccine().'
+        if not sim["use_waning"]: # pragma: no cover
+            errormsg = f"The cv.{self.__class__.__name__} intervention requires use_waning=True. Please enable waning, or else use cv.simple_vaccine()."
             raise RuntimeError(errormsg)
 
         # Populate any missing keys -- must be here, after variants are initialized
         default_variant_pars = cvpar.get_vaccine_variant_pars(default=True)
         default_dose_pars    = cvpar.get_vaccine_dose_pars(default=True)
-        variant_labels       = list(sim['variant_pars'].keys())
+        variant_labels       = list(sim["variant_pars"].keys())
         dose_keys            = list(default_dose_pars.keys())
 
         # Handle dose keys
@@ -1380,46 +1355,45 @@ class BaseVaccination(Intervention):
                     val = default_variant_pars[key]
                 else: # pragma: no cover
                     val = 1.0
-                    if sim['verbose']: print(f'Note: No cross-immunity specified for vaccine {self.label} and variant {key}, setting to 1.0')
+                    if sim["verbose"]: print(f"Note: No cross-immunity specified for vaccine {self.label} and variant {key}, setting to 1.0")
                 self.p[key] = val
 
         # If an efficacy target was specified, calculate what NAb level it maps onto
-        if 'target_eff' in self.p.keys():
+        if "target_eff" in self.p.keys():
             # check to make sure length is equal to number of doses
-            if self.p['doses'] == len(self.p['target_eff']):
+            if self.p["doses"] == len(self.p["target_eff"]):
                 # determine efficacy of first dose (assume efficacy supplied is against symptomatic disease)
                 nabs = np.arange(-8, 4, 0.1) # Pick a range of trial NAbs to use
-                VE_symp = cvi.calc_VE_symp(2**nabs, sim.pars['nab_eff'])
-                peak_nab = nabs[np.argmax(VE_symp>self.p['target_eff'][0])]
-                self.p['nab_init'] = dict(dist='normal', par1=peak_nab, par2=2)
-                if self.p['doses'] == 2:
-                    boosted_nab = nabs[np.argmax(VE_symp>self.p['target_eff'][1])]
+                VE_symp = cvi.calc_VE_symp(2**nabs, sim.pars["nab_eff"])
+                peak_nab = nabs[np.argmax(VE_symp>self.p["target_eff"][0])]
+                self.p["nab_init"] = dict(dist="normal", par1=peak_nab, par2=2)
+                if self.p["doses"] == 2:
+                    boosted_nab = nabs[np.argmax(VE_symp>self.p["target_eff"][1])]
                     boost = (2**boosted_nab)/(2**peak_nab)
-                    self.p['nab_boost'] = boost
+                    self.p["nab_boost"] = boost
             else: # pragma: no cover
-                errormsg = 'Provided mismatching efficacies and doses.'
+                errormsg = "Provided mismatching efficacies and doses."
                 raise ValueError(errormsg)
 
-        self.doses = np.zeros(sim['pop_size'], dtype=cvd.default_int) # Number of doses given per person
+        self.doses = np.zeros(sim["pop_size"], dtype=cvd.default_int) # Number of doses given per person
         self.vaccination_dates = [[] for _ in range(sim.n)] # Store the dates when people are vaccinated
 
-        sim['vaccine_pars'][self.label] = self.p # Store the parameters
-        self.index = list(sim['vaccine_pars'].keys()).index(self.label) # Find where we are in the list
-        sim['vaccine_map'][self.index]  = self.label # Use that to populate the reverse mapping
+        sim["vaccine_pars"][self.label] = self.p # Store the parameters
+        self.index = list(sim["vaccine_pars"].keys()).index(self.label) # Find where we are in the list
+        sim["vaccine_map"][self.index]  = self.label # Use that to populate the reverse mapping
 
         return
 
 
     def finalize(self, sim):
-        ''' Ensure variables with large memory footprints get erased '''
+        """Ensure variables with large memory footprints get erased"""
         super().finalize()
         self.subtarget = None # Reset to save memory
         return
 
 
     def select_people(self, sim):
-        """
-        Return an array of indices of people to vaccinate
+        """Return an array of indices of people to vaccinate
         Derived classes must implement this function to determine who to vaccinate at each timestep
         Args:
             sim: A cv.Sim instance
@@ -1429,8 +1403,7 @@ class BaseVaccination(Intervention):
 
 
     def vaccinate(self, sim, vacc_inds, t=None):
-        '''
-        Vaccinate people
+        """Vaccinate people
 
         This method applies the vaccine to the requested people indices. The indices of people vaccinated
         is returned. These may be different to the requested indices, because anyone that is dead will be
@@ -1443,19 +1416,19 @@ class BaseVaccination(Intervention):
             t: Optionally override the day on which vaccinations are recorded for historical vaccination
 
         Returns: An array of person indices of people vaccinated
-        '''
 
+        """
         if t is None:
             t = sim.t
         else: # pragma: no cover
-            assert t <= sim.t, 'Overriding the vaccination day should only be used for historical vaccination' # High potential for errors to creep in if future vaccines could be scheduled here
+            assert t <= sim.t, "Overriding the vaccination day should only be used for historical vaccination" # High potential for errors to creep in if future vaccines could be scheduled here
 
         # Perform checks
         vacc_inds = vacc_inds[~sim.people.dead[vacc_inds]] # Skip anyone that is dead
         # Skip anyone that has already had all the doses of *this* vaccine (not counting boosters).
         # Otherwise, they will receive the 2nd dose boost cumulatively for every subsequent dose.
         # Note, this does not preclude someone from getting additional doses of another vaccine (e.g. a booster)
-        vacc_inds = vacc_inds[self.doses[vacc_inds] < self.p['doses']]
+        vacc_inds = vacc_inds[self.doses[vacc_inds] < self.p["doses"]]
 
         # Extract indices of already-vaccinated people and get indices of newly-vaccinated
         prior_vacc = cvu.true(sim.people.vaccinated)
@@ -1478,16 +1451,15 @@ class BaseVaccination(Intervention):
             sim.people.t = orig_t
 
             if t >= 0: # Only update the flows if it's *not* a historical dose
-                factor = sim['pop_scale']/sim.rescale_vec[t] # Scale up by pop_scale, but then down by the current rescale_vec, which gets applied again when results are finalized
-                sim.people.flows['new_doses']      += len(vacc_inds)*factor # Count number of doses given
-                sim.people.flows['new_vaccinated'] += len(new_vacc)*factor # Count number of people not already vaccinated given doses
+                factor = sim["pop_scale"]/sim.rescale_vec[t] # Scale up by pop_scale, but then down by the current rescale_vec, which gets applied again when results are finalized
+                sim.people.flows["new_doses"]      += len(vacc_inds)*factor # Count number of doses given
+                sim.people.flows["new_vaccinated"] += len(new_vacc)*factor # Count number of people not already vaccinated given doses
 
         return vacc_inds
 
 
     def apply(self, sim):
-        ''' Perform vaccination each timestep '''
-
+        """Perform vaccination each timestep"""
         inds = self.select_people(sim)
         if len(inds):
             inds = self.vaccinate(sim, inds)
@@ -1495,22 +1467,21 @@ class BaseVaccination(Intervention):
 
 
     def shrink(self, in_place=True):
-        ''' Shrink vaccination intervention '''
+        """Shrink vaccination intervention"""
         obj = super().shrink(in_place=in_place)
         obj.vaccinated = None
         obj.doses = None
         obj.vaccination_dates = None
-        if hasattr(obj, 'second_dose_days'):
+        if hasattr(obj, "second_dose_days"):
             obj.second_dose_days = None
         return obj
 
 
 def check_doses(doses, interval):
-    ''' Check that doses and intervals are supplied in correct formats '''
-
+    """Check that doses and intervals are supplied in correct formats"""
     # First check that they're both numbers
     if not sc.checktype(doses, int):
-        raise ValueError(f'Doses must be an integer, not {doses}.')
+        raise ValueError(f"Doses must be an integer, not {doses}.")
     if interval is not None and not sc.isnumber(interval):
         errormsg = f"Can't understand the dosing interval given by '{interval}'. Dosing interval should be a number."
         raise ValueError(errormsg)
@@ -1518,16 +1489,16 @@ def check_doses(doses, interval):
     # Now check that they're compatible
     if doses == 1 and interval is not None:
         raise ValueError("Can't use dosing intervals for vaccines with only one dose.")
-    elif doses == 2 and interval is None:
-        raise ValueError('Must specify a dosing interval if using a vaccine with more than one dose.')
-    elif doses > 2:
-        raise NotImplementedError('Scheduling three or more doses not yet supported; use a booster vaccine instead')
+    if doses == 2 and interval is None:
+        raise ValueError("Must specify a dosing interval if using a vaccine with more than one dose.")
+    if doses > 2:
+        raise NotImplementedError("Scheduling three or more doses not yet supported; use a booster vaccine instead")
 
     return
 
 
 def process_doses(num_doses, sim):
-    ''' Handle different types of dose data'''
+    """Handle different types of dose data"""
     if sc.isnumber(num_doses):
         num_people = num_doses
     elif callable(num_doses):
@@ -1540,14 +1511,14 @@ def process_doses(num_doses, sim):
 
 
 def process_sequence(sequence, sim):
-    ''' Handle different types of prioritization sequence for vaccination '''
+    """Handle different types of prioritization sequence for vaccination"""
     if callable(sequence):
         sequence = sequence(sim.people)
-    elif sequence == 'age':
+    elif sequence == "age":
         sequence = np.argsort(-sim.people.age)
     elif sequence is None:
         sequence = np.random.permutation(sim.n)
-    elif sc.checktype(sequence, 'arraylike'):
+    elif sc.checktype(sequence, "arraylike"):
         sequence = sc.promotetoarray(sequence)
     else:
         errormsg = f'Unable to interpret sequence {type(sequence)}: must be None, "age", callable, or an array'
@@ -1556,24 +1527,21 @@ def process_sequence(sequence, sim):
 
 
 def vaccinate(*args, **kwargs):
-    '''
-    Wrapper function for ``vaccinate_prob()`` and ``vaccinate_num()``. If the ``num_doses``
+    """Wrapper function for ``vaccinate_prob()`` and ``vaccinate_num()``. If the ``num_doses``
     argument is used, will call ``vaccinate_num()``; else, calls ``vaccinate_prob()``.
 
     **Examples**::
 
         vx1 = cv.vaccinate(vaccine='pfizer', days=30, prob=0.7)
         vx2 = cv.vaccinate(vaccine='pfizer', num_doses=100)
-    '''
-    if 'num_doses' in kwargs:
+    """
+    if "num_doses" in kwargs:
         return vaccinate_num(*args, **kwargs)
-    else:
-        return vaccinate_prob(*args, **kwargs)
+    return vaccinate_prob(*args, **kwargs)
 
 
 class vaccinate_prob(BaseVaccination):
-    '''
-    Probability-based vaccination
+    """Probability-based vaccination
 
     This vaccine intervention allocates vaccines parametrized by the daily probability
     of being vaccinated.
@@ -1602,7 +1570,9 @@ class vaccinate_prob(BaseVaccination):
 
         pfizer = cv.vaccinate_prob(vaccine='pfizer', days=30, prob=0.7)
         cv.Sim(interventions=pfizer, use_waning=True).run().plot()
-    '''
+
+    """
+
     def __init__(self, vaccine, days, label=None, prob=None, subtarget=None, booster=False, **kwargs):
         super().__init__(vaccine,label=label,**kwargs) # Initialize the Intervention object
         self.days      = sc.dcp(days)
@@ -1620,7 +1590,7 @@ class vaccinate_prob(BaseVaccination):
         super().initialize(sim)
         self.days = process_days(sim, self.days) # days that group becomes eligible
         self.second_dose_days     = [None]*sim.npts # People who get second dose (if relevant)
-        check_doses(self.p['doses'], self.p['interval'])
+        check_doses(self.p["doses"], self.p["interval"])
         return
 
 
@@ -1633,7 +1603,7 @@ class vaccinate_prob(BaseVaccination):
             # Vaccinate people with their first dose
             for _ in find_day(self.days, sim.t, interv=self, sim=sim):
 
-                vacc_probs = np.zeros(sim['pop_size'])
+                vacc_probs = np.zeros(sim["pop_size"])
 
                 # Find eligible people
                 vacc_probs[cvu.true(sim.people.dead)] *= 0.0  # Do not vaccinate dead people
@@ -1654,7 +1624,7 @@ class vaccinate_prob(BaseVaccination):
                     if self.p.interval is not None:
                         # Schedule the doses
                         next_dose_days = sim.t + self.p.interval
-                        if next_dose_days < sim['n_days']:
+                        if next_dose_days < sim["n_days"]:
                             self.second_dose_days[next_dose_days] = vacc_inds
 
             # Also, if appropriate, vaccinate people with their second dose
@@ -1666,8 +1636,7 @@ class vaccinate_prob(BaseVaccination):
 
 
 class vaccinate_num(BaseVaccination):
-    '''
-    This vaccine intervention allocates vaccines in a pre-computed order of
+    """This vaccine intervention allocates vaccines in a pre-computed order of
     distribution, at a specified rate of doses per day. Second doses are prioritized
     each day.
 
@@ -1697,7 +1666,8 @@ class vaccinate_num(BaseVaccination):
     **Example**::
         pfizer = cv.vaccinate_num(vaccine='pfizer', sequence='age', num_doses=100)
         cv.Sim(interventions=pfizer, use_waning=True).run().plot()
-    '''
+
+    """
 
     def __init__(self, vaccine, num_doses, booster=False, subtarget=None, sequence=None, **kwargs):
         super().__init__(vaccine,**kwargs) # Initialize the Intervention object
@@ -1717,7 +1687,7 @@ class vaccinate_num(BaseVaccination):
         if isinstance(self.num_doses, dict): # Convert any dates to simulation days
             self.num_doses = {sim.day(k):v for k, v in self.num_doses.items()}
         self.sequence = process_sequence(self.sequence, sim)
-        check_doses(self.p['doses'], self.p['interval'])
+        check_doses(self.p["doses"], self.p["interval"])
 
         return
 
@@ -1729,12 +1699,12 @@ class vaccinate_num(BaseVaccination):
         if num_people == 0:
             self._scheduled_doses[sim.t + 1].update(self._scheduled_doses[sim.t])  # Defer any extras
             return np.array([])
-        num_agents = sc.randround(num_people / sim['pop_scale'])
+        num_agents = sc.randround(num_people / sim["pop_scale"])
 
         # First, see how many scheduled second doses we are going to deliver
         if self._scheduled_doses[sim.t]:
             scheduled = np.fromiter(self._scheduled_doses[sim.t], dtype=cvd.default_int) # Everyone scheduled today
-            scheduled = scheduled[(self.doses[scheduled] < self.p['doses']) & ~sim.people.dead[scheduled]] # Remove anyone who's already had all doses of this vaccine, also dead people
+            scheduled = scheduled[(self.doses[scheduled] < self.p["doses"]) & ~sim.people.dead[scheduled]] # Remove anyone who's already had all doses of this vaccine, also dead people
 
             # If there are more people due for a second dose than there are doses, vaccinate as many second doses
             # as possible, and add the remainder to tomorrow's doses. At the moment, they don't get priority
@@ -1768,7 +1738,7 @@ class vaccinate_num(BaseVaccination):
         if len(first_dose_eligible) == 0:
             return scheduled  # Just return anyone that is scheduled
 
-        elif len(first_dose_eligible) > num_agents:
+        if len(first_dose_eligible) > num_agents:
             # Truncate it to the number of agents for performance when checking whether anyone scheduled overlaps with first doses to allocate
             first_dose_eligible = first_dose_eligible[:num_agents] # This is the maximum number of people we could vaccinate this timestep, if there are no second doses allocated
 
@@ -1784,7 +1754,7 @@ class vaccinate_num(BaseVaccination):
 
         # Schedule subsequent doses
         # For vaccines with >2 doses, scheduled doses will also need to be checked
-        if self.p['doses'] > 1:
+        if self.p["doses"] > 1:
             self._scheduled_doses[sim.t+self.p.interval].update(first_dose_inds)
 
         vacc_inds = np.concatenate([scheduled, first_dose_inds])
@@ -1795,12 +1765,11 @@ class vaccinate_num(BaseVaccination):
 
 #%% Prior/historical immunity interventions
 
-__all__ += ['prior_immunity', 'historical_vaccinate_prob', 'historical_wave']
+__all__ += ["prior_immunity", "historical_vaccinate_prob", "historical_wave"]
 
 
 def prior_immunity(*args, **kwargs):
-    '''
-    Wrapper function for ``historical_wave`` and ``historical_vaccinate_prob``. If the ``vaccine`` keyword is
+    """Wrapper function for ``historical_wave`` and ``historical_vaccinate_prob``. If the ``vaccine`` keyword is
     present then ``historical_vaccinate_prob`` will be used. Otherwise ``historical_wave`` is used.
 
     **Examples**::
@@ -1809,17 +1778,14 @@ def prior_immunity(*args, **kwargs):
         pim2 = cv.prior_immunity(120, 0.05)
 
     New in version 3.1.0.
-    '''
-
-    if 'vaccine' in kwargs:
+    """
+    if "vaccine" in kwargs:
         return historical_vaccinate_prob(*args, **kwargs)
-    else:
-        return historical_wave(*args, **kwargs)
+    return historical_wave(*args, **kwargs)
 
 
 class historical_vaccinate_prob(BaseVaccination):
-    '''
-    Probability-based historical vaccination
+    """Probability-based historical vaccination
 
     This vaccine intervention allocates vaccines parametrized by the daily probability
     of being vaccinated.  Unlike cv.vaccinate_prob this function allows vaccination
@@ -1856,7 +1822,9 @@ class historical_vaccinate_prob(BaseVaccination):
         cv.Sim(interventions=pfizer).run().plot()
 
     New in version 3.1.0.
-    '''
+
+    """
+
     def __init__(self,  vaccine, days, label=None, prob=1.0, subtarget=None, compliance=1.0, **kwargs):
         super().__init__(vaccine, label=label, **kwargs)
         self.days      = sc.dcp(days)
@@ -1873,15 +1841,15 @@ class historical_vaccinate_prob(BaseVaccination):
             self.compliance = 2*[self.compliance]
         else:
             if len(self.compliance) != 2:
-                raise ValueError('compliance must either be a scalar or 2 element vector')
+                raise ValueError("compliance must either be a scalar or 2 element vector")
 
         # extend nab profiles
         self.extra_days = np.abs(np.min(self.days).astype(cvd.default_int))
         new_nab_length = sim.npts + self.extra_days
-        if new_nab_length > len(sim.pars['nab_kin']):
-            sim.pars['nab_kin'] = cvi.precompute_waning(length=new_nab_length, pars=sim['nab_decay'])
+        if new_nab_length > len(sim.pars["nab_kin"]):
+            sim.pars["nab_kin"] = cvi.precompute_waning(length=new_nab_length, pars=sim["nab_decay"])
             if sim.people:
-                sim.people.pars['nab_kin'] = sim['nab_kin']
+                sim.people.pars["nab_kin"] = sim["nab_kin"]
 
         # handle days
         self.days             = self.process_days(sim, self.days) # days that group becomes eligible
@@ -1901,8 +1869,8 @@ class historical_vaccinate_prob(BaseVaccination):
             inds = self.select_people(sim, t)
             if len(inds):
                 inds = self.vaccinate(sim, inds, t=t)
-                sim.results['new_doses'][0] += len(inds)
-                sim.results['new_vaccinated'][0] += np.count_nonzero(sim.people.doses[inds] == 1)
+                sim.results["new_doses"][0] += len(inds)
+                sim.results["new_vaccinated"][0] += np.count_nonzero(sim.people.doses[inds] == 1)
 
             # we need to update the NAbs as it is a cumulative effect
             # this will mess up those who are the seed infections if not reset to naive (see above)
@@ -1916,7 +1884,7 @@ class historical_vaccinate_prob(BaseVaccination):
         cvi.check_immunity(sim.people)
 
         # Re-infect the seed cases so they get updated prognoses
-        sim.people.infect(seed_inds, layer='seed_infection')
+        sim.people.infect(seed_inds, layer="seed_infection")
 
         # Restore the time index so that it matches sim.t (noting that these would both usually be 0)
         sim.people.t = sim.t
@@ -1938,7 +1906,7 @@ class historical_vaccinate_prob(BaseVaccination):
 
             # Vaccinate people with their first dose
             for _ in find_day(self.days, t, interv=self, sim=sim):
-                vacc_probs = np.zeros(sim['pop_size'])
+                vacc_probs = np.zeros(sim["pop_size"])
                 unvacc_inds = sc.findinds(~sim.people.vaccinated)
                 if self.subtarget is not None:
                     subtarget_inds, subtarget_vals = get_subtargets(self.subtarget, sim)
@@ -1954,7 +1922,7 @@ class historical_vaccinate_prob(BaseVaccination):
                 if len(vacc_inds):
                     if self.p.interval is not None:
                         next_dose_day = rel_t + self.p.interval
-                        if next_dose_day < (sim['n_days'] + self.extra_days):
+                        if next_dose_day < (sim["n_days"] + self.extra_days):
                             # second dose compliance
                             second_dose_vacc_inds = cvu.binomial_filter(self.compliance[1], vacc_inds)
                             self.second_dose_days[next_dose_day] = second_dose_vacc_inds
@@ -1969,11 +1937,10 @@ class historical_vaccinate_prob(BaseVaccination):
 
     @staticmethod
     def process_days(sim, days, return_dates=False):
-        '''
-        Ensure lists of days are in consistent format. Used by change_beta, clip_edges,
+        """Ensure lists of days are in consistent format. Used by change_beta, clip_edges,
         and some analyzers.
         Optionally return dates as well as days. If days is callable, leave unchanged.
-        '''
+        """
         if callable(days):
             return days
         if sc.isstring(days) or not sc.isiterable(days):
@@ -1984,14 +1951,12 @@ class historical_vaccinate_prob(BaseVaccination):
         if return_dates:
             dates = [sim.date(day) for day in days] # Store as date strings
             return days, dates
-        else:
-            return days
+        return days
 
 
     @staticmethod
     def estimate_prob(duration, coverage):
-        '''
-        Estimate the per-day probability to achieve desired population coverage for a campaign of fixed duration and
+        """Estimate the per-day probability to achieve desired population coverage for a campaign of fixed duration and
         fixed per-day probability of a person being vaccinated
 
         Args:
@@ -2001,8 +1966,8 @@ class historical_vaccinate_prob(BaseVaccination):
         **Example**::
 
             prob = historical_vaccinate.estimate_prob(duration=180, coverage=0.70)
-        '''
 
+        """
         # Note that NB distribution is defined as k number of successes *before* r=1 failures (vaccination) occur.
         # Mapping onto the vaccination campaign this means we need k+1 days of a campaign (k days to not be
         # vaccinated prior) before 1 day of getting the vaccine. p is the probability of *not* being vaccinated
@@ -2019,13 +1984,12 @@ class historical_vaccinate_prob(BaseVaccination):
 
     @staticmethod
     def NB_cdf(k, p, r=1):
-        '''note that the NB distribution shows the fraction '''
+        """Note that the NB distribution shows the fraction"""
         return 1 - sp.special.betainc(k + 1, r, p)
 
 
 class historical_wave(Intervention):
-    '''
-    Imprint a historical (pre t=0) wave of infections in the population NAbs
+    """Imprint a historical (pre t=0) wave of infections in the population NAbs
 
     Args:
         days_prior (int/str/list) : offset relative to t=0 for the wave (median/par1 value) or median date if a string like "2021-11-15"
@@ -2039,15 +2003,16 @@ class historical_wave(Intervention):
         cv.Sim(interventions=cv.historical_wave(120, 0.30)).run().plot()
 
     New in version 3.1.0.
-    '''
+
+    """
 
     def __init__(self, days_prior, prob, dist=None, subtarget=None, variant=None, **kwargs):
         super().__init__(**kwargs)
         self.days_prior = sc.dcp(days_prior)
-        self.dist = {'dist': 'normal', 'par1': 0, 'par2': 5*7/2.355} if dist is None else sc.dcp(dist) # default is FWHM 5 weeks
+        self.dist = {"dist": "normal", "par1": 0, "par2": 5*7/2.355} if dist is None else sc.dcp(dist) # default is FWHM 5 weeks
         self.prob = sc.dcp(prob)
         self.subtarget = subtarget
-        self.variants = 'wild' if variant is None else variant
+        self.variants = "wild" if variant is None else variant
 
 
     def apply(self, sim):
@@ -2055,11 +2020,11 @@ class historical_wave(Intervention):
             return
 
         # Check that the simulation parameters are correct
-        if not sim['use_waning']: # pragma: no cover
-            errormsg = 'cv.historical_wave() requires use_waning=True. Please enable waning.'
+        if not sim["use_waning"]: # pragma: no cover
+            errormsg = "cv.historical_wave() requires use_waning=True. Please enable waning."
             raise RuntimeError(errormsg)
-        if sim['rescale'] and sim['pop_scale'] > 1:
-            errormsg = 'cv.historical_wave() requires rescale=False, since rescaling assumes non-included agents are naive. Please disable dynamic rescaling.'
+        if sim["rescale"] and sim["pop_scale"] > 1:
+            errormsg = "cv.historical_wave() requires rescale=False, since rescaling assumes non-included agents are naive. Please disable dynamic rescaling."
             raise RuntimeError(errormsg)
 
         # deal with values for multiple waves
@@ -2084,7 +2049,7 @@ class historical_wave(Intervention):
 
         # pick variant mapping index (integer value)
         variants = []
-        mapping = {v: k for k, v in sim['variant_map'].items()}  # Swap
+        mapping = {v: k for k, v in sim["variant_map"].items()}  # Swap
         for variant in self.variants:
             if variant in mapping:
                 variants += [mapping[variant]]
@@ -2098,7 +2063,7 @@ class historical_wave(Intervention):
         wave_id = []
         for wave in range(n_waves):
             # per-individual probability to be part of the wave
-            wave_probs = np.ones(sim['pop_size']) * self.prob[wave]
+            wave_probs = np.ones(sim["pop_size"]) * self.prob[wave]
             if self.subtarget[wave] is not None:
                 subtarget_inds, subtarget_vals = get_subtargets(self.subtarget[wave], sim)
                 wave_probs[subtarget_inds] = subtarget_vals # People being explicitly subtargeted
@@ -2109,7 +2074,7 @@ class historical_wave(Intervention):
             days_prior = self.days_prior[wave]
             if isinstance(days_prior, str):
                 # Interpret as sim day
-                days_prior = sc.daydiff(days_prior, sim['start_day'])
+                days_prior = sc.daydiff(days_prior, sim["start_day"])
 
             # select day for those to be infected / exposed
             this_inf_offset_days = cvu.sample(**self.dist[wave], size=len(this_wave_inds)) - days_prior
@@ -2117,7 +2082,7 @@ class historical_wave(Intervention):
             # require that all offsets are before the start of the sim
             filtered_wave_inds = cvu.true(this_inf_offset_days <= 0)
             if len(filtered_wave_inds) == 0: # pragma: no cover
-                warnmsg = f'Wave with days_prior of {days_prior} and prob of {self.prob} did not result in any historical infections - skipping this wave'
+                warnmsg = f"Wave with days_prior of {days_prior} and prob of {self.prob} did not result in any historical infections - skipping this wave"
                 cvm.warn(warnmsg)
                 continue
 
@@ -2126,7 +2091,7 @@ class historical_wave(Intervention):
             wave_id += len(filtered_wave_inds)*[wave]
 
         if len(wave_id) == 0: # pragma: no cover
-            warnmsg = 'No waves resulted in any infections prior to the start of the simulation'
+            warnmsg = "No waves resulted in any infections prior to the start of the simulation"
             cvm.warn(warnmsg)
             return
 
@@ -2135,18 +2100,18 @@ class historical_wave(Intervention):
         inf_offset_days = np.array(inf_offset_days)
 
         if len(wave_id) != len(inf_offset_days): # pragma: no cover
-            raise  RuntimeError(f'arrays mismatch: {len(wave_id)} != {len(inf_offset_days)}')
+            raise  RuntimeError(f"arrays mismatch: {len(wave_id)} != {len(inf_offset_days)}")
 
         # we will need to extend the nab profiles
         new_nab_length = sim.npts - np.floor(np.min(inf_offset_days)).astype(cvd.default_int)
-        if new_nab_length > len(sim.pars['nab_kin']):
-            sim.pars['nab_kin'] = cvi.precompute_waning(length=new_nab_length, pars=sim['nab_decay'])
-            people.pars['nab_kin'] = sim['nab_kin']
+        if new_nab_length > len(sim.pars["nab_kin"]):
+            sim.pars["nab_kin"] = cvi.precompute_waning(length=new_nab_length, pars=sim["nab_decay"])
+            people.pars["nab_kin"] = sim["nab_kin"]
 
         # update nab, states, and count flows
-        flow_keys_to_save = ['new_infections', 'new_reinfections']
-        flow_variant_keys_to_save = ['new_infections_by_variant', 'new_symptomatic_by_variant', 'new_severe_by_variant']
-        nv = sim['n_variants']
+        flow_keys_to_save = ["new_infections", "new_reinfections"]
+        flow_variant_keys_to_save = ["new_infections_by_variant", "new_symptomatic_by_variant", "new_severe_by_variant"]
+        nv = sim["n_variants"]
         for t in np.arange(np.min(inf_offset_days), 0):
 
             flows = {fkey:0 for fkey in flow_keys_to_save}
@@ -2156,7 +2121,7 @@ class historical_wave(Intervention):
 
                 # set infection
                 people.t = t
-                people.infect(wave_inds[inds], layer='historical', variant=variants[wave])
+                people.infect(wave_inds[inds], layer="historical", variant=variants[wave])
 
             for fkey in flow_keys_to_save:
                 flows[fkey] += people.flows[fkey]
@@ -2175,14 +2140,14 @@ class historical_wave(Intervention):
 
             for key,count in people.flows_variant.items():
                 for variant in range(nv):
-                    sim.results['variant'][key][variant][0] += count[variant]
+                    sim.results["variant"][key][variant][0] += count[variant]
 
             for key,count in flows.items():
                 sim.results[key][0] += count
 
             for key,count in flows_variant.items():
                 for v in range(nv):
-                    sim.results['variant'][key][v][0] += count[v]
+                    sim.results["variant"][key][v][0] += count[v]
 
 
             # we need to update the NAbs as it is a cumulative effect
@@ -2196,6 +2161,6 @@ class historical_wave(Intervention):
         people.update_states_pre(t=0)
 
         # reset the seed infections
-        sim.people.infect(seed_inds, layer='seed_infection')
+        sim.people.infect(seed_inds, layer="seed_infection")
 
         return

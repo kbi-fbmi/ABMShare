@@ -1,7 +1,9 @@
-import abmshare.utils as exut
-import abmshare.defaults as exdf
 import numpy as np
 import pandas as pd
+
+import abmshare.defaults as exdf
+import abmshare.utils as exut
+
 
 def get_popfiles(config:dict|str,code:str=None,popfile:str=None):
     """Get population files from configuration, single popfile, or as override from save_pars
@@ -10,23 +12,25 @@ def get_popfiles(config:dict|str,code:str=None,popfile:str=None):
         config (dict/dict): configuration or path to configuration
         code (str, optional): code of the region. Defaults to None.
         popfile (str, optional): path to population file. Defaults to None. 
+
     Returns:
         list: list of population files paths, if only config provided
         str: path to population file, if code provided
         str: path to population file, if popfile provided
+
     """
     config=exut.load_config_dict(config)
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                            keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        id=exut.get_index_by_column_and_value(data,exdf.covasim_region_csv_columns['location_code'],code)
+                                            keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"],None))
+        id=exut.get_index_by_column_and_value(data,exdf.covasim_region_csv_columns["location_code"],code)
         if id == None and popfile ==None: # For grid compute returner
-            return list(data[exdf.covasim_region_csv_columns['popfile']])
-        return data[exdf.covasim_region_csv_columns['popfile']][id] if popfile==None else popfile
+            return list(data[exdf.covasim_region_csv_columns["popfile"]])
+        return data[exdf.covasim_region_csv_columns["popfile"]][id] if popfile==None else popfile
     except Exception as e:
         print(f"Error in get_popfiles\n{e}")
         return None
-    
+
 
 def get_mobility_filepath(config:dict|str)->str|None:
     """Get mobility file filepath
@@ -36,13 +40,14 @@ def get_mobility_filepath(config:dict|str)->str|None:
 
     Returns:
         str | None: path to mobility, if exists
+
     """
     config=exut.load_config_dict(config)
     try:
-        if exut.get_nested_value_from_dict(dictionary=config,keys=exdf.covasim_mobility_confkeys).get(exdf.confkeys['value'],None):
-            return exut.get_nested_value_from_dict(dictionary=config,keys=exdf.covasim_mobility_confkeys).get(exdf.confkeys['filepath'],None)
-        else: # When there is not provided mobility data, just return none            
-            return None
+        if exut.get_nested_value_from_dict(dictionary=config,keys=exdf.covasim_mobility_confkeys).get(exdf.confkeys["value"],None):
+            return exut.get_nested_value_from_dict(dictionary=config,keys=exdf.covasim_mobility_confkeys).get(exdf.confkeys["filepath"],None)
+        # When there is not provided mobility data, just return none
+        return None
     except:
         print("There is problem with get_mobility_filepath")
         return None
@@ -56,10 +61,11 @@ def get_population_filepath(config:dict|str)->str|None:
 
     Returns:
         str | None: path to population file, if exists
+
     """
     config=exut.load_config_dict(config)
     try:
-        return exut.get_nested_value_from_dict(dictionary=config,keys=exdf.covasim_population_size_confkeys).get(exdf.confkeys['filepath'],None)
+        return exut.get_nested_value_from_dict(dictionary=config,keys=exdf.covasim_population_size_confkeys).get(exdf.confkeys["filepath"],None)
     except:
         print("There is problem with get_population_filepath")
         return None
@@ -72,13 +78,14 @@ def get_number_of_regions(config:dict|str)->int|None:
 
     Returns:
         int: number of regions
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
     try:
         data = exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        return len(data.loc[data['use'].isin(valid_true),'location_code'].values)
+                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"],None))
+        return len(data.loc[data["use"].isin(valid_true),"location_code"].values)
     except:
         print("There is problem with get_number_of_regions")
         return None
@@ -91,15 +98,16 @@ def get_num_of_population(config:dict|str)->int|None:
 
     Returns:
         int: number of population files
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
     try:
         data = exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        location_codes=data.loc[data['use'].isin(valid_true),'location_code'].values
+                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"],None))
+        location_codes=data.loc[data["use"].isin(valid_true),"location_code"].values
         pop_data=exut.load_datafile(get_population_filepath(config))
-        size=np.sum(pop_data.loc[data['location_code'].isin(location_codes),'population_size'].values)
+        size=np.sum(pop_data.loc[data["location_code"].isin(location_codes),"population_size"].values)
         return size
     except:
         print("There is problem with number of population")
@@ -115,20 +123,21 @@ def get_pop_size_by_code(config:dict|str,code:str,mobility:bool=True)->int|None:
 
     Returns:
         int: num of population size
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
     try:
         data = exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        location_codes=data.loc[data['use'].isin(valid_true),'location_code'].values
+                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"],None))
+        location_codes=data.loc[data["use"].isin(valid_true),"location_code"].values
         pop_data=exut.load_datafile(get_population_filepath(config))
-        if code in data.loc[data['use'].isin(valid_true),'location_code'].values:
-            size = int(pop_data.loc[pop_data['location_code'] == code, 'population_size'].values[0])
-        # Add if mobility 
+        if code in data.loc[data["use"].isin(valid_true),"location_code"].values:
+            size = int(pop_data.loc[pop_data["location_code"] == code, "population_size"].values[0])
+        # Add if mobility
         if get_mobility_filepath(config) is not None and mobility:
             mob_data=exut.load_datafile(get_mobility_filepath(config))
-            size+=mob_data[mob_data['location_code'].isin(location_codes)][code].sum()
+            size+=mob_data[mob_data["location_code"].isin(location_codes)][code].sum()
         elif get_mobility_filepath(config) is not None and not mobility: # to get size without mobility
             pass
         # else:
@@ -141,7 +150,7 @@ def get_pop_size_by_code(config:dict|str,code:str,mobility:bool=True)->int|None:
         print(f"There is problem with number of population for location code: {code}")
         return None
 
-def get_global_pars(config:dict|str,parameter:str=None)->dict|None: 
+def get_global_pars(config:dict|str,parameter:str=None)->dict|None:
     """Get global pars from configuration. Datafile > config pars
 
     Args:
@@ -151,20 +160,21 @@ def get_global_pars(config:dict|str,parameter:str=None)->dict|None:
     Returns:
         dict | None: global pars
         value | None: value of given parameter
+
     """
     config=exut.load_config_dict(config)
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_global_parameters_confkeys).get(exdf.confkeys['filepath'],None))
+                                        keys=exdf.covasim_global_parameters_confkeys).get(exdf.confkeys["filepath"],None))
         # additive_pars=exut.get_nested_value_from_dict(dictionary=config,
         #                                                 keys=exdf.covasim_global_parameters)
         data_pars = data.iloc[0].to_dict()
         # combined_dict = {**additive_pars, **data_pars}
         combined_dict = data_pars
         keys_to_remove=[key for key in combined_dict.keys() if key not in exdf.covasim_pars_all]
-        for key in keys_to_remove: 
+        for key in keys_to_remove:
             print(f"Removing invalid key: {key} from global pars.")
-            del combined_dict[key] 
+            del combined_dict[key]
         if parameter is not None:
             return combined_dict.get(parameter,None)
         return combined_dict
@@ -176,30 +186,31 @@ def get_global_pars(config:dict|str,parameter:str=None)->dict|None:
 def get_pars_by_code(config:dict|str,code:str)->dict|None:
     """Get pars by code + merge them with global pars (if exists, but global consistency > region specific)
         Code can be location specific or parent code (e.g. CZ01, CZECHIA)
+
     Args:
         conf (dict | str): configuration
 
     Returns:
         dict: pars by code
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(
-                dictionary=config,keys= exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'], None))
-        if code in data.loc[data['use'].isin(valid_true),'location_code'].values:
+                dictionary=config,keys= exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"], None))
+        if code in data.loc[data["use"].isin(valid_true),"location_code"].values:
             id = exut.get_index_by_column_and_value(
-                data, exdf.covasim_region_csv_columns['location_code'], code)
+                data, exdf.covasim_region_csv_columns["location_code"], code)
             out_pars=dict()
             for key,value in data.iloc[id].items():
                 if key in exdf.covasim_pars_all or key in exdf.covasim_region_csv_columns:
-                    if key == 'popfile' and (value is not None and not pd.isna(value)):
+                    if key == "popfile" and (value is not None and not pd.isna(value)):
                         out_pars[key] = value if exut.file_validator(value) else None
                         continue
-                    else:
-                        out_pars[key] = value
+                    out_pars[key] = value
             global_pars=get_global_pars(config)
-            out_pars = {**out_pars, **global_pars}             
+            out_pars = {**out_pars, **global_pars}
         else:
             print(f"Region code: {code} is not enabled or does not exists")
             return None
@@ -217,13 +228,14 @@ def get_region_codes(config:dict|str)->list|None:
 
     Returns:
         list: list of region codes
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        return data.loc[data['use'].isin(valid_true),'location_code'].values
+                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"],None))
+        return data.loc[data["use"].isin(valid_true),"location_code"].values
     except:
         print("There is problem with get_region_codes")
         return None
@@ -237,18 +249,18 @@ def get_region_name(config:dict|str,code:str)->str|None:
 
     Returns:
         str | None: region name
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        if code in data.loc[data['use'].isin(valid_true),'location_code'].values:
-            id = exut.get_index_by_column_and_value(data, exdf.covasim_region_csv_columns['location_code'], code)
-            return data.iloc[id][exdf.covasim_region_csv_columns['name']]
-        else:
-            print(f"Region code: {code} is not enabled or does not exists")
-            return None
+                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"],None))
+        if code in data.loc[data["use"].isin(valid_true),"location_code"].values:
+            id = exut.get_index_by_column_and_value(data, exdf.covasim_region_csv_columns["location_code"], code)
+            return data.iloc[id][exdf.covasim_region_csv_columns["name"]]
+        print(f"Region code: {code} is not enabled or does not exists")
+        return None
     except:
         print(f"There is problem with get_region_name for location code: {code}")
         return None
@@ -262,22 +274,22 @@ def get_region_parent_name(config:dict|str,code:str)->str|None:
 
     Returns:
         str | None: region parent name
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        if code in data.loc[data['use'].isin(valid_true),'location_code'].values:
-            id = exut.get_index_by_column_and_value(data, exdf.covasim_region_csv_columns['location_code'], code)
-            return data.iloc[id][exdf.covasim_region_csv_columns['region_parent_name']]
-        else:
-            print(f"Region code: {code} is not enabled or does not exists")
-            return None
+                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"],None))
+        if code in data.loc[data["use"].isin(valid_true),"location_code"].values:
+            id = exut.get_index_by_column_and_value(data, exdf.covasim_region_csv_columns["location_code"], code)
+            return data.iloc[id][exdf.covasim_region_csv_columns["region_parent_name"]]
+        print(f"Region code: {code} is not enabled or does not exists")
+        return None
     except:
         print(f"There is problem with get_region_parent_name for location code: {code}")
         return None
-    
+
 def get_interventions_by_code(config:dict|str,code:str)->dict|None:
     """Method for generating intervention dictionary by pars. Global + region specific
 
@@ -287,32 +299,33 @@ def get_interventions_by_code(config:dict|str,code:str)->dict|None:
 
     Returns:
         dict|None: _description_ returns app_dict
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
     try:
-        location_codes=[x.lower() for x in[code,get_region_parent_name(config,code),'global']] # to lowercase
+        location_codes=[x.lower() for x in[code,get_region_parent_name(config,code),"global"]] # to lowercase
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                            keys=exdf.covasim_interventions_confkeys).get(exdf.confkeys['filepath'],None))
-        indexes=data.loc[data['location_code'].str.lower().isin(location_codes)].index
+                                            keys=exdf.covasim_interventions_confkeys).get(exdf.confkeys["filepath"],None))
+        indexes=data.loc[data["location_code"].str.lower().isin(location_codes)].index
         intervention_list=[]
         for row in indexes:
             row=data.iloc[row]
             row_dict={col:row[col] for col in data.columns if pd.notna(row[col]) and row[col]!=""}
             # Check consistency
-            if row_dict[exdf.confkeys['intervention_type']] in exdf.interventions.keys() and row_dict[exdf.confkeys['use']]: # if its not use==true, it will not continue
+            if row_dict[exdf.confkeys["intervention_type"]] in exdf.interventions.keys() and row_dict[exdf.confkeys["use"]]: # if its not use==true, it will not continue
                 remaining_keys=set(row_dict.keys())-set(exdf.covasim_intervention_exclude_keys)
-                remaining_keys.add('type')
-                if remaining_keys.issubset(exdf.interventions[row_dict[exdf.confkeys['intervention_type']]]):
-                    app_dict={key:row_dict[key] for key in remaining_keys if key != 'type'} # Change to another dict
-                    app_dict['type']=row_dict[exdf.confkeys['intervention_type']]
+                remaining_keys.add("type")
+                if remaining_keys.issubset(exdf.interventions[row_dict[exdf.confkeys["intervention_type"]]]):
+                    app_dict={key:row_dict[key] for key in remaining_keys if key != "type"} # Change to another dict
+                    app_dict["type"]=row_dict[exdf.confkeys["intervention_type"]]
                 else:
                     print(f"There is inconsistency for intervention type: {row_dict[exdf.confkeys['intervention_type']]}, you can use only those keys:\n{exdf.interventions[row_dict[exdf.confkeys['intervention_type']]]}\n\
         but you provided:\n{remaining_keys}")
             else:
                 continue
             # Check list values consistency
-            for key in app_dict.keys():
+            for key in app_dict:
                 if (key in exdf.covasim_intervention_list_keys) and isinstance(app_dict[key],str) and (app_dict[key].startswith("[")):
                     try:
                         app_dict[key]=exut.convert_string_lists(app_dict[key])
@@ -335,6 +348,7 @@ def get_mobility_data_by_code(config:dict|str,code:str)->dict|None:
 
     Returns:
         dict|None: _description_ returns Dictionary of mobility to region codes
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
@@ -342,22 +356,22 @@ def get_mobility_data_by_code(config:dict|str,code:str)->dict|None:
     output={}
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        if code in data.loc[data['use'].isin(valid_true),'location_code'].values:
-            id = exut.get_index_by_column_and_value(data, exdf.covasim_region_csv_columns['location_code'], code)
+                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"],None))
+        if code in data.loc[data["use"].isin(valid_true),"location_code"].values:
+            id = exut.get_index_by_column_and_value(data, exdf.covasim_region_csv_columns["location_code"], code)
         else:
             print(f"Region code: {code} is not enabled or does not exists")
             return None
         if get_mobility_filepath(config) is not None:
             mob_data=exut.load_datafile(get_mobility_filepath(config))
             for region_code in region_codes:
-                output[region_code]=(mob_data[mob_data['location_code']==code].iloc[0])[region_code]
+                output[region_code]=(mob_data[mob_data["location_code"]==code].iloc[0])[region_code]
         else:
             raise Exception(f"There is no mobility data provided for location code:{code}")
         return output
     except:
         print(f"There is problem with get_region_parent_name for location code: {code}")
-        return None 
+        return None
 
 
 def get_incoming_mobility_data_by_code(config:dict|str,code:str)->dict|None:
@@ -369,6 +383,7 @@ def get_incoming_mobility_data_by_code(config:dict|str,code:str)->dict|None:
 
     Returns:
         dict|None: _description_ returns Dictionary of mobility to region codes
+
     """
     config=exut.load_config_dict(config)
     valid_true=exdf.valid_true_values
@@ -376,22 +391,22 @@ def get_incoming_mobility_data_by_code(config:dict|str,code:str)->dict|None:
     output={}
     try:
         data=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys['filepath'],None))
-        if code in data.loc[data['use'].isin(valid_true),'location_code'].values:
-            id = exut.get_index_by_column_and_value(data, exdf.covasim_region_csv_columns['location_code'], code)
+                                        keys=exdf.covasim_region_parameters_confkeys).get(exdf.confkeys["filepath"],None))
+        if code in data.loc[data["use"].isin(valid_true),"location_code"].values:
+            id = exut.get_index_by_column_and_value(data, exdf.covasim_region_csv_columns["location_code"], code)
         else:
             print(f"Region code: {code} is not enabled or does not exists")
             return None
         if get_mobility_filepath(config) is not None:
             mob_data=exut.load_datafile(get_mobility_filepath(config))
             for region_code in region_codes:
-                 output[region_code]=mob_data.loc[mob_data['location_code'] == region_code, code].iloc[0]
+                 output[region_code]=mob_data.loc[mob_data["location_code"] == region_code, code].iloc[0]
         else:
             raise Exception("There is no mobility data provided.")
         return output
     except:
         print(f"There is problem with get_region_parent_name for location code: {code}")
-        return None 
+        return None
 
 def get_variants(config:dict|str):
     """Get variants from configuration
@@ -401,11 +416,12 @@ def get_variants(config:dict|str):
 
     Returns:
         dict: variants
+
     """
     config=exut.load_config_dict(config)
     try:
         variants=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_immunity_confkeys).get(exdf.confkeys['filepath'],None))
+                                        keys=exdf.covasim_immunity_confkeys).get(exdf.confkeys["filepath"],None))
         return variants
     except:
         print("There is problem with get_variants")
@@ -419,14 +435,15 @@ def get_immunity_files(config:dict|str):
 
     Returns:
         dict: immunity files
+
     """
     config=exut.load_config_dict(config)
     output=[]
     try:
         immunity_files=exut.load_datafile(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_immunity_confkeys).get(exdf.confkeys['filepath'],None))
+                                        keys=exdf.covasim_immunity_confkeys).get(exdf.confkeys["filepath"],None))
         output.append(exut.get_nested_value_from_dict(dictionary=config,
-                                        keys=exdf.covasim_immunity_confkeys).get(exdf.confkeys['filepath'],None))
+                                        keys=exdf.covasim_immunity_confkeys).get(exdf.confkeys["filepath"],None))
         for file in exdf.covasim_immunity_files:
             if exut.file_validator(immunity_files[file][0]):
                 output.append(immunity_files[file][0])
@@ -438,8 +455,8 @@ def get_immunity_files(config:dict|str):
         print("There is problem with get_immunity_files")
         return []
 
-def get_all_csv_files(config:dict|str): 
-    "Get filepaths to all data csvs"
+def get_all_csv_files(config:dict|str):
+    """Get filepaths to all data csvs"""
     config = exut.load_config_dict(config)
     output=[]
     for file in exdf.covasim_data_files:

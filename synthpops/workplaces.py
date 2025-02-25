@@ -1,35 +1,36 @@
-from copy import deepcopy
 from collections import Counter
-import sciris as sc
+from copy import deepcopy
+
 import numpy as np
+import sciris as sc
+
 from . import base as spb
+from . import defaults
 from . import sampling as spsamp
 from .config import logger as log
-from . import defaults
 
-
-__all__ = ['count_employment_by_age', 'get_workplace_sizes',
-           'get_employment_rates_by_age',
-           'get_generated_workplace_size_distribution',
-           'Workplace',
+__all__ = ["count_employment_by_age", "get_workplace_sizes",
+           "get_employment_rates_by_age",
+           "get_generated_workplace_size_distribution",
+           "Workplace",
            ]
 
 
 class Workplace(spb.LayerGroup):
-    """
-    A class for individual workplaces and methods to operate on each.
+    """A class for individual workplaces and methods to operate on each.
 
     Args:
         kwargs (dict): data dictionary of the workplace
+
     """
 
     def __init__(self, wpid=None, **kwargs):
-        """
-        Class constructor for empty workplace.
+        """Class constructor for empty workplace.
 
         Args:
             **wpid (int)             : workplace id
             **member_uids (np.array) : ids of workplace members
+
         """
         # set up default workplace values
         super().__init__(wpid=wpid, **kwargs)
@@ -38,20 +39,18 @@ class Workplace(spb.LayerGroup):
         return
 
     def validate(self):
-        """
-        Check that information supplied to make a workplace is valid and update
+        """Check that information supplied to make a workplace is valid and update
         to the correct type if necessary.
         """
-        super().validate(layer_str='workplace')
+        super().validate(layer_str="workplace")
         return
 
 
-__all__ += ['get_workplace', 'add_workplace', 'initialize_empty_workplaces', 'populate_workplaces']
+__all__ += ["get_workplace", "add_workplace", "initialize_empty_workplaces", "populate_workplaces"]
 
 
 def get_workplace(pop, wpid):
-    """
-    Return workplace with id: wpid.
+    """Return workplace with id: wpid.
 
     Args:
         pop (sp.Pop) : population
@@ -59,6 +58,7 @@ def get_workplace(pop, wpid):
 
     Returns:
         sp.Workplace: A populated workplace.
+
     """
     if not isinstance(wpid, int):
         raise TypeError(f"wpid must be an int. Instead supplied wpid with type: {type(wpid)}.")
@@ -68,31 +68,31 @@ def get_workplace(pop, wpid):
 
 
 def add_workplace(pop, workplace):
-    """
-    Add a workplace to the list of workplaces.
+    """Add a workplace to the list of workplaces.
 
     Args:
         pop (sp.Pop)             : population
         workplace (sp.Workplace) : workplace with at minimum the wpid and member_uids.
+
     """
     if not isinstance(workplace, Workplace):
-        raise ValueError('workplace is not a sp.Workplace object.')
+        raise ValueError("workplace is not a sp.Workplace object.")
 
     # ensure wpid to match the index in the list
-    if workplace['wpid'] != len(pop.workplaces):
-        workplace['wpid'] = len(pop.workplaces)
+    if workplace["wpid"] != len(pop.workplaces):
+        workplace["wpid"] = len(pop.workplaces)
     pop.workplaces.append(workplace)
     pop.n_workplaces = len(pop.workplaces)
     return
 
 
 def initialize_empty_workplaces(pop, n_workplaces=None):
-    """
-    Array of empty workplaces.
+    """Array of empty workplaces.
 
     Args:
         pop (sp.Pop)       : population
         n_workplaces (int) : the number of workplaces to initialize
+
     """
     if n_workplaces is not None and isinstance(n_workplaces, int):
         pop.n_workplaces = n_workplaces
@@ -104,8 +104,7 @@ def initialize_empty_workplaces(pop, n_workplaces=None):
 
 
 def populate_workplaces(pop, workplaces):
-    """
-    Populate all of the workplaces. Store each workplace at the index corresponding to it's wpid.
+    """Populate all of the workplaces. Store each workplace at the index corresponding to it's wpid.
 
     Args:
         pop (sp.Pop)      : population
@@ -114,6 +113,7 @@ def populate_workplaces(pop, workplaces):
     Notes:
         If number of workplaces (n) is fewer than existing workplaces, it will only replace the first n workplaces. Otherwise the
         existing workplaces will be overwritten by the input workplaces.
+
     """
     # make sure there are enough workplaces
     initialize_empty_workplaces(pop, len(workplaces))
@@ -127,14 +127,13 @@ def populate_workplaces(pop, workplaces):
                       )
         workplace = Workplace()
         workplace.set_layer_group(**kwargs)
-        pop.workplaces[workplace['wpid']] = sc.dcp(workplace)
+        pop.workplaces[workplace["wpid"]] = sc.dcp(workplace)
 
     return
 
 
 def get_uids_potential_workers(student_uid_lists, employment_rates, age_by_uid):
-    """
-    Get IDs for everyone who could be a worker by removing those who are students and those who can't be employed officially.
+    """Get IDs for everyone who could be a worker by removing those who are students and those who can't be employed officially.
 
     Args:
         student_uid_lists (list) : A list of lists where each sublist represents a school with the IDs of students in the school.
@@ -144,8 +143,9 @@ def get_uids_potential_workers(student_uid_lists, employment_rates, age_by_uid):
     Returns:
         A dictionary of potential workers mapping their ID to their age, a dictionary mapping age to the list of IDs for potential
         workers with that age, and a dictionary mapping age to the count of potential workers left to assign to a workplace for that age.
+
     """
-    log.debug('get_uids_potential_workers()')
+    log.debug("get_uids_potential_workers()")
     potential_worker_uids = deepcopy(age_by_uid)
     potential_worker_uids_by_age = {}
     potential_worker_ages_left_count = {}
@@ -170,7 +170,7 @@ def get_uids_potential_workers(student_uid_lists, employment_rates, age_by_uid):
         # potential_worker_uid[uid] may generate persons who are not valid working age
         # This will cause a 'key' error in potential__worker_uids_by_age
         # Since potential_worker_uids_age keys are valid work ages, skip invalid workers
-        if ai in potential_worker_uids_by_age.keys():
+        if ai in potential_worker_uids_by_age:
             potential_worker_uids_by_age[ai].append(uid)
             potential_worker_ages_left_count[ai] += 1
 
@@ -182,8 +182,7 @@ def get_uids_potential_workers(student_uid_lists, employment_rates, age_by_uid):
 
 
 def generate_workplace_sizes(workplace_size_distr_by_bracket, workplace_size_brackets, workers_by_age_to_assign_count):
-    """
-    Given a number of individuals employed, generate a list of workplace sizes to place everyone in a workplace.
+    """Given a number of individuals employed, generate a list of workplace sizes to place everyone in a workplace.
 
     Args:
         workplace_size_distr_by_bracket (dict) : The distribution of binned workplace sizes.
@@ -192,6 +191,7 @@ def generate_workplace_sizes(workplace_size_distr_by_bracket, workplace_size_bra
 
     Returns:
         A list of workplace sizes.
+
     """
     nworkers = np.sum([workers_by_age_to_assign_count[a] for a in workers_by_age_to_assign_count])
 
@@ -215,8 +215,7 @@ def generate_workplace_sizes(workplace_size_distr_by_bracket, workplace_size_bra
 
 
 def get_workers_by_age_to_assign(employment_rates, potential_worker_ages_left_count, uids_by_age):
-    """
-    Get the number of people to assign to a workplace by age using those left who can potentially go to work and employment rates by age.
+    """Get the number of people to assign to a workplace by age using those left who can potentially go to work and employment rates by age.
 
     Args:
         employment_rates (dict)                 : A dictionary of employment rates by age.
@@ -225,8 +224,9 @@ def get_workers_by_age_to_assign(employment_rates, potential_worker_ages_left_co
 
     Returns:
         A dictionary with a count of workers to assign to a workplace.
+
     """
-    log.debug('get_workers_by_age_to_assign()')
+    log.debug("get_workers_by_age_to_assign()")
     workers_by_age_to_assign_count = dict.fromkeys(np.arange(101), 0)
     for a in potential_worker_ages_left_count:
         if a in employment_rates:
@@ -241,8 +241,7 @@ def get_workers_by_age_to_assign(employment_rates, potential_worker_ages_left_co
 
 
 def assign_rest_of_workers(workplace_sizes, potential_worker_uids, potential_worker_uids_by_age, workers_by_age_to_assign_count, age_by_uid, age_brackets, age_by_brackets, contact_matrices):
-    """
-    Assign the rest of the workers to non-school workplaces.
+    """Assign the rest of the workers to non-school workplaces.
 
     Args:
         workplace_sizes (list)                : list of workplace sizes
@@ -258,15 +257,16 @@ def assign_rest_of_workers(workplace_sizes, potential_worker_uids, potential_wor
         List of lists where each sublist is a workplace with the ages of workers, list of lists where each sublist is a workplace with the ids of workers,
         dictionary of potential workers left mapping id to age, dictionary mapping age to a list of potential workers left of that age, dictionary
         mapping age to the count of workers left to assign.
+
     """
-    log.debug('assign_rest_of_workers()')
+    log.debug("assign_rest_of_workers()")
     workplace_age_lists = []
     workplace_uid_lists = []
     worker_age_keys = workers_by_age_to_assign_count.keys()
     sorted_worker_age_keys = sorted(worker_age_keys)
 
     # make a copy of the workplace matrix to sample from and modify as people get placed into workplaces and removed from the pool of potential workers
-    w_contact_matrix = contact_matrices['W'].copy()
+    w_contact_matrix = contact_matrices["W"].copy()
 
     # off turn likelihood to meet those unemployed in the workplace because the matrices are not an exact match for the population under study
     for b in age_brackets:
@@ -356,15 +356,14 @@ def assign_rest_of_workers(workplace_sizes, potential_worker_uids, potential_wor
                     if np.sum(b_prob) > 0: # pragma: no cover
                         b_prob = b_prob / np.sum(b_prob)
 
-        log.debug(f'  Progress: {n}, {Counter(new_work)}')
+        log.debug(f"  Progress: {n}, {Counter(new_work)}")
         workplace_age_lists.append(new_work)
         workplace_uid_lists.append(new_work_uids)
     return workplace_age_lists, workplace_uid_lists, potential_worker_uids, potential_worker_uids_by_age, workers_by_age_to_assign_count
 
 
 def count_employment_by_age(popdict):
-    """
-    Get employment count by age for workers in the popdict. Workers can be in
+    """Get employment count by age for workers in the popdict. Workers can be in
     different possible layers: as staff in long term care facilities (LTCF),
     as teachers or staff in schools (S), or as workers in other workplaces (W).
 
@@ -373,18 +372,18 @@ def count_employment_by_age(popdict):
 
     Returns:
         dict: Dictionary of the count of employed people by age in popdict.
+
     """
     employment_count_by_age = dict.fromkeys(np.arange(0, defaults.settings.max_age), 0)
     for i, person in popdict.items():
-        if person['ltcf_staff'] or person['sc_teacher'] or person['sc_staff'] or person['wpid']:
-            employment_count_by_age[person['age']] += 1
+        if person["ltcf_staff"] or person["sc_teacher"] or person["sc_staff"] or person["wpid"]:
+            employment_count_by_age[person["age"]] += 1
 
     return employment_count_by_age
 
 
 def get_employment_rates_by_age(employment_count_by_age, age_count):
-    """
-    Get employment rates by age.
+    """Get employment rates by age.
 
     Args:
         employment_count_by_age (dict) : dictionary of the count of employed people
@@ -392,13 +391,13 @@ def get_employment_rates_by_age(employment_count_by_age, age_count):
 
     Returns:
         dict: Dictionary of the employment rates by age.
+
     """
     return {a: employment_count_by_age[a] / age_count[a] if age_count[a] > 0 else 0 for a in sorted(age_count.keys())}
 
 
 def get_workplace_sizes(popdict):
-    """
-    Get workplace sizes of regular workplaces in popdict. This only includes
+    """Get workplace sizes of regular workplaces in popdict. This only includes
     workplaces that are not long term care facilities (LTCF) or schools (S).
 
     Args:
@@ -406,12 +405,13 @@ def get_workplace_sizes(popdict):
 
     Returns:
         dict: Dictionary of the generated workplace sizes for each regular workplace.
+
     """
     workplace_sizes = dict()
     for i, person in popdict.items():
-        if person['wpid'] is not None:
-            workplace_sizes.setdefault(person['wpid'], 0)
-            workplace_sizes[person['wpid']] += 1
+        if person["wpid"] is not None:
+            workplace_sizes.setdefault(person["wpid"], 0)
+            workplace_sizes[person["wpid"]] += 1
             # workplace_sizes.setdefault(person['wpid'], dict())  # use when workplace types by industry are included
             # workplace_sizes[person['wpid']].setdefault('employed', 0)
             # workplace_sizes[person['wpid']]['employed'] += 1
@@ -420,8 +420,7 @@ def get_workplace_sizes(popdict):
 
 
 def get_generated_workplace_size_distribution(workplace_sizes, bins):
-    """
-    Get workplace size distribution.
+    """Get workplace size distribution.
 
     Args:
         workplace_sizes (dict): generated workplace sizes by workplace id (wpid)
@@ -429,6 +428,7 @@ def get_generated_workplace_size_distribution(workplace_sizes, bins):
 
     Returns:
         dict: Dictionary of generated workplace size distribution.
+
     """
     generated_workplace_sizes = list(workplace_sizes.values())
     hist, bins = np.histogram(generated_workplace_sizes, bins=bins, density=0)

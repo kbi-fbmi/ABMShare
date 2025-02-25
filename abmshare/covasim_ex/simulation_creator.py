@@ -1,15 +1,18 @@
-import covasim as cv
-import abmshare.utils as exut
-import multiprocessing as mp
-import abmshare.defaults as exdf
-import abmshare.covasim_ex.mobility as mb
-import abmshare.covasim_ex.simulation_conf_getter as exscg
-from abmshare.covasim_ex.region import Region
-import abmshare.covasim_ex.intervention_process as exip
-from pytictoc import TicToc
+import concurrent.futures
 import datetime
 import functools
-import concurrent.futures
+import multiprocessing as mp
+
+from pytictoc import TicToc
+
+import abmshare.covasim_ex.intervention_process as exip
+import abmshare.covasim_ex.mobility as mb
+import abmshare.covasim_ex.simulation_conf_getter as exscg
+import abmshare.defaults as exdf
+import abmshare.utils as exut
+import covasim as cv
+from abmshare.covasim_ex.region import Region
+
 
 class Simulation_creator():
     def __init__(self,configuration:dict,
@@ -27,33 +30,34 @@ class Simulation_creator():
             wait (bool, optional): _description_. Defaults to False.
             test (bool, optional): _description_. Defaults to False.
             save_settings (dict, optional): _description_. Defaults to None.
+
         """
         if not isinstance(configuration,dict):
             configuration=exut.load_config(configuration)
-        self.configuration=configuration   
+        self.configuration=configuration
         self.test=self.configuration.get("test",False) or test
-        self.parallel_run=parallel_run 
-        self.override_pop_location=override_pop_location        
+        self.parallel_run=parallel_run
+        self.override_pop_location=override_pop_location
         self.save_settings=save_settings or {}
-        self.mobility=mobility        
+        self.mobility=mobility
         # Simulation parameters
         self.region_objects={}
         self.simulation_days=None
-        self.multisim_result=None        
+        self.multisim_result=None
         self.region_objects_result={}
         self.shared_mobility_exclude = list()
-        self.unique_mobility_indexes=exscg.get_global_pars(self.configuration,'unique_mobility_indexes') or unique_mobility_indexes
+        self.unique_mobility_indexes=exscg.get_global_pars(self.configuration,"unique_mobility_indexes") or unique_mobility_indexes
         # Initialize new immunity data and variants
-        if not wait: 
+        if not wait:
             self.process()
 
     def process(self):
         # Core processing class
         if not self.parallel_run: self.run_single_core_sims()
-        else: self.run_multi_core_sims() 
+        else: self.run_multi_core_sims()
         # Save multisim object
         self.save_multisim_object()
-        
+
     def run_single_core_sims(self):
         """_summary_
 
@@ -63,21 +67,19 @@ class Simulation_creator():
         # Sim preparation
         for location_code in exscg.get_region_codes(self.configuration):
             self.sim_creation_process(location_code=location_code)
-        self.simulation_days=(next(iter(self.region_objects.values()))).get_days()+1 
+        self.simulation_days=(next(iter(self.region_objects.values()))).get_days()+1
         # Initial interaction for all simulations
-        if self.mobility and self.unique_mobility_indexes:
-            mb.interactions(self.region_objects,init=True) 
-        elif self.mobility and not self.unique_mobility_indexes:
+        if self.mobility and self.unique_mobility_indexes or self.mobility and not self.unique_mobility_indexes:
             mb.interactions(self.region_objects,init=True)
         # Run sims
-        for t in range(self.simulation_days):            
-            # print(f"Running sim for day:{t}")            
+        for t in range(self.simulation_days):
+            # print(f"Running sim for day:{t}")
             exclude_regions=[]
             for region in self.region_objects.values():
                 # Prepare mobility keys to exclude
-                actual_date=datetime.datetime.strptime(region.cv_simulation.date(t),'%Y-%m-%d')
+                actual_date=datetime.datetime.strptime(region.cv_simulation.date(t),"%Y-%m-%d")
                 if t==0:
-                    print(f"Starting simulation date:{actual_date}") 
+                    print(f"Starting simulation date:{actual_date}")
                 region.run_step()
                 # Now handle mobility intervention when is turned
                 for change in region.mobility_intervention_list:
@@ -101,7 +103,7 @@ class Simulation_creator():
         tic.toc("Simulations done in:")
         # Create multisim object
         self.multisim_result=cv.MultiSim([val.cv_simulation for val in self.region_objects.values()])
-                        
+
     def sim_creation_process(self, location_code:str,shared_dict=None):
         region = Region(location_code=location_code,
                                                             name=exscg.get_region_name(config=self.configuration,code=location_code),
@@ -148,14 +150,12 @@ class Simulation_creator():
         # Convert back to regular dictionary after multiprocessing is done
         self.region_objects = dict(shared_region_objects)
         # Handle init mobility interactions
-        if self.mobility and self.unique_mobility_indexes:
+        if self.mobility and self.unique_mobility_indexes or self.mobility and not self.unique_mobility_indexes:
             mb.interactions(self.region_objects,init=True)
-        elif self.mobility and not self.unique_mobility_indexes:
-            mb.interactions(self.region_objects,init=True) 
         else:
             pass
-            # TODO: future to default version with no randoms  
-        self.simulation_days=(next(iter(self.region_objects.values()))).get_days()+1 
+            # TODO: future to default version with no randoms
+        self.simulation_days=(next(iter(self.region_objects.values()))).get_days()+1
 
         # Run the simulation in parallel and synchro mobility
         for t in range(self.simulation_days):
@@ -181,10 +181,10 @@ class Simulation_creator():
         for val in self.region_objects.values():
             val.finalize_simulation()
         self.multisim_result=cv.MultiSim([val.cv_simulation for val in self.region_objects.values()])
-        
+
     def save_multisim_object(self):
         if not self.save_settings:
             print("Save settings is not defined. Nowhere to save simulation.")
         else:
-            self.save_settings['sim_location']=exut.merge_twoPaths(self.save_settings['location'],exdf.default_multisim_object_rel_path)
-            self.multisim_result.save(self.save_settings['sim_location'])
+            self.save_settings["sim_location"]=exut.merge_twoPaths(self.save_settings["location"],exdf.default_multisim_object_rel_path)
+            self.multisim_result.save(self.save_settings["sim_location"])

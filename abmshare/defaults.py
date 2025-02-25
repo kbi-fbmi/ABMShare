@@ -1,27 +1,28 @@
-import os
 import copy
+import os
+
 
 def get_filepath(path):
-    this_dir=os.path.dirname(os.path.abspath(__file__)) #Example dir 
+    this_dir=os.path.dirname(os.path.abspath(__file__)) #Example dir
     return os.path.join(this_dir,path)
 
 def get_filepath_default(path):
-    this_dir=os.path.abspath(__file__+"/../../")#Example dir 
+    this_dir=os.path.abspath(__file__+"/../../")#Example dir
     return os.path.join(this_dir,path)
 
 def get_filepathSP(path):
-    this_dir=os.path.abspath(__file__+"/../../synthpops") #Example dir 
+    this_dir=os.path.abspath(__file__+"/../../synthpops") #Example dir
     return os.path.join(this_dir,path)
 
 def get_filepathCV(path):
-    this_dir=os.path.abspath(__file__+"/../../covasim") #Example dir 
+    this_dir=os.path.abspath(__file__+"/../../covasim") #Example dir
     return os.path.join(this_dir,path)
 
 testsettings={
     "n_size":20000,
     "mobility_size":200,
     "suffix":"",
-    "prefix":"test_"
+    "prefix":"test_",
 }
 test_n_people=20000
 population_age_distributions_bins=[16,20]
@@ -33,21 +34,21 @@ report_default_format="xlsx"
 # Variables for variant changes based on being only included in sims. Values can be changed overtime
 default_empty_variant={
     "number_of_imports":0,
-    "days":0
+    "days":0,
 }
 
-variant_result_keys=['prevalence_by_variant',
- 'incidence_by_variant',
- 'cum_infections_by_variant',
- 'cum_symptomatic_by_variant',
- 'cum_severe_by_variant',
- 'cum_infectious_by_variant',
- 'new_infections_by_variant',
- 'new_symptomatic_by_variant',
- 'new_severe_by_variant',
- 'new_infectious_by_variant',
- 'n_exposed_by_variant',
- 'n_infectious_by_variant'
+variant_result_keys=["prevalence_by_variant",
+ "incidence_by_variant",
+ "cum_infections_by_variant",
+ "cum_symptomatic_by_variant",
+ "cum_severe_by_variant",
+ "cum_infectious_by_variant",
+ "new_infections_by_variant",
+ "new_symptomatic_by_variant",
+ "new_severe_by_variant",
+ "new_infectious_by_variant",
+ "n_exposed_by_variant",
+ "n_infectious_by_variant",
 ]
 
 
@@ -58,10 +59,10 @@ modules={
 }
 
 pathvalues={
-    'default_configuration' :'data/default_configuration.json', #default parent
-    'mobility_path'         :'covasim_ex/data/CZ_NUTS2_mobility.xlsx',
-    'population_path'       :'covasim_ex/data/CZ_NUTS2_population.xlsx',
-    "output_path"           :'outputs',
+    "default_configuration" :"data/default_configuration.json", #default parent
+    "mobility_path"         :"covasim_ex/data/CZ_NUTS2_mobility.xlsx",
+    "population_path"       :"covasim_ex/data/CZ_NUTS2_population.xlsx",
+    "output_path"           :"outputs",
     "default_synthpops_region_creator_datafiles":"data/default_csv",
     "synthetic_population"  :"synthpops",
     "simulation_model"      :"covasim",
@@ -69,29 +70,29 @@ pathvalues={
 }
 
 save_settings={
-    'population_path':"pops",
-    'population_configurations':"pop_configurations",
-    'saved_multisim':'sims',
-    'saved_images':'images',
-    "output_reports":"output_reports"
+    "population_path":"pops",
+    "population_configurations":"pop_configurations",
+    "saved_multisim":"sims",
+    "saved_images":"images",
+    "output_reports":"output_reports",
 }
 
 # Key specified to json configuration
 confkeys={
-    'covasim_pars':'covasim_pars', 
-    'synthpops_pars':'synthpops_pars',
-    'global_pars':'global_pars',
-    'region_pars':'region_pars',
-    'different_pars':'different_pars',
+    "covasim_pars":"covasim_pars",
+    "synthpops_pars":"synthpops_pars",
+    "global_pars":"global_pars",
+    "region_pars":"region_pars",
+    "different_pars":"different_pars",
     "regions":"regions",
-    'mobility_pars':'mobility_pars',
-    'population_pars':'population_pars',
-    'interventions':'interventions',
-    'pars':'pars',
-    'popfile':'popfile',
-    'simulation_pars':'sim_pars',
-    'region_config':"region_settings",
-    'pop_creator_config':"pop_creator_settings",
+    "mobility_pars":"mobility_pars",
+    "population_pars":"population_pars",
+    "interventions":"interventions",
+    "pars":"pars",
+    "popfile":"popfile",
+    "simulation_pars":"sim_pars",
+    "region_config":"region_settings",
+    "pop_creator_config":"pop_creator_settings",
     "global_only":"global_only",
     "include_with_different":"include_with_different",
     "include_keys":"include_keys",
@@ -151,7 +152,7 @@ confkeys={
     "population_size":"population_size",
     "simulation_configuration_files":"simulation_configuration_files",
     "synthpops_configuration_files":"synthpops_configuration_files",
-    "simulation_immunity_files":"simulation_immunity_files"
+    "simulation_immunity_files":"simulation_immunity_files",
 }
 
 
@@ -171,131 +172,131 @@ default_synthpops_data_files=[
     "README.md",
     "usa-Washington-seattle_metro.json",
     "usa-Washington.json",
-    "usa.json"
+    "usa.json",
 ]
 
 # Valid pars for simulation
 # Source https://docs.idmod.org/projects/covasim/en/latest/parameters.html
 covasim_pars={
     #Only for mobility sim validation
-    'sim_pars':[
-        'n_days',
-        'start_day',
-        'end_day',
-        'pop_type',
-        'pop_infected',
-        'use_waning',# added before mobility fix
-        "rand_seed"
+    "sim_pars":[
+        "n_days",
+        "start_day",
+        "end_day",
+        "pop_type",
+        "pop_infected",
+        "use_waning",# added before mobility fix
+        "rand_seed",
     ],
-    'sim_constructor':[
-        'label',       
-        'popfile',
+    "sim_constructor":[
+        "label",
+        "popfile",
     ],
-    'global_pars_settings':[
-        'global_only',
-        'include_global',
-        'include_keys'
+    "global_pars_settings":[
+        "global_only",
+        "include_global",
+        "include_keys",
     ],
-    'population_pars':[
-        'pop_file', #added for population .xlsx or .csv
-        'pop_size',
-        'pop_infected',
-        'pop_type',
-        'location',
+    "population_pars":[
+        "pop_file", #added for population .xlsx or .csv
+        "pop_size",
+        "pop_infected",
+        "pop_type",
+        "location",
     ],
-    'simulation_pars':[
-        'pop_file', # added for created .pop via synthpops
-        'people', # added for reference to created and holded pop via synthpops
-        'start_day',
-        'end_day',
-        'n_days',
-        'rand_seed',
-        'verbose',
-        'label' # added for sim labeling
+    "simulation_pars":[
+        "pop_file", # added for created .pop via synthpops
+        "people", # added for reference to created and holded pop via synthpops
+        "start_day",
+        "end_day",
+        "n_days",
+        "rand_seed",
+        "verbose",
+        "label", # added for sim labeling
     ],
-    'rescaling_pars':[
-        'pop_scale',
-        'scaled_pop',
-        'rescale',
-        'rescale_threshold',
-        'rescale_factor'
+    "rescaling_pars":[
+        "pop_scale",
+        "scaled_pop",
+        "rescale",
+        "rescale_threshold",
+        "rescale_factor",
     ],
-    'basic_disease_trans':
+    "basic_disease_trans":
     [
-        'beta',
-        'n_imports',
-        'beta_dist',
-        'viral_dist',
-        'asymp_factor'
+        "beta",
+        "n_imports",
+        "beta_dist",
+        "viral_dist",
+        "asymp_factor",
     ],
-    'network_pars':
+    "network_pars":
     [
-        'contacts',
-        'dynam_layer',
-        'beta_layer'
+        "contacts",
+        "dynam_layer",
+        "beta_layer",
     ],
-    'multi_strain_pars':
+    "multi_strain_pars":
     [
-        'n_imports',
-        'n_strains'
+        "n_imports",
+        "n_strains",
     ],
-    'immunity_pars':
+    "immunity_pars":
     [
-        'use_waning',
-        'nab_init',
-        'nab_decay',
-        'nab_kin',
-        'nab_boost',
-        'nab_eff',
-        'rel_imm_symp',
-        'immunity'
+        "use_waning",
+        "nab_init",
+        "nab_decay",
+        "nab_kin",
+        "nab_boost",
+        "nab_eff",
+        "rel_imm_symp",
+        "immunity",
     ],
-    'strain_specifis_pars':
+    "strain_specifis_pars":
     [
-        'rel_beta',
-        'rel_imm_strain'
+        "rel_beta",
+        "rel_imm_strain",
     ],
-    'time_for_disease_progression':
+    "time_for_disease_progression":
     [
-        'exp2inf',
-        'inf2sym',
-        'sym2sev'        
+        "exp2inf",
+        "inf2sym",
+        "sym2sev",
     ],
-    'time_for_disease_recovery':
+    "time_for_disease_recovery":
     [
-        'asym2rec',
-        'mild2rec',
-        'sev2rec',
-        'crit2rec'        
+        "asym2rec",
+        "mild2rec",
+        "sev2rec",
+        "crit2rec",
     ],
-    'severity_pars':
+    "severity_pars":
     [
-        'rel_symp_prob',
-        'rel_severe_prob',
-        'rel_crit_prob',
-        'rel_death_prob',
-        'prog_by_age',
-        'prognoses'
+        "rel_symp_prob",
+        "rel_severe_prob",
+        "rel_crit_prob",
+        "rel_death_prob",
+        "prog_by_age",
+        "prognoses",
     ],
-    'efficiacy_of_protection_measures':
+    "efficiacy_of_protection_measures":
     [
-        'iso_factor',
-        'quar_factor',
-        'quar_period'
+        "iso_factor",
+        "quar_factor",
+        "quar_period",
     ],
-    'events_and_interventions':
+    "events_and_interventions":
     [
-        'interventions',
-        'analyzers',
-        'timelimit',
-        'stopping_func'
+        "interventions",
+        "analyzers",
+        "timelimit",
+        "stopping_func",
     ],
-    'health_system_parameters':
+    "health_system_parameters":
     [
-        'n_beds_hosp',
-        'n_beds_icu',
-        'no_hosp_factor',
-        'no_icu_factor'
+        "n_beds_hosp",
+        "n_beds_icu",
+        "no_hosp_factor",
+        "no_icu_factor",
     ],
     "interventions":
     [
@@ -304,68 +305,68 @@ covasim_pars={
         "end_day",
         "start_change",
         "end_change",
-        "layers"
-    ],  
+        "layers",
+    ],
     "analyzers":
     [
-        
-    ]
+
+    ],
 }
 
 interventions={
     "beta_change":
     [
-        'type',
-        'label',
-        'start_day',
-        'end_day',
-        'num_days',
-        'days', # is num_days
-        'beta_change',
-        'layers'
-    ],  
+        "type",
+        "label",
+        "start_day",
+        "end_day",
+        "num_days",
+        "days", # is num_days
+        "beta_change",
+        "layers",
+    ],
     "mobility_change":
     [
-        'type',
-        'location_code',
-        'label',
-        'start_day',
-        'end_day',
-        'num_days'
+        "type",
+        "location_code",
+        "label",
+        "start_day",
+        "end_day",
+        "num_days",
     ],
     "isolate_contacts":
     [
-        'type', 
-        'label',
-        'days', # can also be a list
-        'start_day',
-        'end_day',
-        'num_days',
-        'beta_change', # can also be a list
-        'layers'
+        "type",
+        "label",
+        "days", # can also be a list
+        "start_day",
+        "end_day",
+        "num_days",
+        "beta_change", # can also be a list
+        "layers",
     ],
     "per_day_testing":
     [
-        'type',
-        'label',
-        'daily_tests',
-        'symp_test',
-        'quar_test',
-        'quar_policy',
-        'subtarget',
-        'ili_prev',
-        'sensitivity',
-        'loss_prob',
-        'test_delay',
-        'start_day',
-        'end_day',
-        'swab_delay'
-        'num_days',
+        "type",
+        "label",
+        "daily_tests",
+        "symp_test",
+        "quar_test",
+        "quar_policy",
+        "subtarget",
+        "ili_prev",
+        "sensitivity",
+        "loss_prob",
+        "test_delay",
+        "start_day",
+        "end_day",
+        "swab_delay"
+        "num_days",
     ],
     "testing_probability":[
         "type",
         "label",
-        "days",        
+        "days",
         "symp_prob",
         "asymp_prob",
         "symp_quar_prob",
@@ -379,20 +380,20 @@ interventions={
         "start_day",
         "end_day",
         "swab_delay",
-        'num_days'
+        "num_days",
     ],
     "contact_tracing":
     [
         "type",
         "label",
-        "trace_probs",   
+        "trace_probs",
         "trace_time",
         "start_day",
         "end_day",
-        'num_days',
+        "num_days",
         "presumptive",
         "capacity",
-        "quar_period",        
+        "quar_period",
     ],
     "vaccinate_probability":
     [
@@ -403,10 +404,10 @@ interventions={
         "prob",
         "booster",
         "subtarget",
-        'num_days',
+        "num_days",
         "start_day",
         "end_day",
-        "vaccine_dict" # TODO: casem
+        "vaccine_dict", # TODO: casem
     ],
     "vaccinate_distribution":
     [
@@ -417,9 +418,9 @@ interventions={
         "booster",
         "subtarget",
         "sequence",
-        'num_days',
+        "num_days",
         "start_day",
-        "end_day"
+        "end_day",
     ],
     "simple_vaccination":
     [
@@ -431,31 +432,31 @@ interventions={
         "rel_symp",
         "subtarget",
         "cumulative",
-        'num_days',
+        "num_days",
         "start_day",
-        "end_day"
+        "end_day",
     ],
     "base_vaccination":
     [
         "type",
         "vaccine",
         "label",
-        "booster",        
+        "booster",
         "days",
         "num_days",
         "start_day",
-        "end_day",        
+        "end_day",
     ],
     "weekend_off":
     [
-        'type',
-        'label',
-        'start_day',
-        'end_day',
-        'num_days',
-        'days',
-        'beta_change',
-        'layers'
+        "type",
+        "label",
+        "start_day",
+        "end_day",
+        "num_days",
+        "days",
+        "beta_change",
+        "layers",
     ],
     "variant":
     [
@@ -466,161 +467,161 @@ interventions={
         "end_day",
         "label",
         "number_of_imports",
-        "rescale"
-    ]
+        "rescale",
+    ],
 }
 
 covasim_pars_all=[
-        'location_code',
-        'unique_mobility_indexes',
-        'n_days',
-        'start_day',
-        'end_day',
-        'pop_type',
-        'pop_infected',
-        'use_waning',# added before mobility fix
+        "location_code",
+        "unique_mobility_indexes",
+        "n_days",
+        "start_day",
+        "end_day",
+        "pop_type",
+        "pop_infected",
+        "use_waning",# added before mobility fix
         "rand_seed",
-        'label',       
-        'popfile',
+        "label",
+        "popfile",
 
-        'pop_size',
-        'pop_infected',
-        'pop_type',
-        'verbose',
+        "pop_size",
+        "pop_infected",
+        "pop_type",
+        "verbose",
 
-        'pop_scale',
-        'scaled_pop',
-        'rescale',
-        'rescale_threshold',
-        'rescale_factor',
+        "pop_scale",
+        "scaled_pop",
+        "rescale",
+        "rescale_threshold",
+        "rescale_factor",
 
-        'beta',
-        'n_imports',
-        'beta_dist',
-        'viral_dist',
-        'asymp_factor'
+        "beta",
+        "n_imports",
+        "beta_dist",
+        "viral_dist",
+        "asymp_factor"
 
-        'contacts',
-        'dynam_layer',
-        'beta_layer',
+        "contacts",
+        "dynam_layer",
+        "beta_layer",
 
-        'n_imports',
-        'n_strains',
+        "n_imports",
+        "n_strains",
 
-        'use_waning',
-        'nab_init',
-        'nab_decay',
-        'nab_kin',
-        'nab_boost',
-        'nab_eff',
-        'rel_imm_symp',
-        'immunity',
+        "use_waning",
+        "nab_init",
+        "nab_decay",
+        "nab_kin",
+        "nab_boost",
+        "nab_eff",
+        "rel_imm_symp",
+        "immunity",
 
-        'rel_beta',
-        'rel_imm_strain',
+        "rel_beta",
+        "rel_imm_strain",
 
-        'exp2inf',
-        'inf2sym',
-        'sym2sev',        
+        "exp2inf",
+        "inf2sym",
+        "sym2sev",
 
-        'asym2rec',
-        'mild2rec',
-        'sev2rec',
-        'crit2rec',        
+        "asym2rec",
+        "mild2rec",
+        "sev2rec",
+        "crit2rec",
 
-        'rel_symp_prob',
-        'rel_severe_prob',
-        'rel_crit_prob',
-        'rel_death_prob',
-        'prog_by_age',
-        'prognoses',
+        "rel_symp_prob",
+        "rel_severe_prob",
+        "rel_crit_prob",
+        "rel_death_prob",
+        "prog_by_age",
+        "prognoses",
 
-        'iso_factor',
-        'quar_factor',
-        'quar_period',
+        "iso_factor",
+        "quar_factor",
+        "quar_period",
 
-        'interventions',
-        'analyzers',
-        'timelimit',
-        'stopping_func',
+        "interventions",
+        "analyzers",
+        "timelimit",
+        "stopping_func",
 
-        'n_beds_hosp',
-        'n_beds_icu',
-        'no_hosp_factor',
-        'no_icu_factor'
+        "n_beds_hosp",
+        "n_beds_icu",
+        "no_hosp_factor",
+        "no_icu_factor",
 ]
 
 covasim_constructor_pars_mapping={
     "name":"label",
     "popfile":"popfile",
     "location_code":"location_code",
-    "region_parent_name":"region_parent_name"
+    "region_parent_name":"region_parent_name",
 }
 
-synchronization_pars=['n_infections','susceptible','naive','exposed','exposed_variant','infectious_variant','peak_nab','date_susceptible',#'exposed_by_variant','infectious_by_variant',
-     'date_naive','date_exposed','date_infectious','date_symptomatic','date_severe','date_critical','date_tested','date_diagnosed','date_recovered','date_known_dead',
-     'date_dead','date_known_contact','date_quarantined','date_vaccinated','date_pos_test','date_end_quarantine','dur_exp2inf','dur_inf2sym','dur_sym2sev',#'symp_imm','sev_imm',
-     'dur_sev2crit','dur_disease','recovered_variant'
+synchronization_pars=["n_infections","susceptible","naive","exposed","exposed_variant","infectious_variant","peak_nab","date_susceptible",#'exposed_by_variant','infectious_by_variant',
+     "date_naive","date_exposed","date_infectious","date_symptomatic","date_severe","date_critical","date_tested","date_diagnosed","date_recovered","date_known_dead",
+     "date_dead","date_known_contact","date_quarantined","date_vaccinated","date_pos_test","date_end_quarantine","dur_exp2inf","dur_inf2sym","dur_sym2sev",#'symp_imm','sev_imm',
+     "dur_sev2crit","dur_disease","recovered_variant",
 ]
-arraypars=['exposed_by_variant','symp_imm','sev_imm','infectious_by_variant','sus_imm']
+arraypars=["exposed_by_variant","symp_imm","sev_imm","infectious_by_variant","sus_imm"]
 synthpops_pars={
     "regions":
     [
-        'name_with_diacritic',
-        'name',
-        'filename',
-        'location_code',
-        'sheet_name',
-        'country_location',
-        'state_location',
-        'parent',
+        "name_with_diacritic",
+        "name",
+        "filename",
+        "location_code",
+        "sheet_name",
+        "country_location",
+        "state_location",
+        "parent",
         "region_data_name",
         "config_dirpath", # Optional
-        'population_age_distributions',
-        'employment_rates_by_age',
-        'enrollment_rates_by_age',
-        'household_head_age_brackets',
-        'household_head_age_distribution_by_family_size',
-        'household_size_distribution',
-        'school_size_brackets',
-        'school_size_distribution',
-        'school_size_distribution_by_type',
-        'school_types_by_age',
-        'workplace_size_counts_by_num_personnel'
+        "population_age_distributions",
+        "employment_rates_by_age",
+        "enrollment_rates_by_age",
+        "household_head_age_brackets",
+        "household_head_age_distribution_by_family_size",
+        "household_size_distribution",
+        "school_size_brackets",
+        "school_size_distribution",
+        "school_size_distribution_by_type",
+        "school_types_by_age",
+        "workplace_size_counts_by_num_personnel",
     ],
     "age_distribution":
     [
-        'num_bins',
-        "filename"
+        "num_bins",
+        "filename",
     ],
     "load_pop_keys":
     [
-        'num_bins',
-        'distribution'
+        "num_bins",
+        "distribution",
     ],
     "region_pars":
     [
-        'location_name',
-        'data_provenance_notices',
-        'reference_links',
-        'citations',
+        "location_name",
+        "data_provenance_notices",
+        "reference_links",
+        "citations",
         # 'notes',
-        'parent',
-        'population_age_distributions',
-        'employment_rates_by_age',
-        'enrollment_rates_by_age',
-        'household_head_age_brackets',
-        'household_head_age_distribution_by_family_size',
-        'household_size_distribution',
-        'ltcf_resident_to_staff_ratio_distribution',
-        'ltcf_num_residents_distribution',
-        'ltcf_num_staff_distribution',
-        'ltcf_use_rate_distribution',
-        'school_size_brackets',
-        'school_size_distribution',
-        'school_size_distribution_by_type',
-        'school_types_by_age',
-        'workplace_size_counts_by_num_personnel'
+        "parent",
+        "population_age_distributions",
+        "employment_rates_by_age",
+        "enrollment_rates_by_age",
+        "household_head_age_brackets",
+        "household_head_age_distribution_by_family_size",
+        "household_size_distribution",
+        "ltcf_resident_to_staff_ratio_distribution",
+        "ltcf_num_residents_distribution",
+        "ltcf_num_staff_distribution",
+        "ltcf_use_rate_distribution",
+        "school_size_brackets",
+        "school_size_distribution",
+        "school_size_distribution_by_type",
+        "school_types_by_age",
+        "workplace_size_counts_by_num_personnel",
     ],
     "pop_creator_pars": # For pars_file.csv
     [
@@ -665,8 +666,8 @@ synthpops_pars={
         "state_location",
         "country_location",
         "sheet_name",
-        "region_config_filename"
-    ]
+        "region_config_filename",
+    ],
 }
 default_region_pars=[
     "location_name",
@@ -692,28 +693,28 @@ default_region_pars=[
 ]
 
 synthpops_csv_files=[
-        'population_age_distributions',
-        'employment_rates_by_age',
-        'enrollment_rates_by_age',
-        'household_head_age_brackets',
-        'household_head_age_distribution_by_family_size',
-        'household_size_distribution',
-        'school_size_brackets',
-        'school_size_distribution',
-        'school_size_distribution_by_type',
-        'school_types_by_age',
-        'workplace_size_counts_by_num_personnel'
+        "population_age_distributions",
+        "employment_rates_by_age",
+        "enrollment_rates_by_age",
+        "household_head_age_brackets",
+        "household_head_age_distribution_by_family_size",
+        "household_size_distribution",
+        "school_size_brackets",
+        "school_size_distribution",
+        "school_size_distribution_by_type",
+        "school_types_by_age",
+        "workplace_size_counts_by_num_personnel",
 ]
 
 synthpops_one_file_data={
-    'household_head_age_brackets':'load_household_head_age_brackets',
-    'household_head_age_distribution_by_family_size':'load_household_head_age_distribution_by_family_size',
-    'household_size_distribution':'load_household_size_distribution',
-    'school_size_brackets':'load_school_size_brackets',
-    'school_size_distribution':'load_school_distribution',
-    'school_size_distribution_by_type':'load_school_size_distribution',
-    'school_types_by_age':'load_school_types',
-    'workplace_size_counts_by_num_personnel':'load_workplace_size_counts'
+    "household_head_age_brackets":"load_household_head_age_brackets",
+    "household_head_age_distribution_by_family_size":"load_household_head_age_distribution_by_family_size",
+    "household_size_distribution":"load_household_size_distribution",
+    "school_size_brackets":"load_school_size_brackets",
+    "school_size_distribution":"load_school_distribution",
+    "school_size_distribution_by_type":"load_school_size_distribution",
+    "school_types_by_age":"load_school_types",
+    "workplace_size_counts_by_num_personnel":"load_workplace_size_counts",
 }
 
 report_keys=[
@@ -774,7 +775,7 @@ report_keys=[
 "pop_symp_protection",
 "variant",
 "date",
-"t"
+"t",
 ]
 
 # and without variant
@@ -833,75 +834,75 @@ report_keys_without_date=[
 "frac_vaccinated",
 "pop_nabs",
 "pop_protection",
-"pop_symp_protection"
+"pop_symp_protection",
 ]
 
 person_keys=[
     #'uid',              # Int
-    'age',              # Float
-    'sex',              # Float
-    'symp_prob',        # Float
-    'severe_prob',      # Float
-    'crit_prob',        # Float
-    'death_prob',       # Float
-    'rel_trans',        # Float
-    'rel_sus',          # Float
-    'n_infections',     # Int
-    'n_breakthroughs',  # Int
+    "age",              # Float
+    "sex",              # Float
+    "symp_prob",        # Float
+    "severe_prob",      # Float
+    "crit_prob",        # Float
+    "death_prob",       # Float
+    "rel_trans",        # Float
+    "rel_sus",          # Float
+    "n_infections",     # Int
+    "n_breakthroughs",  # Int
 ]
 
 person_states = [
-    'susceptible',
-    'naive',
-    'exposed',
-    'infectious',
-    'symptomatic',
-    'severe',
-    'critical',
-    'tested',
-    'diagnosed',
-    'recovered',
-    'known_dead',
-    'dead',
-    'known_contact',
-    'quarantined',
-    'vaccinated',
+    "susceptible",
+    "naive",
+    "exposed",
+    "infectious",
+    "symptomatic",
+    "severe",
+    "critical",
+    "tested",
+    "diagnosed",
+    "recovered",
+    "known_dead",
+    "dead",
+    "known_contact",
+    "quarantined",
+    "vaccinated",
 ]
 
 person_variant_states = [
-    'exposed_variant',
-    'infectious_variant',
-    'recovered_variant',
+    "exposed_variant",
+    "infectious_variant",
+    "recovered_variant",
 ]
 
 person_by_variant_states = [ # Array
-    'exposed_by_variant',
-    'infectious_by_variant',
+    "exposed_by_variant",
+    "infectious_by_variant",
 ]
 
 person_imm_states = [ # Array
-    'sus_imm',  # Float, by variant
-    'symp_imm', # Float, by variant
-    'sev_imm',  # Float, by variant
+    "sus_imm",  # Float, by variant
+    "symp_imm", # Float, by variant
+    "sev_imm",  # Float, by variant
 ]
 
 person_vacc_states = [ #Array
-    'doses',          # Number of doses given per person
-    'vaccine_source', # index of vaccine that individual received
+    "doses",          # Number of doses given per person
+    "vaccine_source", # index of vaccine that individual received
 ]
 
 person_nab_states = [ #Array
-    'peak_nab',    # Float, peak neutralization titre relative to convalescent plasma
-    'nab',         # Float, current neutralization titre relative to convalescent plasma
-    't_nab_event', # Int, time since nab-conferring event
+    "peak_nab",    # Float, peak neutralization titre relative to convalescent plasma
+    "nab",         # Float, current neutralization titre relative to convalescent plasma
+    "t_nab_event", # Int, time since nab-conferring event
 ]
 
 person_durs = [
-    'dur_exp2inf',
-    'dur_inf2sym',
-    'dur_sym2sev',
-    'dur_sev2crit',
-    'dur_disease',
+    "dur_exp2inf",
+    "dur_inf2sym",
+    "dur_sym2sev",
+    "dur_sev2crit",
+    "dur_disease",
 ]
 
 person_all_states=person_keys+person_states+person_variant_states+person_vacc_states+person_nab_states+person_durs
@@ -912,7 +913,7 @@ simulation_variant_keys=[
     "label",
     "days",
     "number_of_imports",
-    "rescale"
+    "rescale",
 ]
 
 custom_variant_keys=[
@@ -920,7 +921,7 @@ custom_variant_keys=[
     "rel_symp_prob",
     "rel_severe_prob",
     "rel_crit_prob",
-    "rel_death_prob"
+    "rel_death_prob",
 ]
 
 default_variants=[
@@ -928,7 +929,7 @@ default_variants=[
     "alpha",
     "beta",
     "gamma",
-    "delta"
+    "delta",
 ]
 
 # For intervention per_day_testing
@@ -939,7 +940,7 @@ default_per_day_testing_values={
     "loss_prob":0,
     "test_delay":0,
     "start_day":0,
-    "quar_policy":None
+    "quar_policy":None,
 }
 
 # For intervention testing probability
@@ -949,27 +950,27 @@ default_prob_testing_values={
     "loss_prob":0.0,
     "test_delay":0,
     "start_day":0,
-    "quar_policy":'start'
+    "quar_policy":"start",
 }
 default_contact_tracing_values={
     "start_day":0,
     "presumptive":False,
     "quar_period":None,
-    "capacity":None
+    "capacity":None,
 }
 
 default_vaccinate_probability_values={
     "booster":False,
-    "prob":None
+    "prob":None,
 }
 default_vaccinate_distribution_values={
-    "booster":False
+    "booster":False,
 }
 
 default_simple_vaccination_values={
     "prob":1.0,
     "rel_sus":0.0,
-    "rel_symp":0.0
+    "rel_symp":0.0,
 }
 
 vaccine_keys=[
@@ -978,7 +979,7 @@ vaccine_keys=[
     "nab_boost",
     "target_eff",
     "doses",
-    "interval"
+    "interval",
 ]
 
 # Default input folder structure for grid sending
@@ -990,7 +991,7 @@ input_folder_structure={
         "synthpops_input_data":[],
         "simulation_configuration_files":[],
         "synthpops_configuration_files":[],
-        "simulation_immunity_files":[]
+        "simulation_immunity_files":[],
     },
     "output_data":
     {
@@ -1000,9 +1001,9 @@ input_folder_structure={
             "output_reports":[],
             "pop_configurations":[],
             "pops":[],
-            "sims":[]
-        }
-    }            
+            "sims":[],
+        },
+    },
 }
 
 config_list=["mainconfig","synthpops","simulation","report"]
@@ -1043,7 +1044,7 @@ grid_script_functions={
     "credentials":"check_credentials",
     "copy_to_remote":"scp_copy_to_remote",
     "send_qsub":"send_qsub_to_remote",
-    "append_to_queue":"append_to_queue"
+    "append_to_queue":"append_to_queue",
 }
 # Name of bash script to be remotely executed on grid
 grid_start_pattern="meta_start_pattern.sh"
@@ -1053,9 +1054,9 @@ queue_download_config={
             "local_location":"local_location",
             "remote_location":"remote_location",
             "error":False,
-            "processed":False
-     }
-    ]
+            "processed":False,
+     },
+    ],
 }
 
 queue_download_config_single={
@@ -1063,7 +1064,7 @@ queue_download_config_single={
         "local_location":"local_location",
         "remote_location":"remote_location",
         "error":False,
-        "processed":False
+        "processed":False,
      }
 
 # Confkeys list synthpops
@@ -1075,13 +1076,13 @@ synthpops_parameters_confkeys=["pop_creator_settings","parameters"]
 synthpops_naming_confkeys=["pop_creator_settings","pop_output_naming"]
 
 synthpops_data_files=[
-    copy.deepcopy(synthpops_parameters_confkeys)+['filepath'],
-    copy.deepcopy(synthpops_creator_confkeys)+['filepath'],
-    copy.deepcopy(synthpops_global_input_data_confkeys)+['filepath'],
-    copy.deepcopy(synthpops_mobility_confkeys)+['filepath']
-] 
+    copy.deepcopy(synthpops_parameters_confkeys)+["filepath"],
+    copy.deepcopy(synthpops_creator_confkeys)+["filepath"],
+    copy.deepcopy(synthpops_global_input_data_confkeys)+["filepath"],
+    copy.deepcopy(synthpops_mobility_confkeys)+["filepath"],
+]
 
-global_values=['default','all']
+global_values=["default","all"]
 
 synthpops_region_csv_columns={
     "location_code":"location_code",
@@ -1107,7 +1108,7 @@ synthpops_input_files={
     "school_size_distribution":"school_size_distribution",
     "school_size_distribution_by_type":"school_size_distribution_by_type",
     "school_types_by_age":"school_types_by_age",
-    "workplace_size_counts_by_num_personnel":"workplace_size_counts_by_num_personnel"
+    "workplace_size_counts_by_num_personnel":"workplace_size_counts_by_num_personnel",
 }
 
 synthpops_region_pars_mapped={
@@ -1154,20 +1155,20 @@ covasim_global_parameters_confkeys=["global_parameters"]
 covasim_global_parameters=["global_parameters","pars"]
 
 covasim_data_files=[
-    copy.deepcopy(covasim_region_parameters_confkeys)+['filepath'],
-    copy.deepcopy(covasim_interventions_confkeys)+['filepath'],
-    copy.deepcopy(covasim_immunity_confkeys)+['filepath'],
-    copy.deepcopy(covasim_variants_confkeys)+['filepath'],
-    copy.deepcopy(covasim_mobility_confkeys)+['filepath'],
-    copy.deepcopy(covasim_population_size_confkeys)+['filepath'],
-    copy.deepcopy(covasim_global_parameters_confkeys)+['filepath']
+    copy.deepcopy(covasim_region_parameters_confkeys)+["filepath"],
+    copy.deepcopy(covasim_interventions_confkeys)+["filepath"],
+    copy.deepcopy(covasim_immunity_confkeys)+["filepath"],
+    copy.deepcopy(covasim_variants_confkeys)+["filepath"],
+    copy.deepcopy(covasim_mobility_confkeys)+["filepath"],
+    copy.deepcopy(covasim_population_size_confkeys)+["filepath"],
+    copy.deepcopy(covasim_global_parameters_confkeys)+["filepath"],
 ]
 
-covasim_immunity_files=[    
+covasim_immunity_files=[
     "vaccine_dose_pars",
     "vaccine_variant_pars",
     "variant_pars",
-    "variant_cross_immunity"
+    "variant_cross_immunity",
 ]
 
 covasim_region_csv_columns={
@@ -1205,27 +1206,27 @@ covasim_check_consistency_keys=[
     "pop_scale",
     "n_days",
     "start_day",
-    "end_day"
+    "end_day",
 ]
 
 covasim_intervention_exclude_keys=[
     "location_code",
     "use",
-    "intervention_type"
+    "intervention_type",
 ]
 
 covasim_intervention_list_keys=[
     "beta_change",
     "num_days",
     "layers",
-    "changes"
+    "changes",
 ]
 
 covasim_exclude_simulation_pars=[
     "use",
     "location_code",
     "region_parent_name",
-    'unique_mobility_indexes',
+    "unique_mobility_indexes",
 ]
 
 covasim_global_keys=covasim_pars_all
@@ -1245,42 +1246,42 @@ intervention_names_mapping={
     "vaccinate_probability":"vaccinate_probability",
     "vaccinate_distribution":"vaccinate_distribution",
     "simple_vaccination":"simple_vaccination",
-    "base_vaccination":"base_vaccination"
+    "base_vaccination":"base_vaccination",
 }
 
 intervention_mapping={
     "beta_change":{
-        "keys":interventions['beta_change'],  
+        "keys":interventions["beta_change"],
         "defaults":None,
     },
     "mobility_change":{
-        "keys":interventions['mobility_change'],  
+        "keys":interventions["mobility_change"],
         "defaults":None,
     },
     "isolate_contacts":{
-        "keys":interventions['isolate_contacts'],
+        "keys":interventions["isolate_contacts"],
         "defaults":None,
     },
     "per_day_testing":{
-        "keys":interventions['per_day_testing'],
-        "defaults":default_per_day_testing_values, 
+        "keys":interventions["per_day_testing"],
+        "defaults":default_per_day_testing_values,
     },
     "testing_probability":{
-        "keys":interventions['testing_probability'],
+        "keys":interventions["testing_probability"],
         "defaults":default_prob_testing_values,
     },
     "contact_tracing":{
-        "keys":interventions['contact_tracing'],
+        "keys":interventions["contact_tracing"],
         "defaults":default_contact_tracing_values,
     },
     "vaccinate_probability":{
-        "keys":interventions['vaccinate_probability'],
+        "keys":interventions["vaccinate_probability"],
         "defaults":default_vaccinate_probability_values,
     },
     "vaccinate_distribution":{
-        "keys":interventions['vaccinate_distribution'],
+        "keys":interventions["vaccinate_distribution"],
         "defaults":default_vaccinate_probability_values,
-    }
+    },
     # Simple vaccination TODO
     # "simple_vaccination":{
     #     "keys":interventions['simple_vaccination'],
@@ -1294,12 +1295,12 @@ default_multisim_object_rel_path="sims/simulation.msim"
 grid_dict_info={
     "default_base_directory":"ABM_share_meta",
     "input_directory":"input_data",
-    "output_auto_settings":"output_data"
+    "output_auto_settings":"output_data",
 }
 
 grid_configuration_extensions=["json","yaml","yml"]
 grid_csv_extensions=["csv","xlsx"]
-grid_conf_replace_keys=['filepath','mobility_filepath','mobility_path','parent_location','location']
+grid_conf_replace_keys=["filepath","mobility_filepath","mobility_path","parent_location","location"]
 grid_csv_replace_keys=list(synthpops_input_files.keys())[1:]
-grid_csv_immunity_replace_keys=['vaccine_dose_pars','vaccine_variant_pars','variant_pars','variant_cross_immunity']
-grid_conf_replace_keys.extend(['parent_filepath','popfile','parent_dirpath'])
+grid_csv_immunity_replace_keys=["vaccine_dose_pars","vaccine_variant_pars","variant_pars","variant_cross_immunity"]
+grid_conf_replace_keys.extend(["parent_filepath","popfile","parent_dirpath"])

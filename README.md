@@ -22,18 +22,41 @@ Git >= 2.25.1
 ## Install system
 > Documentation available at <a href="https://github.com/kbi-fbmi/ABMShare_doc"> ABMShare documentation </a>
 
-### Download Sharesim system or copy ShareSim folder
-> Copy **ABMShare** folder from git repository or from USB drive to your computer.
-> Copy **ShareSim** folder from **ABMShare directory** to another path *(Its main folder for running the simulation)*
-### 1. Create virtual environment and activate it
+### Download ABMShare system or copy ShareSim folder
+> Clone a ABMShare project on [Link](https://github.com/kbi-fbmi/ABMShare) <br>
+
+#### 1.A Install within Pip package manager
 > Create virtualEnvironment for python packages in main **ABMShare** folder. Install virtual env via pip: ```python3 -m venv .venv``` (Works same way for Windows and Linux) 
 > Activate virtual environment. 
 * For windows run in shell: ```.\<path_to_ABMShare_project>\.venv\Scripts\activate```. 
 * For Linux run in shell: ```source <path_to_ABMShare_project>/.venv/bin/activate``` 
-### 2. Install all requirements for Sharesim system
-In activated virtual environment, in path of sharesim run: ```pip install -e .```
+
+>In activated virtual environment, in path of sharesim run: ```pip install -e .```
+
+#### 1.B Install within uv package manager
+> First install uv - follow this [Link](https://docs.astral.sh/uv/getting-started/installation/)
+> Create virtual environment ```uv venv```
+> Install all dependencies using ```uv sync```, if you want to use development version, then also run ```uv pip install -e <path_to_the_project / or use ".">```
+
 ### 3. Edit few paths in ShareSim folder
-> Edit paths in ```/<path_to_sharesim_project>/start.sh```  
-> Especially Paths, which needs to be changes. (it is noted with description)
-### Zeppelin analysis
-> For running Zeppelin analysis, you need look into ```ABMShare/ShareSim/notebooks/Tutotial.md```
+> Edit configuration files paths in "abmShare_sandbox folder". You can also run python code to edit paths - if you want to replace current/different patterns. It looks across all csv/xlsx json/yaml files and replace paths.
+```python
+    from abmshare.change_paths import RecursiveChangePaths
+    pattern_to_replace="<Path_to_sandbox>" #Pattern of your choice
+    replacement_pattern="/path/you/want/to/replace"
+    dir_path="/path/to/your/sandbox/input_files"
+    RecursiveChangePaths(directory=dir_path,pattern=pattern_to_replace,replacement=replacement_pattern)
+```
+#### 3.A For locall run 
+> run start.sh with possible arguments for:``` -c <path_to_main_configuration_file> -s <path_to_abmshare.abm_share_start.py>```
+> run ```python abm_share_start.py``` with corresponding args
+> run your own python script with import like:
+```python
+import abmshare.extension_controller as exct
+configuration_path="path/to/main/configuration/file"
+exct.ExtensionController(configuration=configuration_path) #args.config
+```
+### Run with the Google colab
+> Check this [Link](https://drive.google.com/drive/folders/1LzP4MUeqz9upJU3DdFkVAYIooW0rwiM5?usp=drive_link)
+> And look for ABMShare_run.ipynb notebook, Also you can run this with ipykernel.
+

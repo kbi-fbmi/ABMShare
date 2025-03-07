@@ -82,7 +82,7 @@ def save_whole(simulations,dirpath,filename=None,extension=".csv"):
         df["date"]= np.arange(datetime.strptime((simulations.sims[0].date(0)),"%Y-%m-%d"),
                   datetime.strptime((simulations.sims[0].date(simulations.sims[0].t+1)),"%Y-%m-%d"),
                   timedelta(days=1)).astype(datetime)
-        df["t"]=np.arange(1,int(simulations.sims[0].t)+1)
+        df["t"]=np.arange(0,int(simulations.sims[0].t+1))
         exut.save_file(dirpath,filename,extension,df)
     except:
         print(f"Cannot create whole simulation summary at:{os.path.join(dirpath,filename)}.{extension}")

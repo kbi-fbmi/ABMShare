@@ -98,8 +98,7 @@ class RegionConfigCreator:
         self.region_config_creator(test=self.test)
         # Population object creation
         self.preparation_region_pop_creator()
-        self.create_population_objects()
-        print()
+        self.create_population_objects()        
 
     def region_config_creator(self,test:bool=False):
         self.preparation_region_config()

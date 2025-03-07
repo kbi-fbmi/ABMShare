@@ -200,10 +200,10 @@ class Pop(sc.prettyobj):
             self.state_location   = defaults.settings.state_location
             self.location         = defaults.settings.location
         elif self.region_config_path is not None:
-            print(f"========== setting region config location = {self.region_config_path}")
+            print(f"\n========== setting region config location = {self.region_config_path}",end="")
             cfg.set_region_config_path(self.region_config_path)
         else:
-            print(f"========== setting country location = {country_location}")
+            print(f"\n========== setting country location = {country_location}",end="")
             cfg.set_location_defaults(country_location)
 
         self.max_age = defaults.settings.max_age

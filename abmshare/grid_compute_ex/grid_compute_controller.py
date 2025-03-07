@@ -250,5 +250,5 @@ if __name__=="__main__":
     }
     conf_path=""
     test= GridComputeController(config=conf_path,base_conf_path=conf_path,grid_user="user",test=True)
-    print()
+    # print()
 

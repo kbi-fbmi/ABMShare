@@ -63,11 +63,11 @@ class Region:
         self.naming_object={}
 
     def create_population_object(self):
-        print(f"Creating population object for region {self.region_name} ({self.location_code})")
+        print(f"\nCreating population object for region {self.region_name} ({self.location_code})",end="")
         t=TicToc()
         t.tic()
         pop=sp.Pop(**self.pop_creator_pars)
-        t.toc(f"Region: {self.region_name} ({self.location_code}) population object created.")
+        t.toc(f"\nRegion: {self.region_name} ({self.location_code}) population object created.")
         filename=exut.generate_population_filename(region_name=self.region_name,prefix=self.naming_object["pop_name_prefix"],
                                                    suffix=self.naming_object["pop_name_suffix"],test=self.test)
         self.save_population_object(pop=pop,filename=filename)
@@ -129,7 +129,7 @@ class Region:
                 f.write(pretty_json)
             self.region_config_output_path=filepath
         except:
-            print(f"No save settings for region {self.region_name} ({self.location_code}). Cannot save population configurations.")
+            print(f"\nNo save settings for region {self.region_name} ({self.location_code}). Cannot save population configurations.",end="")
 
 
     def prepare_region_config(self):

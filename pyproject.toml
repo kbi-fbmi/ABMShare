@@ -1,7 +1,7 @@
 [project]
 name = "abmshare"
 version = "0.3.2"
-description = "Add your description here"
+description = "ABMShare app"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -22,7 +22,7 @@ dependencies = [
     "mkdocstrings==0.19.1",
     "networkx>=3.4.2",
     "numba>=0.61.0",
-    "numpy==1.26.0",
+    "numpy==2.0.0",
     "optuna>=4.2.1",
     "pandas==2.2.2",
     "parestlib>=0.4.0",

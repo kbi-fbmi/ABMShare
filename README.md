@@ -1,4 +1,6 @@
-### ShareSim system
+### ABMShare system
+> Created by [DNAi s.r.o](https://www.dnai.ai/) maintained by [FBME CTU ](https://www.fbmi.cvut.cz/en)
+
 ## Install requirements
 Python >= Python 3.10.2 <= 3.12
 Microsoft Windows >= Windows10

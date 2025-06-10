@@ -230,7 +230,8 @@ def simple_vaccine_intervention(intervention:dict,config:dict)->cvi.simple_vacci
                             days=[int_days[0],int_days[1]] if len(int_days)>1 else int_days[0],
                             rel_sus=intervention.get("orig_rel_sus",0.0),
                             rel_symp=intervention.get("orig_rel_symp",0.0),
-                            label=intervention.get("label"))
+                            label=intervention.get("label"),
+                            prob=intervention.get("prob",1.0))
     except Exception as e:
         print(f"An error occured: {e}, while processing simple_vaccine intervention:{intervention}")
         return None

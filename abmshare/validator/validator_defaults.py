@@ -363,6 +363,7 @@ simulation_interventions_csv_cols_with_types = {
         "num_days": {"allowed_type": [int, list], "optional": True},
         "rel_sus":{ "allowed_type": float, "optional": False},
         "rel_symp":{ "allowed_type": float, "optional": False},
+        "prob":{ "allowed_type": float, "optional": True},
     },
 
 }

@@ -80,10 +80,13 @@ class ExtensionController():
 
         if self.grid_compute and self.grid_user:
             if self.validate!=False: # If validate only
-                val.process(self.configuration,
-                            self.simulation_configuration["filepath"] if self.initialized_modules["multisim"] else None,
-                            self.synthpops_configuration["filepath"] if self.initialized_modules["synthpops"] else None,
-                            self.report_configuration["filepath"] if self.initialized_modules["report"] else None)
+                try:
+                    val.process(self.configuration,
+                                self.simulation_configuration["filepath"] if self.initialized_modules["multisim"] else None,
+                                self.synthpops_configuration["filepath"] if self.initialized_modules["synthpops"] else None,
+                                self.report_configuration["filepath"] if self.initialized_modules["report"] else None)
+                except Exception as e:
+                    print(f"Validation process failed with message:\n{e}\n Process will continue, but it is recommended to check the errors.")
                 print("Validation process has been finished")                
             if self.validate==None:                
                 gridproc.GridComputeController(config=self.configuration,base_conf_path=self.conf_path,grid_user=self.grid_user)            
@@ -91,10 +94,13 @@ class ExtensionController():
 
         # Handle validation, for locall run
         if self.validate!=False: # If validate only
-            val.process(self.configuration,
-                        self.simulation_configuration["filepath"] if self.initialized_modules["multisim"] else None,
-                        self.synthpops_configuration["filepath"] if self.initialized_modules["synthpops"] else None,
-                        self.report_configuration["filepath"] if self.initialized_modules["report"] else None)           
+            try:
+                val.process(self.configuration,
+                            self.simulation_configuration["filepath"] if self.initialized_modules["multisim"] else None,
+                            self.synthpops_configuration["filepath"] if self.initialized_modules["synthpops"] else None,
+                            self.report_configuration["filepath"] if self.initialized_modules["report"] else None)           
+            except Exception as e:
+                print(f"Validation process failed with message:\n{e}\n Process will continue, but it is recommended to check the errors.")                
         if self.validate:
             print("Validation process has been finished")
             exit(0) # Exit after validation

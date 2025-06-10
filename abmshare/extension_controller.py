@@ -51,6 +51,14 @@ class ExtensionController():
             report_configuration = self.configuration.get("report_settings", None)
         self.report_configuration = report_configuration
 
+        # Enabled modules
+        if self.configuration["initialize"]["synthpop_initialize"]:
+            self.initialized_modules["synthpops"]=True
+        if self.configuration["initialize"]["simulation_initialize"]:
+            self.initialized_modules["multisim"]=True
+        if self.configuration["initialize"]["report_module_initialize"]:
+            self.initialized_modules["report"]=True
+
         #Handle test manually
         try:
             # self.test = self.simulation_configuration.get('test', self.test)
@@ -71,24 +79,25 @@ class ExtensionController():
             raise NotImplementedError("You need to provide save_settings, for simulation running.")
 
         if self.grid_compute and self.grid_user:
-            if self.validate: # If validate only
-                val.process(self.configuration,self.simulation_configuration["filepath"],self.synthpops_configuration["filepath"],self.report_configuration["filepath"])
-                print("Validation process has been finished")
-                return
-            if self.validate==None:
-                val.process(self.configuration,self.simulation_configuration["filepath"],self.synthpops_configuration["filepath"],self.report_configuration["filepath"])
-            gridproc.GridComputeController(config=self.configuration,base_conf_path=self.conf_path,grid_user=self.grid_user)
-            # Changing the value of grid_compute processed to True is by the grid_change_paths script
-            return
-
+            if self.validate!=False: # If validate only
+                val.process(self.configuration,
+                            self.simulation_configuration["filepath"] if self.initialized_modules["multisim"] else None,
+                            self.synthpops_configuration["filepath"] if self.initialized_modules["synthpops"] else None,
+                            self.report_configuration["filepath"] if self.initialized_modules["report"] else None)
+                print("Validation process has been finished")                
+            if self.validate==None:                
+                gridproc.GridComputeController(config=self.configuration,base_conf_path=self.conf_path,grid_user=self.grid_user)            
+            exit(0) # Exit after grid compute initialization
 
         # Handle validation, for locall run
-        if self.validate: # If validate only
-            val.process(self.configuration,self.simulation_configuration["filepath"],self.synthpops_configuration["filepath"],self.report_configuration["filepath"])
+        if self.validate!=False: # If validate only
+            val.process(self.configuration,
+                        self.simulation_configuration["filepath"] if self.initialized_modules["multisim"] else None,
+                        self.synthpops_configuration["filepath"] if self.initialized_modules["synthpops"] else None,
+                        self.report_configuration["filepath"] if self.initialized_modules["report"] else None)           
+        if self.validate:
             print("Validation process has been finished")
-            return
-        if self.validate==None:
-            val.process(self.configuration,self.simulation_configuration["filepath"],self.synthpops_configuration["filepath"],self.report_configuration["filepath"])
+            exit(0) # Exit after validation
 
         #Check for possible override_load+and_save settings
         self.check_override()
@@ -100,17 +109,15 @@ class ExtensionController():
             sys.stdout = self.log_file
         except Exception:
             pass
-        if self.configuration["initialize"]["synthpop_initialize"]:
-            self.initialized_modules["synthpops"]=True
+        if self.initialized_modules["synthpops"]:            
             if self.mobility==None:
                 self.mobility=exut.get_nested_value_from_dict(exut.load_config(self.synthpops_configuration["filepath"]),exdf.synthpops_mobility_bool) if not None else False
             print("*******************************************")
             print("Running pop creation process")
             syntproc.SynthpopsExtensionController(configuration=self.synthpops_configuration["filepath"],save_settings=self.save_settings,test=self.test,mobility=self.mobility)
-        if self.configuration["initialize"]["simulation_initialize"]:
+        if self.initialized_modules["multisim"]:
             if self.mobility==None:
-                self.mobility=exut.get_nested_value_from_dict(exut.load_config(self.synthpops_configuration["filepath"]),exdf.synthpops_mobility_bool) if not None else False
-            self.initialized_modules["multisim"]=True
+                self.mobility=exut.get_nested_value_from_dict(exut.load_config(self.synthpops_configuration["filepath"]),exdf.synthpops_mobility_bool) if not None else False            
             print("*******************************************")
             print("Running multisim simulation process")
             # immunity
@@ -124,8 +131,7 @@ class ExtensionController():
             simproc.SimulationExtensionController(configuration=self.simulation_configuration["filepath"],save_settings=self.save_settings,
                                                   override_pop_location=self.override_save_settings,test=self.test,mobility=self.mobility)
         try:
-            if self.configuration["initialize"]["report_module_initialize"]:
-                self.initialized_modules["report"]=True
+            if self.initialized_modules["report"]:                
                 print("*******************************************")
                 print("Running reporting module")
                 repproc.Report_ex_controller(configuration=self.report_configuration["filepath"],save_settings=self.save_settings)
